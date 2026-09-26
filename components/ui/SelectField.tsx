@@ -5,12 +5,12 @@ interface SelectOption {
   label: string;
 }
 
-interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
+type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> & {
   label: string;
   options: SelectOption[];
   placeholder?: string;
   prefix?: ReactNode;
-}
+};
 
 export function SelectField({
   label,
@@ -52,8 +52,8 @@ export function SelectField({
 
         <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[44px] items-center justify-center">
           <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M0.664062 0.664062L4.66406 4.66406L8.66406 0.664062" stroke="black" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+          <path d="M0.664062 0.664062L4.66406 4.66406L8.66406 0.664062" stroke="black" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
       </div>
     </div>

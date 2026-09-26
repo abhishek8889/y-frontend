@@ -128,7 +128,7 @@ export default function SignupPage() {
                 international
                 defaultCountry="US"
                 value={phone}
-                onChange={setPhone}
+                onChange={(value) => setPhone(value ?? "")}
                 placeholder="(000) 000-0000"
                 className="phone-input h-[48px] w-full px-[14px]"
               />

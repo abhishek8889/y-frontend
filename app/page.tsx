@@ -24,12 +24,6 @@ export default function HomePage() {
           >
             Login
           </Link>
-          <Link
-            href="/reset-password"
-            className="flex h-[52px] items-center justify-center border border-black bg-white text-[14px] font-normal uppercase tracking-[0.02em] text-black transition hover:bg-black hover:text-white"
-          >
-            Reset Password
-          </Link>
         </div>
       </div>
     </main>
