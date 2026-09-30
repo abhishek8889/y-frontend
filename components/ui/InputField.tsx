@@ -1,49 +1,70 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
-type InputType = InputHTMLAttributes<HTMLInputElement>["type"];
-
-type InputFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "prefix" | "type"> & {
-  label: string;
-  type?: InputType;
+type SharedProps = {
+  label?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
   containerClassName?: string;
+  as?: "input" | "textarea";
 };
+
+type InputFieldProps = SharedProps &
+  (
+    | ({ as?: "input" } & InputHTMLAttributes<HTMLInputElement>)
+    | ({ as: "textarea" } & TextareaHTMLAttributes<HTMLTextAreaElement>)
+  );
 
 export function InputField({
   label,
   id,
+  as = "input",
   type = "text",
   prefix,
   suffix,
   className = "",
   containerClassName = "",
+  rows,
   ...props
 }: InputFieldProps) {
-  const inputId = id ?? props.name;
+  const inputId = id ?? (typeof props.name === "string" ? props.name : undefined);
+  const isTextarea = as === "textarea";
 
   return (
     <div className="mb-0">
-      <label
-        htmlFor={inputId}
-        className="text-[16px] mb-[6px] block font-bold uppercase leading-[24px] tracking-[0px] text-black"
-      >
-        {label}
-      </label>
+      {label ? (
+        <label
+          htmlFor={inputId}
+          className="mb-[6px] block text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black"
+        >
+          {label}
+        </label>
+      ) : null}
 
       <div
-        className={`flex h-[48px] items-center rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${containerClassName}`.trim()}
+        className={`flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
+          isTextarea ? "min-h-[140px] p-0" : "h-[48px] items-center"
+        } ${containerClassName}`.trim()}
       >
-        {prefix ? <span className="mr-2 flex items-center">{prefix}</span> : null}
+        {prefix ? <span className="ml-5 mr-2 flex items-center">{prefix}</span> : null}
 
-        <input
-          id={inputId}
-          type={type}
-          {...props}
-          className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
-        />
-
-        {suffix ? <span className="mr-6 flex items-center">{suffix}</span> : null}
+        {isTextarea ? (
+          <textarea
+            id={inputId}
+            rows={rows ?? 4}
+            {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            className={`w-full resize-none border-0 bg-transparent px-5 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+          />
+        ) : (
+          <>
+            <input
+              id={inputId}
+              type={type}
+              {...(props as InputHTMLAttributes<HTMLInputElement>)}
+              className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+            />
+            {suffix ? <span className="mr-6 flex items-center">{suffix}</span> : null}
+          </>
+        )}
       </div>
     </div>
   );

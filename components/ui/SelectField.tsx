@@ -6,7 +6,7 @@ interface SelectOption {
 }
 
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> & {
-  label: string;
+  label?: string;
   options: SelectOption[];
   placeholder?: string;
   prefix?: ReactNode;
@@ -25,17 +25,19 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-[6px]">
-      <label htmlFor={selectId} className="text-[16px] font-bold uppercase leading-[24px] text-black">
-        {label}
-      </label>
+      {label ? (
+        <label htmlFor={selectId} className="text-[16px] font-bold uppercase leading-[24px] text-black">
+          {label}
+        </label>
+      ) : null}
 
-      <div className="relative flex h-[48px] items-center overflow-hidden rounded-[4px] border border-black bg-white">
+      <div className="relative flex h-[48px] items-center overflow-hidden bg-white">
         {prefix ? <span className="mr-2 flex items-center pl-5">{prefix}</span> : null}
 
         <select
           id={selectId}
           {...props}
-          className={`h-full w-full appearance-none border-0 bg-transparent px-5 pr-12 text-[14px] font-normal leading-[20px] text-black outline-none focus:outline-none ${className}`.trim()}
+          className={`h-full w-full appearance-none border rounded-[4px] border-black bg-transparent px-5 pr-12 text-[14px] font-normal leading-[20px] text-black outline-none focus:outline-none ${className}`.trim()}
         >
           {placeholder ? (
             <option value="" disabled>
