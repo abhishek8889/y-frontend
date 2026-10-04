@@ -10,6 +10,8 @@ type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> 
   options: SelectOption[];
   placeholder?: string;
   prefix?: ReactNode;
+  containerClassName?: string;
+  density?: "default" | "compact";
 };
 
 export function SelectField({
@@ -18,6 +20,8 @@ export function SelectField({
   placeholder,
   prefix,
   className = "",
+  containerClassName = "",
+  density = "default",
   id,
   ...props
 }: SelectFieldProps) {
@@ -31,7 +35,7 @@ export function SelectField({
         </label>
       ) : null}
 
-      <div className="relative flex h-[48px] items-center overflow-hidden bg-white">
+      <div className={`relative flex ${density === "compact" ? "h-10" : "h-[48px]"} items-center overflow-hidden bg-white ${containerClassName}`.trim()}>
         {prefix ? <span className="mr-2 flex items-center pl-5">{prefix}</span> : null}
 
         <select

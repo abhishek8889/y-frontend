@@ -32,3 +32,25 @@ select {
   font-family: var(--font-univers), sans-serif;
 }
 
+@keyframes event-gallery-loop {
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.event-gallery-track {
+  animation: event-gallery-loop 42s linear infinite;
+  will-change: transform;
+}
+
+.event-gallery-track:hover,
+.event-gallery-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-gallery-track {
+    animation: none;
+  }
+}
+

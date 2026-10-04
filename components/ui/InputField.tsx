@@ -4,7 +4,10 @@ type SharedProps = {
   label?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
+  prefixClassName?: string;
+  suffixClassName?: string;
   containerClassName?: string;
+  density?: "default" | "compact";
   as?: "input" | "textarea";
 };
 
@@ -14,20 +17,23 @@ type InputFieldProps = SharedProps &
     | ({ as: "textarea" } & TextareaHTMLAttributes<HTMLTextAreaElement>)
   );
 
-export function InputField({
-  label,
-  id,
-  as = "input",
-  type = "text",
-  prefix,
-  suffix,
-  className = "",
-  containerClassName = "",
-  rows,
-  ...props
-}: InputFieldProps) {
+export function InputField(props: InputFieldProps) {
+  const {
+    label,
+    id,
+    as = "input",
+    prefix,
+    suffix,
+    prefixClassName = "ml-5 mr-2",
+    suffixClassName = "mr-6",
+    className = "",
+    containerClassName = "",
+    density = "default",
+  } = props;
   const inputId = id ?? (typeof props.name === "string" ? props.name : undefined);
   const isTextarea = as === "textarea";
+  const type = "type" in props ? props.type ?? "text" : "text";
+  const rows = "rows" in props ? props.rows : undefined;
 
   return (
     <div className="mb-0">
@@ -42,10 +48,10 @@ export function InputField({
 
       <div
         className={`flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
-          isTextarea ? "min-h-[140px] p-0" : "h-[48px] items-center"
+          isTextarea ? "min-h-[140px] p-0" : density === "compact" ? "h-10 items-center" : "h-[48px] items-center"
         } ${containerClassName}`.trim()}
       >
-        {prefix ? <span className="ml-5 mr-2 flex items-center">{prefix}</span> : null}
+        {prefix ? <span className={`flex items-center ${prefixClassName}`}>{prefix}</span> : null}
 
         {isTextarea ? (
           <textarea
@@ -62,7 +68,7 @@ export function InputField({
               {...(props as InputHTMLAttributes<HTMLInputElement>)}
               className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
             />
-            {suffix ? <span className="mr-6 flex items-center">{suffix}</span> : null}
+            {suffix ? <span className={`flex items-center ${suffixClassName}`}>{suffix}</span> : null}
           </>
         )}
       </div>
