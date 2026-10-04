@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { clearAuthSession } from "@/lib/api/authStorage";
+import { baseApi } from "@/lib/store/baseApi";
+import { useAppDispatch } from "@/lib/store/hooks";
 import IconCard, {
   CHEVRON_DOWN_ICON,
   CLUBSITE_ICON,
@@ -42,6 +45,13 @@ const defaultItems: SidebarItem[] = [
 
 export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
+
+  function handleLogout() {
+    clearAuthSession();
+    dispatch(baseApi.util.resetApiState());
+    window.location.assign("/login");
+  }
 
   return (
     <aside className="h-[calc(100vh-45px)] w-[250px] border-r border-[#000000] bg-[#fff]">
@@ -84,7 +94,8 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
         <div className="mt-auto border-t border-black/30 px-3 py-3">
           <button
             type="button"
-            className="flex items-center gap-3 px-3 py-2 text-[13px] font-medium uppercase tracking-[0.02em] text-black/80 transition hover:text-black"
+            onClick={handleLogout}
+            className="flex cursor-pointer items-center gap-3 px-3 py-2 text-[13px] font-medium uppercase tracking-[0.02em] text-black/80 transition hover:text-black"
           >
             <span className="flex h-4 w-4 items-center justify-center text-[14px]">
               <IconCard name={LOGOUT_ICON} className="h-4 w-4" />

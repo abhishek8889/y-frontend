@@ -1,18 +1,19 @@
 import Cookies from "js-cookie";
+import { AUTH_TOKEN_KEY } from "@/lib/auth/constants";
+import { authCookieOptions, clearAuthCookieOptions } from "@/lib/api/cookieOptions";
 
-export const AUTH_TOKEN_KEY = "authToken";
+export { AUTH_TOKEN_KEY };
 
 export function getAuthToken() {
   return Cookies.get(AUTH_TOKEN_KEY) ?? null;
 }
 
 export function setAuthToken(token: string) {
-  Cookies.set(AUTH_TOKEN_KEY, token, {
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  Cookies.set(AUTH_TOKEN_KEY, token, authCookieOptions());
 }
 
 export function clearAuthToken() {
-  Cookies.remove(AUTH_TOKEN_KEY);
+  for (const options of clearAuthCookieOptions()) {
+    Cookies.remove(AUTH_TOKEN_KEY, options);
+  }
 }

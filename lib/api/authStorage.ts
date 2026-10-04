@@ -1,26 +1,17 @@
 import Cookies from "js-cookie";
+import { AUTH_USER_KEY } from "@/lib/auth/constants";
+import { getPrimaryRole, type AuthUserLike } from "@/lib/auth/roles";
+import type { AuthUser } from "@/lib/auth/session";
+import { authCookieOptions, clearAuthCookieOptions } from "@/lib/api/cookieOptions";
 import { clearAuthToken, setAuthToken } from "@/lib/api/token";
+import { buildSurfaceUrl, getSurfaceForRole } from "@/lib/hosts";
 
-export const AUTH_USER_KEY = "authUser";
-
-export type AuthUser = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  profile_image: string | null;
-  status: string;
-  scope: string;
-  roles: string[];
-  organisation_id: number | null;
-};
+export type { AuthUser };
+export { AUTH_USER_KEY };
 
 export function setAuthSession(token: string, user: AuthUser) {
   setAuthToken(token);
-  Cookies.set(AUTH_USER_KEY, JSON.stringify(user), {
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  Cookies.set(AUTH_USER_KEY, JSON.stringify(user), authCookieOptions());
 }
 
 export function getAuthUser(): AuthUser | null {
@@ -36,13 +27,40 @@ export function getAuthUser(): AuthUser | null {
 
 export function clearAuthSession() {
   clearAuthToken();
-  Cookies.remove(AUTH_USER_KEY);
+  for (const options of clearAuthCookieOptions()) {
+    Cookies.remove(AUTH_USER_KEY, options);
+  }
 }
 
-export function getPostLoginPath(user: AuthUser) {
-  if (user.scope === "admin" || user.roles.includes("superadmin") || user.roles.includes("admin")) {
-    return "/admin";
+export function getPostLoginPath(user: AuthUserLike) {
+  const role = getPrimaryRole(user);
+  if (role === "superadmin") return "/admin";
+  if (role === "owner") return "/dashboard";
+  return "/";
+}
+
+export function getPostLoginUrl(user: AuthUserLike, currentHostHeader?: string) {
+  const role = getPrimaryRole(user);
+  const surface = getSurfaceForRole(role);
+  const path = getPostLoginPath(user);
+  const host =
+    currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
+  return buildSurfaceUrl(surface, path, host);
+}
+
+/** Prefer a safe same-origin `next` path from the login query string when present. */
+export function resolvePostLoginUrl(
+  user: AuthUserLike,
+  nextPath: string | null | undefined,
+  currentHostHeader?: string,
+) {
+  if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
+    const host =
+      currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
+    const role = getPrimaryRole(user);
+    const surface = getSurfaceForRole(role);
+    return buildSurfaceUrl(surface, nextPath, host);
   }
 
-  return "/dashboard";
+  return getPostLoginUrl(user, currentHostHeader);
 }

@@ -1,5 +1,5 @@
 import { baseApi } from "@/lib/store/baseApi";
-import type { AuthUser } from "@/lib/api/authStorage";
+import type { AuthUser } from "@/lib/auth/session";
 
 export type LoginRequest = {
   email: string;
@@ -17,17 +17,34 @@ export type LoginResponse = {
   };
 };
 
+export type AboutMeUser = AuthUser & {
+  organisation_approve_status?: boolean;
+  permissions?: Record<string, string[]>;
+};
+
+export type AboutMeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    user: AboutMeUser;
+  };
+};
+
 export type ProfileResponse = AuthUser;
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     login: build.mutation<LoginResponse, LoginRequest>({
       query: (body) => ({
-        url: "login",
+        url: "organisation/login",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Auth"],
+    }),
+    getAboutMe: build.query<AboutMeResponse, void>({
+      query: () => "about-me",
+      providesTags: ["Auth"],
     }),
     getProfile: build.query<ProfileResponse, void>({
       query: () => "get-profile",
@@ -36,4 +53,9 @@ export const authApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useGetProfileQuery, useLazyGetProfileQuery } = authApi;
+export const {
+  useLoginMutation,
+  useGetAboutMeQuery,
+  useGetProfileQuery,
+  useLazyGetProfileQuery,
+} = authApi;

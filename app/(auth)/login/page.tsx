@@ -1,8 +1,6 @@
 "use client";
 
 import { type FormEvent, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-
 import { useLoginMutation } from "@/apis/auth/authApi";
 import { AuthPage } from "@/components/auth/AuthPage";
 import IconCard, {
@@ -15,12 +13,11 @@ import IconCard, {
 } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
 import { getApiErrorMessage } from "@/lib/api/errors";
-import { getPostLoginPath, setAuthSession } from "@/lib/api/authStorage";
+import { resolvePostLoginUrl, setAuthSession } from "@/lib/api/authStorage";
 
 const initialCode = ["", "", "", "", "", ""];
 
 export default function LoginPage() {
-  const router = useRouter();
   const [login, { isLoading }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,7 +70,10 @@ export default function LoginPage() {
       }
 
       setAuthSession(token, user);
-      router.push(getPostLoginPath(user));
+
+      const nextPath = new URLSearchParams(window.location.search).get("next");
+      // Host-only cookies on app.localhost; then land on dashboard (or ?next=).
+      window.location.assign(resolvePostLoginUrl(user, nextPath, window.location.host));
     } catch (error) {
       setFormError(getApiErrorMessage(error as never, "Invalid email or password."));
     }

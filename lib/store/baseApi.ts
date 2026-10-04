@@ -36,7 +36,8 @@ const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuery
 ) => {
   const result = await rawBaseQuery(args, api, extraOptions);
   const requestUrl = typeof args === "string" ? args : args.url;
-  const isAuthRequest = requestUrl === "login" || requestUrl.startsWith("login?");
+  const isAuthRequest =
+    requestUrl === "organisation/login" || requestUrl.startsWith("organisation/login?");
 
   if (result.error?.status === 401 && !isAuthRequest) {
     clearAuthSession();
