@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import homeHeroImage from "@/assets/home-hero.jpg";
 import yourlistLogo from "@/assets/yourlist-logo.png";
-import { SiteFooter } from "@/components/SiteFooter";
+import { SiteFooter } from "@/components/public/SiteFooter";
 import eventCover from "@/assets/event-cover.jpg";
 
 const events = Array.from({ length: 8 }, (_, index) => ({

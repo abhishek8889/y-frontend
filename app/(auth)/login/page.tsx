@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { useLoginMutation } from "@/apis/auth/authApi";
 import { AuthPage } from "@/components/auth/AuthPage";
 import IconCard, {
   CLOSE_ICON,
@@ -12,10 +14,17 @@ import IconCard, {
   CHECK_CIRCLE_ICON,
 } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
+import { getApiErrorMessage } from "@/lib/api/errors";
+import { getPostLoginPath, setAuthSession } from "@/lib/api/authStorage";
 
 const initialCode = ["", "", "", "", "", ""];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [login, { isLoading }] = useLoginMutation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [modalState, setModalState] = useState<
     "reset" | "verify" | "create" | "success" | null
@@ -43,6 +52,33 @@ export default function LoginPage() {
     }
   };
 
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setFormError("Email and password are required.");
+      return;
+    }
+
+    try {
+      const result = await login({ email: trimmedEmail, password }).unwrap();
+      const token = result.data?.access_token;
+      const user = result.data?.user;
+
+      if (!token || !user) {
+        setFormError("Login succeeded but no access token was returned.");
+        return;
+      }
+
+      setAuthSession(token, user);
+      router.push(getPostLoginPath(user));
+    } catch (error) {
+      setFormError(getApiErrorMessage(error as never, "Invalid email or password."));
+    }
+  }
+
   return (
     <>
       <AuthPage
@@ -54,12 +90,16 @@ export default function LoginPage() {
           </p>
         }
       >
-        <form className="space-y-[22px]" onSubmit={(event) => event.preventDefault()}>
+        <form className="space-y-[22px]" onSubmit={handleLogin}>
           <InputField
             label="Email"
             type="email"
             placeholder="Enter your email"
             name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
             containerClassName="mb-[22px]"
           />
 
@@ -68,6 +108,10 @@ export default function LoginPage() {
             type={showPassword ? "text" : "password"}
             placeholder="Enter password"
             name="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
             suffix={
               <button
                 type="button"
@@ -93,11 +137,18 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {formError ? (
+            <p role="alert" className="text-[13px] leading-[18px] text-[#d32f2f]">
+              {formError}
+            </p>
+          ) : null}
+
           <button
             type="submit"
-            className="rounded-[4px] cursor-pointer flex h-[52px] w-full items-center justify-center border border-black bg-black text-[14px] font-bold uppercase tracking-[0.04em] text-white transition hover:opacity-90"
+            disabled={isLoading}
+            className="rounded-[4px] cursor-pointer flex h-[52px] w-full items-center justify-center border border-black bg-black text-[14px] font-bold uppercase tracking-[0.04em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Continue
+            {isLoading ? "Signing in..." : "Continue"}
           </button>
         </form>
       </AuthPage>

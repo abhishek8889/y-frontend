@@ -1,6 +1,6 @@
+import type { PublishedEvent } from "@/lib/events/eventStorage";
+import { formatDateTime } from "@/lib/events/formatDateTime";
 import { EventImage } from "../EventImage";
-import { formatDateTime } from "../formatDateTime";
-import type { PublishedEvent } from "../eventStorage";
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (

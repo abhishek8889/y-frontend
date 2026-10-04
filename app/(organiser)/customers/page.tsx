@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/organiser/DashboardHeader";
+import { DashboardShell } from "@/components/organiser/DashboardShell";
+import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";

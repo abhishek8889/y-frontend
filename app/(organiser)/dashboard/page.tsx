@@ -1,6 +1,6 @@
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/organiser/DashboardHeader";
+import { DashboardShell } from "@/components/organiser/DashboardShell";
+import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 
 const stats = [
   { label: "Revenue month", value: "£84,290", trend: "12% vs last month" },

@@ -29,11 +29,10 @@ export function InputField(props: InputFieldProps) {
     className = "",
     containerClassName = "",
     density = "default",
+    ...rest
   } = props;
-  const inputId = id ?? (typeof props.name === "string" ? props.name : undefined);
+  const inputId = id ?? ("name" in rest && typeof rest.name === "string" ? rest.name : undefined);
   const isTextarea = as === "textarea";
-  const type = "type" in props ? props.type ?? "text" : "text";
-  const rows = "rows" in props ? props.rows : undefined;
 
   return (
     <div className="mb-0">
@@ -56,16 +55,16 @@ export function InputField(props: InputFieldProps) {
         {isTextarea ? (
           <textarea
             id={inputId}
-            rows={rows ?? 4}
-            {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            rows={"rows" in rest ? rest.rows ?? 4 : 4}
+            {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
             className={`w-full resize-none border-0 bg-transparent px-5 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
           />
         ) : (
           <>
             <input
               id={inputId}
-              type={type}
-              {...(props as InputHTMLAttributes<HTMLInputElement>)}
+              {...(rest as InputHTMLAttributes<HTMLInputElement>)}
+              type={"type" in rest ? rest.type ?? "text" : "text"}
               className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
             />
             {suffix ? <span className={`flex items-center ${suffixClassName}`}>{suffix}</span> : null}

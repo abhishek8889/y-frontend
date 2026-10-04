@@ -2,18 +2,18 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/organiser/DashboardHeader";
+import { DashboardShell } from "@/components/organiser/DashboardShell";
+import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 import { Button } from "@/components/ui/Button";
 import { EventImage } from "./EventImage";
-import { formatDateTime } from "./formatDateTime";
 import {
   deletePublishedEvent,
   getPublishedEventsSnapshot,
   parsePublishedEvents,
   subscribeToPublishedEvents,
-} from "./eventStorage";
+} from "@/lib/events/eventStorage";
+import { formatDateTime } from "@/lib/events/formatDateTime";
 import AttendeesTab from "./tabs/AttendeesTab";
 import DetailsTab from "./tabs/DetailsTab";
 import OrdersTab from "./tabs/OrdersTab";
