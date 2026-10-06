@@ -1,6 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { MonthFilter } from "./TabControls";
 
 const revenueByDay = [680, 270, 420, 950, 510, 190, 790, 420, 870, 420, 110, 210, 40, 550, 420, 90, 660, 420, 860, 950, 420, 210, 670, 420, 190, 220, 420, 210, 420, 420];
@@ -22,6 +31,16 @@ export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
   const monthLabel = month
     ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(`${month}-01T12:00:00`))
     : "Select month";
+  const monthDate = month ? new Date(`${month}-01T12:00:00`) : new Date();
+  const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+  const monthShort = new Intl.DateTimeFormat("en", { month: "short" }).format(monthDate);
+  const chartData = Array.from({ length: daysInMonth }, (_, index) => ({
+    day: index + 1,
+    revenue: revenueByDay[Math.round((index * (revenueByDay.length - 1)) / (daysInMonth - 1))],
+  }));
+  const chartTicks = chartData
+    .filter(({ day }) => day === 1 || day % 5 === 0)
+    .map(({ day }) => day);
 
   return (
     <section className="pt-4" aria-label={`${eventTitle} reports`}>
@@ -44,24 +63,41 @@ export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
           <h4 className="text-[12px] font-bold uppercase text-black">Revenue overview</h4>
           <p className="text-[11px] text-[#888]">{monthLabel}</p>
         </div>
-        <div className="relative h-[210px] pl-12">
-          <div className="absolute inset-x-12 inset-y-2 flex flex-col justify-between" aria-hidden="true">
-            {["$1,000", "$750", "$500", "$250", "$0"].map((label) => (
-              <div key={label} className="flex h-0 items-center border-t border-dashed border-black/10 text-[10px] text-[#999]">
-                <span className="absolute -left-11 w-9 text-right">{label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-x-12 bottom-7 top-2 flex items-end justify-between gap-1 border-b border-black/15">
-            {revenueByDay.map((value, index) => (
-              <div key={`${index}-${value}`} className="flex h-full min-w-0 flex-1 items-end justify-center" title={`Day ${index + 1}: $${value}`}>
-                <div className="w-full max-w-[10px] bg-black" style={{ height: `${Math.max(4, (value / 1000) * 100)}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-x-12 bottom-0 flex justify-between text-[10px] text-[#999]">
-            {["1 Sep", "5 Sep", "10 Sep", "15 Sep", "20 Sep", "25 Sep", "30 Sep"].map((label) => <span key={label}>{label}</span>)}
-          </div>
+        <div className="h-[250px] w-full" role="img" aria-label={`Daily revenue in pounds for ${monthLabel}`}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              <CartesianGrid vertical={false} stroke="#d9d9d9" strokeDasharray="3 4" />
+              <XAxis
+                dataKey="day"
+                type="number"
+                scale="band"
+                domain={[1, daysInMonth]}
+                ticks={chartTicks}
+                tickFormatter={(day: number) => `${day} ${monthShort}`}
+                tick={{ fill: "#999", fontSize: 10 }}
+                tickLine={false}
+                axisLine={{ stroke: "#b5b5b5" }}
+                interval={0}
+                minTickGap={12}
+              />
+              <YAxis
+                domain={[0, 1000]}
+                ticks={[0, 250, 500, 750, 1000]}
+                tickFormatter={(value: number) => `£${value.toLocaleString("en-GB")}`}
+                tick={{ fill: "#999", fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                width={52}
+              />
+              <Tooltip
+                formatter={(value) => [`£${Number(value).toLocaleString("en-GB")}`, "Revenue"]}
+                labelFormatter={(day) => `${day} ${monthShort} ${monthDate.getFullYear()}`}
+                contentStyle={{ borderColor: "#777", borderRadius: 0, fontSize: 12 }}
+                cursor={{ fill: "#000", fillOpacity: 0.06 }}
+              />
+              <Bar dataKey="revenue" fill="#000" maxBarSize={12} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </section>
 

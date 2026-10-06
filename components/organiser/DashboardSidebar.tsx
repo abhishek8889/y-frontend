@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { clearAuthSession } from "@/lib/api/authStorage";
 import { baseApi } from "@/lib/store/baseApi";
 import { useAppDispatch } from "@/lib/store/hooks";
+import { useState } from "react";
 import IconCard, {
   CHEVRON_DOWN_ICON,
   CLUBSITE_ICON,
@@ -52,41 +53,75 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
     dispatch(baseApi.util.resetApiState());
     window.location.assign("/login");
   }
+  const [financeExpanded, setFinanceExpanded] = useState(pathname.startsWith("/finance"));
 
   return (
     <aside className="h-[calc(100vh-45px)] w-[250px] border-r border-[#000000] bg-[#fff]">
       <nav className="flex h-full flex-col gap-2.5 p-6">
         {items.map((item) => {
+          const isFinance = item.label === "Finance";
           const isActive = pathname === item.href;
 
           return (
             <div key={item.label}>
-              <Link
-                href={item.href}
-                className={[
-                  "flex w-full items-center justify-between gap-3 rounded-[4px] px-3 py-3 text-left text-base font-normal leading-5 tracking-[0.02em] transition",
-                  isActive ? "bg-black text-white" : "text-black/70 hover:text-black",
-                ].join(" ")}
-              >
-                <span className="flex items-center gap-3">
-                  <span
-                    className="flex h-4 w-4 items-center justify-center text-[14px]"
-                    style={isActive ? { filter: "brightness(0) invert(1)" } : undefined}
-                  >
-                    <IconCard name={item.icon} className="h-4 w-4" />
+              <div className="flex items-center">
+                <Link
+                  href={item.href}
+                  className={[
+                    "flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[4px] px-3 py-3 text-left text-base font-normal leading-5 tracking-[0.02em] transition",
+                    isActive ? "bg-black text-white" : "text-black/70 hover:text-black",
+                  ].join(" ")}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className="flex h-4 w-4 items-center justify-center text-[14px]"
+                      style={isActive ? { filter: "brightness(0) invert(1)" } : undefined}
+                    >
+                      <IconCard name={item.icon} className="h-4 w-4" />
+                    </span>
+                    <span>{item.label}</span>
                   </span>
-                  <span>{item.label}</span>
-                </span>
-
-                {item.hasChevron ? (
-                  <span
-                    className="flex h-3.5 w-3.5 items-center justify-center"
-                    style={isActive ? { filter: "brightness(0) invert(1)" } : undefined}
+                </Link>
+                {isFinance ? (
+                  <button
+                    type="button"
+                    aria-label={`${financeExpanded ? "Collapse" : "Expand"} Finance menu`}
+                    aria-expanded={financeExpanded}
+                    onClick={() => setFinanceExpanded((expanded) => !expanded)}
+                    className={[
+                      "flex h-10 w-8 shrink-0 items-center justify-center transition",
+                      isActive ? "text-white" : "text-black/70 hover:text-black",
+                    ].join(" ")}
                   >
-                    <IconCard name={CHEVRON_DOWN_ICON} className="h-3.5 w-3.5" />
-                  </span>
+                    <IconCard
+                      name={CHEVRON_DOWN_ICON}
+                      className={`h-3.5 w-3.5 transition-transform ${financeExpanded ? "rotate-180" : ""}`}
+                    />
+                  </button>
                 ) : null}
-              </Link>
+              </div>
+              {isFinance && financeExpanded ? (
+                <div className="ml-7 mt-1 flex flex-col gap-0.5">
+                  {[
+                    { label: "Overview", href: "/finance", active: pathname === "/finance" },
+                    { label: "Transaction", href: "/finance/transactions", active: pathname === "/finance/transactions" },
+                    { label: "Payouts", href: "/finance/payouts", active: pathname === "/finance/payouts" },
+                    { label: "Refunds", href: "/finance/refunds", active: pathname === "/finance/refunds" },
+                  ].map((child) => (
+                    <Link
+                      key={child.label}
+                      href={child.href}
+                      aria-current={child.active ? "page" : undefined}
+                      className={[
+                        "rounded-[3px] px-3 py-1.5 text-[13px] leading-5 transition",
+                        child.active ? "bg-black text-white" : "text-black/75 hover:bg-black/5 hover:text-black",
+                      ].join(" ")}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </div>
           );
         })}

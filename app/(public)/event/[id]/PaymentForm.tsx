@@ -16,7 +16,7 @@ type PaymentFormProps = {
   eventTitle: string;
   ticketType: "general" | "vip";
   amount: number;
-  onSuccess: () => void;
+  onSuccess: (paymentIntentId: string) => void;
 };
 
 const stripeFieldOptions = {
@@ -72,7 +72,7 @@ export function PaymentForm({
     }
 
     if (paymentIntent?.status === "succeeded") {
-      onSuccess();
+      onSuccess(paymentIntent.id);
       return;
     }
 
@@ -99,7 +99,7 @@ export function PaymentForm({
     }
 
     if (paymentIntent?.status === "succeeded") {
-      onSuccess();
+      onSuccess(paymentIntent.id);
       return;
     }
 

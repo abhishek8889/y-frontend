@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
@@ -19,6 +19,7 @@ const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : 
 
 export default function PublicEventPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [ticketType, setTicketType] = useState<"" | "general" | "vip">("");
@@ -68,10 +69,12 @@ export default function PublicEventPage() {
     }
   }
 
-  function handlePaymentSuccess() {
-    setIsPaymentOpen(false);
-    setPaymentClientSecret(null);
-    setBookingMessage("Payment successful. Your ticket is confirmed.");
+  function handlePaymentSuccess(paymentIntentId: string) {
+    const params = new URLSearchParams({
+      ticket: ticketType,
+      reference: paymentIntentId,
+    });
+    router.push(`/payment/success?${params.toString()}`);
   }
 
   return (
