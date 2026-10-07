@@ -55,7 +55,7 @@ export function SelectFilter({
         options={options}
         density="compact"
         containerClassName="!min-w-[125px] !rounded-none"
-        className="!rounded-none !border-black/75 !px-2.5 !pr-8 !text-[11px] !font-bold !uppercase"
+        className="!text-[14px] !rounded-none !border-black/75 !px-2.5 !pr-8 !font-bold !uppercase"
       />
     </div>
   );
@@ -71,7 +71,7 @@ export function MonthFilter({ value, onChange }: { value: string; onChange: (val
         aria-label="Filter by month"
         density="compact"
         containerClassName="!rounded-none !border-black/75 focus-within:!ring-0"
-        className="!px-2.5 !text-[11px] !font-bold !uppercase"
+        className="!px-2.5 !text-[14px] !font-bold !uppercase"
       />
     </div>
   );
@@ -98,7 +98,7 @@ export function ExportButton({
   }
 
   return (
-    <Button type="button" onClick={exportRows} className="inline-flex h-[36px] items-center gap-2 rounded-[3px] border border-black bg-black px-3 text-[11px] font-medium uppercase text-white hover:bg-white hover:text-black">
+    <Button type="button" onClick={exportRows} className="inline-flex h-[36px] items-center gap-2 rounded-[3px] border border-black bg-black px-3 text-[14px] font-medium uppercase text-white hover:bg-white hover:text-black">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 16v4h14v-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -125,7 +125,7 @@ export function RowActions({
         aria-label={`Actions for ${label}`}
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
+        className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
       >
         ⋮
       </button>

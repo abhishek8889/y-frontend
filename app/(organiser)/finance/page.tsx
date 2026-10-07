@@ -90,47 +90,43 @@ export default function FinancePage() {
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       <main id="overview" className="min-h-full bg-white px-4 py-5 md:px-5 md:py-5">
         <header>
-          <h1 className="text-[22px] font-black uppercase leading-6 text-black">Finance</h1>
-          <p className="mt-1 text-[13px] leading-5 text-[#777]">
+          <h1 className="text-[26px] font-black uppercase leading-6 text-black">Finance</h1>
+          <p className="mt-1 text-[14px] leading-5 text-[#777]">
             Track sales, refunds, payouts and financial performance across all your venues and events.
           </p>
         </header>
 
-        <section className="mt-5" aria-labelledby="finance-overview-heading">
-          <h2 id="finance-overview-heading" className="text-[18px] font-black uppercase leading-6 text-black">
+        <section className="mt-9" aria-labelledby="finance-overview-heading">
+          <h2 id="finance-overview-heading" className="text-[26px] font-black uppercase leading-6 text-black">
             Overview
           </h2>
 
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="flex min-w-[125px] flex-col gap-1 text-[10px] font-bold uppercase text-[#777]">
-              Date range
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
-                className="h-[34px] border border-black/70 bg-white px-2 text-[11px] font-bold text-black"
-              >
+                className="h-[44px] border border-black bg-white px-2 text-[14px] font-bold text-black"              >
                 <option value="30">Last 30 days</option>
                 <option value="7">Last 7 days</option>
                 <option value="90">Last 90 days</option>
               </select>
             </label>
             <label className="flex min-w-[125px] flex-col gap-1 text-[10px] font-bold uppercase text-[#777]">
-              Venue
               <select
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}
-                className="h-[34px] border border-black/70 bg-white px-2 text-[11px] font-bold text-black"
+                className="h-[44px] border border-black bg-white px-2 text-[14px] font-bold text-black"
               >
                 <option value="all">All venues</option>
                 {venueSales.map((row) => <option key={row.venue} value={row.venue}>{row.venue}</option>)}
               </select>
             </label>
             <label className="flex min-w-[125px] flex-col gap-1 text-[10px] font-bold uppercase text-[#777]">
-              Event
               <select
                 value={event}
                 onChange={(e) => setEvent(e.target.value)}
-                className="h-[34px] border border-black/70 bg-white px-2 text-[11px] font-bold text-black"
+                className="h-[44px] border border-black bg-white px-2 text-[14px] font-bold text-black"
               >
                 <option value="all">All events</option>
                 {[...new Set(recentTransactions.map((row) => row.event))].map((name) => (
@@ -154,20 +150,20 @@ export default function FinancePage() {
                 id={metric.id}
                 className="min-h-[72px] border border-black/65 px-3 py-3"
               >
-                <h3 className="text-[10px] font-bold uppercase text-[#999]">{metric.label}</h3>
-                <p className="mt-1 text-[16px] font-bold leading-5 text-black">{metric.value}</p>
-                <p className="mt-1 text-[10px] text-[#888]">{metric.detail}</p>
+                <h3 className="text-[14px] font-bold uppercase text-[#AAAAAC]">{metric.label}</h3>
+                <p className="mt-[6px] mb-[10px] text-[22px] font-bold leading-[22px] text-black">{metric.value}</p>
+                <p className="text-[14px] text-[#6F6E69]">{metric.detail}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="mt-3 border border-black/65 p-3" aria-labelledby="revenue-chart-heading">
+        <section className="mt-[24px] border border-black py-[28px] px-[20]" aria-labelledby="revenue-chart-heading">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="revenue-chart-heading" className="text-[12px] font-bold uppercase text-black">
+            <h2 id="revenue-chart-heading" className="text-[18px] font-bold uppercase text-black">
               Revenue overview
             </h2>
-            <p className="flex items-center gap-4 text-[10px] text-[#555]">
+            <p className="flex items-center gap-4 text-[14px] text-[#000000]">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-black" />Gross sales</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#999]" />Net sales</span>
             </p>
@@ -213,13 +209,13 @@ export default function FinancePage() {
           </div>
         </section>
 
-        <div className="mt-3 grid gap-3 xl:grid-cols-2">
-          <section className="min-w-0 border border-black/65 p-3" aria-labelledby="venue-sales-heading">
+        <div className="mt-[40px] grid gap-3 xl:grid-cols-2">
+          <section className="min-w-0 border border-black py-[28px] px-[20px]" aria-labelledby="venue-sales-heading">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 id="venue-sales-heading" className="text-[12px] font-bold uppercase text-black">Sales by venue</h2>
+              <h2 id="venue-sales-heading" className="text-[18px] font-bold uppercase text-black">Sales by venue</h2>
               <a
                 href="#venue-sales-heading"
-                className="border border-black/50 px-2.5 py-1 text-[10px] text-black hover:bg-black hover:text-white"
+                className="border border-black  px-2.5 py-1 text-[14px] rounded text-black hover:bg-black hover:text-white"
               >
                 View all
               </a>
@@ -227,7 +223,7 @@ export default function FinancePage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left">
                 <thead>
-                  <tr className="border-y border-black/65 text-[9px] font-bold uppercase text-black">
+                  <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
                     <th className="px-1.5 py-2.5">Venue</th>
                     <th className="px-1.5 py-2.5">Events</th>
                     <th className="px-1.5 py-2.5">Tickets sold</th>
@@ -238,7 +234,7 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {filteredVenues.map((row) => (
-                    <tr key={row.venue} className="border-b border-black/50 text-[11px] text-black">
+                    <tr key={row.venue} className="border-b border-black text-[16px] text-black">
                       <td className="px-1.5 py-2.5">{row.venue}</td>
                       <td className="px-1.5 py-2.5">{row.events}</td>
                       <td className="px-1.5 py-2.5">{row.tickets.toLocaleString("en-GB")}</td>
@@ -255,12 +251,12 @@ export default function FinancePage() {
             </div>
           </section>
 
-          <section id="recent-transactions" className="min-w-0 border border-black/65 p-3" aria-labelledby="transactions-heading">
+          <section id="recent-transactions" className="min-w-0 border border-black py-[28px] px-[20px]" aria-labelledby="transactions-heading">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 id="transactions-heading" className="text-[12px] font-bold uppercase text-black">Recent transactions</h2>
+              <h2 id="transactions-heading" className="text-[18px] font-bold uppercase text-black">Recent transactions</h2>
               <a
                 href="#recent-transactions"
-                className="border border-black/50 px-2.5 py-1 text-[10px] text-black hover:bg-black hover:text-white"
+                className="border border-black px-2.5 py-1 text-[14px] rounded text-black hover:bg-black hover:text-white"
               >
                 View all
               </a>
@@ -268,7 +264,7 @@ export default function FinancePage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] border-collapse text-left">
                 <thead>
-                  <tr className="border-y border-black/65 text-[9px] font-bold uppercase text-black">
+                  <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
                     <th className="px-1.5 py-2.5">Order ID</th>
                     <th className="px-1.5 py-2.5">Customer</th>
                     <th className="px-1.5 py-2.5">Event</th>
@@ -278,7 +274,7 @@ export default function FinancePage() {
                 </thead>
                 <tbody>
                   {filteredTransactions.map((row) => (
-                    <tr key={row.order} className="border-b border-black/50 text-[11px] text-black">
+                    <tr key={row.order} className="border-b border-black text-[16px] text-black">
                       <td className="px-1.5 py-2.5">{row.order}</td>
                       <td className="px-1.5 py-2.5">{row.customer}</td>
                       <td className="px-1.5 py-2.5">{row.event}</td>

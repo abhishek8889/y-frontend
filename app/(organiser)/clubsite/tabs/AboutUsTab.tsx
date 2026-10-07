@@ -82,46 +82,42 @@ export default function AboutUsTab() {
 
   return (
     <form onSubmit={saveAbout} className="mt-4">
-      <h3 className="text-[18px] font-black uppercase leading-6">About page</h3>
+      {/* <h3 className="text-[18px] font-black uppercase leading-6">About page</h3>
       <p className="mt-1 text-[12px] text-[#777]">
         All things your customers want to know and love about your brand
-      </p>
+      </p> */}
 
       <div className="mt-4 grid gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)]">
-        <div className="space-y-3.5">
-          <div>
-            <label htmlFor="about-title" className="block text-[10px] font-bold uppercase">Title *</label>
-            <InputField
-              id="about-title"
-              required
-              value={title}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                setNotice("");
-              }}
-              placeholder="Enter headline"
-              density="compact"
-              containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-              className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
-            />
-          </div>
-          <div>
-            <label htmlFor="about-description" className="block text-[10px] font-bold uppercase">Description *</label>
-            <InputField
-              as="textarea"
-              id="about-description"
-              required
-              rows={6}
-              value={description}
-              onChange={(event) => {
-                setDescription(event.target.value);
-                setNotice("");
-              }}
-              placeholder="Supporting text..."
-              containerClassName="mt-1 !min-h-[106px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-              className="!min-h-[104px] !resize-y !px-3 !py-2 !text-[11px] normal-case placeholder:!text-[#777]"
-            />
-          </div>
+        <div>
+          <InputField
+            id="about-title"
+            label="Title"
+            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            required
+            value={title}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              setNotice("");
+            }}
+            placeholder="Enter headline"
+            density="compact"
+            containerClassName="mt-1 mb-[20px]"
+            className="!h-[40px]"
+          />
+          <InputField
+            as="textarea"
+            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            label="Description"
+            id="about-description"
+            required
+            rows={6}
+            value={description}
+            onChange={(event) => {
+              setDescription(event.target.value);
+              setNotice("");
+            }}
+            placeholder="Supporting text..."
+          />
         </div>
 
         <div>
@@ -139,8 +135,8 @@ export default function AboutUsTab() {
             ) : (
               <>
                 <ImagePlaceholder />
-                <span className="mt-2 text-[12px] font-bold text-black">Add Image</span>
-                <span className="mt-2 max-w-[280px] text-[10px] leading-[15px] text-[#999]">
+                <span className="mt-2 text-[16px] font-bold text-black">Add Image</span>
+                <span className="mt-2 text-[14px] leading-[18px] text-[#999]">
                   Upload a nice image that represent your brand. JPG or<br className="hidden sm:block" />
                   PNG, under 5MB.
                 </span>
@@ -163,13 +159,13 @@ export default function AboutUsTab() {
         <button
           type="button"
           onClick={cancelChanges}
-          className="h-[35px] min-w-[90px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white"
+          className="h-[40px] min-w-[90px] rounded-[3px] border border-black px-4 text-[14px] cursor-pointer uppercase hover:bg-black hover:text-white"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="h-[35px] min-w-[78px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black"
+          className="h-[40px] min-w-[78px] rounded-[3px] border border-black bg-black px-4 text-[14px] cursor-pointer uppercase text-white hover:bg-white hover:text-black"
         >
           Save
         </button>

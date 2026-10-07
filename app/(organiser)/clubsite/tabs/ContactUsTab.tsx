@@ -123,38 +123,40 @@ export default function ContactUsTab() {
       <h3 className="text-[18px] font-black uppercase leading-6">Contact Page</h3>
       <p className="mt-1 text-[12px] text-[#777]">Create contact form to collect essential data.</p>
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      <div className="mt-[24px] grid gap-3 lg:grid-cols-2">
         <div>
-          <label htmlFor="contact-title" className="block text-[10px] font-bold uppercase">Title *</label>
           <InputField
             id="contact-title"
+            label="Title"
+            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
             required
             value={draft.title}
             onChange={(event) => updateText("title", event.target.value)}
             placeholder="Enter headline"
             density="compact"
-            containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
+            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
+            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
           />
         </div>
         <div>
-          <label htmlFor="contact-subtitle" className="block text-[10px] font-bold uppercase">Subtitle *</label>
           <InputField
             id="contact-subtitle"
             required
+            label="Subtitle"
+            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
             value={draft.subtitle}
             onChange={(event) => updateText("subtitle", event.target.value)}
             placeholder="Supporting text..."
             density="compact"
-            containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
+            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
+            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
           />
         </div>
       </div>
 
       <fieldset className="mt-5">
-        <legend className="mb-2 text-[10px] font-bold uppercase">What data do you want to collect?</legend>
-        <div className="grid grid-cols-[minmax(0,1fr)_96px_96px] border-b border-black/60 px-3 py-2 text-[9px] font-bold">
+        <legend className="mb-2 text-[14px] font-bold uppercase">What data do you want to collect?</legend>
+        <div className="grid grid-cols-[minmax(0,1fr)_96px_96px] border-b border-black px-3 py-2 text-[14px] font-bold">
           <span>Data Field</span>
           <span className="text-center">Include</span>
           <span className="text-center">Required</span>
@@ -163,7 +165,7 @@ export default function ContactUsTab() {
           {draft.fields.map((field) => (
             <div
               key={field.id}
-              className="grid min-h-[41px] grid-cols-[minmax(0,1fr)_96px_96px] items-center border-b border-black/50 px-3 text-[11px]"
+              className="grid grid-cols-[minmax(0,1fr)_96px_96px] items-center border-b border-black/50 p-[16px] text-[14px]"
             >
               <span>{field.label}</span>
               <span className="flex justify-center">
@@ -191,13 +193,13 @@ export default function ContactUsTab() {
         <button
           type="button"
           onClick={cancelChanges}
-          className="h-[35px] min-w-[90px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white"
+          className="cursor-pointer h-[40px] min-w-[90px] rounded border border-black px-4 text-[12px] uppercase hover:bg-black hover:text-white"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="h-[35px] min-w-[78px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black"
+          className="cursor-pointer h-[40px] min-w-[78px] rounded border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black"
         >
           Save
         </button>

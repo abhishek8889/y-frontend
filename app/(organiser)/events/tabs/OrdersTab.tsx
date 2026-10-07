@@ -72,23 +72,23 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-              <th className="px-2.5 py-3.5">Order ID</th>
-              <th className="px-2.5 py-3.5">Name</th>
-              <th className="px-2.5 py-3.5">Ticket name</th>
-              <th className="px-2.5 py-3.5">Offer &amp; price</th>
-              <th className="px-2.5 py-3.5">Ticket status</th>
-              <th className="px-2.5 py-3.5">Date &amp; time</th>
-              <th className="w-16 px-2.5 py-3.5 text-center">Action</th>
+            <tr className="border-y border-black text-[10px] font-bold uppercase text-black">
+              <th className="py-[18px] px-3">Order ID</th>
+              <th className="py-[18px] px-3">Name</th>
+              <th className="py-[18px] px-3">Ticket name</th>
+              <th className="py-[18px] px-3">Offer &amp; price</th>
+              <th className="py-[18px] px-3">Ticket status</th>
+              <th className="py-[18px] px-3">Date &amp; time</th>
+              <th className="w-16 py-[18px] px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredOrders.map((order) => (
-              <tr key={order.id} className="border-b border-black/75 text-[13px] text-black">
+              <tr key={order.id} className="border-b border-black text-[16px] text-black">
                 <td className="px-2.5 py-4">{order.orderNumber}</td>
                 <td className="px-2.5 py-3.5">
                   <strong className="block font-bold">{order.name}</strong>
-                  <span className="text-[12px] text-[#777]">{order.email}</span>
+                  <span className="text-[14px] text-[#666]">{order.email}</span>
                 </td>
                 <td className="px-2.5 py-4">{order.ticket}</td>
                 <td className="px-2.5 py-4">{order.offer} - ${order.price.toFixed(2)}</td>

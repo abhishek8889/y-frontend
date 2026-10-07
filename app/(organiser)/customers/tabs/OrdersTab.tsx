@@ -52,7 +52,7 @@ export default function OrdersTab() {
       <div className="flex flex-wrap items-center gap-3">
         <TabSearch value={search} onChange={setSearch} />
         <SelectFilter
-          label="Event"
+          // label="Event"
           value={eventFilter}
           onChange={setEventFilter}
           options={[
@@ -61,7 +61,7 @@ export default function OrdersTab() {
           ]}
         />
         <SelectFilter
-          label="Status"
+          // label="Status"
           value={statusFilter}
           onChange={setStatusFilter}
           options={[
@@ -77,23 +77,23 @@ export default function OrdersTab() {
       <div className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[1180px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/70 text-[10px] font-bold uppercase text-black">
-              <th className="px-3 py-3.5">Order ID</th>
-              <th className="px-3 py-3.5">Date &amp; time</th>
-              <th className="px-3 py-3.5">Event</th>
-              <th className="px-3 py-3.5">Venue</th>
-              <th className="px-3 py-3.5">Ticket</th>
-              <th className="px-3 py-3.5">Offer &amp; price</th>
-              <th className="px-3 py-3.5">Items</th>
-              <th className="px-3 py-3.5">Amount</th>
-              <th className="px-3 py-3.5">Ticket status</th>
-              <th className="px-3 py-3.5">Payment method</th>
-              <th className="px-3 py-3.5 text-center">Action</th>
+            <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+              <th className="py-5 px-3">Order ID</th>
+              <th className="py-5 px-3">Date &amp; time</th>
+              <th className="py-5 px-3">Event</th>
+              <th className="py-5 px-3">Venue</th>
+              <th className="py-5 px-3">Ticket</th>
+              <th className="py-5 px-3">Offer &amp; price</th>
+              <th className="py-5 px-3">Items</th>
+              <th className="py-5 px-3">Amount</th>
+              <th className="py-5 px-3">Ticket status</th>
+              <th className="py-5 px-3">Payment method</th>
+              <th className="py-5 px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredOrders.map((order) => (
-              <tr key={order.id} className="border-b border-black/75 text-[13px] text-black">
+              <tr key={order.id} className="border-b border-black text-[16px] text-black">
                 <td className="px-3 py-4">{order.id}</td>
                 <td className="px-3 py-4">{order.date}</td>
                 <td className="px-3 py-4">{order.event}</td>
@@ -110,7 +110,7 @@ export default function OrdersTab() {
                 </td>
                 <td className="px-3 py-4">{order.paymentMethod}</td>
                 <td className="px-3 py-3.5 text-center">
-                  <button type="button" aria-label={`Actions for ${order.id}`} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75">⋮</button>
+                  <button type="button" aria-label={`Actions for ${order.id}`} className="cursor-pointer inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75">⋮</button>
                 </td>
               </tr>
             ))}

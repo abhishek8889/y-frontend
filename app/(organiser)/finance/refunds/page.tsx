@@ -34,7 +34,7 @@ const refunds: Refund[] = [
   { id: "#RF-4830", date: "Jun 23, 2026, 04:27 PM", month: "2026-06", orderId: "#ORD-4830", ticketId: "#TKT-4830", customer: "Casey Patel", email: "casey.patel@gmail.com", venue: "Key Corner", event: "The Closing Party", amount: 25, status: "Completed", reason: "Customer request" },
 ];
 
-const selectClass = "h-[34px] min-w-[105px] border border-black/65 bg-white px-2 text-[10px] font-bold uppercase text-black";
+const selectClass = "h-[44px] min-w-[105px] border border-black bg-white px-2 text-[14px] font-bold uppercase text-black";
 
 export default function FinanceRefundsPage() {
   const [search, setSearch] = useState("");
@@ -79,15 +79,15 @@ export default function FinanceRefundsPage() {
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       <main className="min-h-full bg-white px-4 py-5 md:px-5 md:py-5">
         <header>
-          <h1 className="text-[22px] font-black uppercase leading-6 text-black">Finance</h1>
-          <p className="mt-1 text-[13px] leading-5 text-[#777]">
+          <h1 className="text-[26px] font-black uppercase leading-6 text-black">Finance</h1>
+          <p className="mt-1 text-[14px] leading-5 text-[#777]">
             Track sales, refunds, payouts and financial performance across all venues and events.
           </p>
         </header>
 
-        <section className="mt-5" aria-labelledby="refunds-title">
+        <section className="mt-9" aria-labelledby="refunds-title">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="refunds-title" className="text-[20px] font-black uppercase leading-6 text-black">
+            <h2 id="refunds-title" className="text-[26px] font-black uppercase leading-6 text-black">
               Refunds
             </h2>
             <ExportButton
@@ -155,28 +155,28 @@ export default function FinanceRefundsPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[1120px] border-collapse text-left">
               <thead>
-                <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-                  <th className="px-2 py-3">Refund ID</th>
-                  <th className="px-2 py-3">Date &amp; time</th>
-                  <th className="px-2 py-3">Order ID</th>
-                  <th className="px-2 py-3">Ticket ID</th>
-                  <th className="px-2 py-3">Customer</th>
-                  <th className="px-2 py-3">Event</th>
-                  <th className="px-2 py-3">Amount</th>
-                  <th className="px-2 py-3">Ticket status</th>
-                  <th className="px-2 py-3">Reason</th>
+                <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+                  <th className="px-3 py-5">Refund ID</th>
+                  <th className="px-3 py-5">Date &amp; time</th>
+                  <th className="px-3 py-5">Order ID</th>
+                  <th className="px-3 py-5">Ticket ID</th>
+                  <th className="px-3 py-5">Customer</th>
+                  <th className="px-3 py-5">Event</th>
+                  <th className="px-3 py-5">Amount</th>
+                  <th className="px-3 py-5">Ticket status</th>
+                  <th className="px-3 py-5">Reason</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map((refund) => (
-                  <tr key={refund.id} className="border-b border-black/55 text-[12px] text-black">
+                  <tr key={refund.id} className="border-b border-black text-[16px] text-black">
                     <td className="whitespace-nowrap px-2 py-3.5">{refund.id}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">{refund.date}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">{refund.orderId}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">{refund.ticketId}</td>
                     <td className="px-2 py-2.5">
                       <span className="block whitespace-nowrap">{refund.customer}</span>
-                      <span className="block whitespace-nowrap text-[10px] text-[#888]">{refund.email}</span>
+                      <span className="block whitespace-nowrap text-[15px] text-[#666666]">{refund.email}</span>
                     </td>
                     <td className="whitespace-nowrap px-2 py-3.5">{refund.event}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">£{refund.amount.toFixed(2)}</td>

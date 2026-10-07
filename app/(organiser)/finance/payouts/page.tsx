@@ -61,15 +61,15 @@ export default function FinancePayoutsPage() {
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       <main className="min-h-full bg-white px-4 py-5 md:px-5 md:py-5">
         <header>
-          <h1 className="text-[22px] font-black uppercase leading-6 text-black">Finance</h1>
+          <h1 className="text-[26px] font-black uppercase leading-6 text-black">Finance</h1>
           <p className="mt-1 text-[13px] leading-5 text-[#777]">
             Track sales, refunds, payouts and financial performance across all venues and events.
           </p>
         </header>
 
-        <section className="mt-5" aria-labelledby="payouts-title">
+        <section className="mt-9" aria-labelledby="payouts-title">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="payouts-title" className="text-[20px] font-black uppercase leading-6 text-black">
+            <h2 id="payouts-title" className="text-[26px] font-black uppercase leading-6 text-black">
               Payout
             </h2>
             <ExportButton
@@ -87,19 +87,19 @@ export default function FinancePayoutsPage() {
 
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             <article className="min-h-[82px] border border-black/65 px-3 py-3">
-              <h3 className="text-[10px] font-bold uppercase text-[#999]">Available balance</h3>
-              <p className="mt-1 text-[16px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
-              <p className="mt-1 text-[11px] text-[#888]">Will be released in your next payout.</p>
+              <h3 className="text-[14px] font-bold uppercase text-[#999]">Available balance</h3>
+              <p className="mt-1 text-[22px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
+              <p className="mt-1 text-[14px] text-[#888]">Will be released in your next payout.</p>
             </article>
             <article className="min-h-[82px] border border-black/65 px-3 py-3">
-              <h3 className="text-[10px] font-bold uppercase text-[#999]">Next payout</h3>
-              <p className="mt-1 text-[16px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
-              <p className="mt-1 text-[11px] text-[#888]">Expected on 25 Sep 2026</p>
+              <h3 className="text-[14px] font-bold uppercase text-[#999]">Next payout</h3>
+              <p className="mt-1 text-[22px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
+              <p className="mt-1 text-[14px] text-[#888]">Expected on 25 Sep 2026</p>
             </article>
             <article className="min-h-[82px] border border-black/65 px-3 py-3">
-              <h3 className="text-[10px] font-bold uppercase text-[#999]">Total paid out</h3>
-              <p className="mt-1 text-[16px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
-              <p className="mt-1 text-[11px] text-[#888]">10 payouts</p>
+              <h3 className="text-[14px] font-bold uppercase text-[#999]">Total paid out</h3>
+              <p className="mt-1 text-[22px] font-bold leading-5 text-black">{formatPounds(48250)}</p>
+              <p className="mt-1 text-[14px] text-[#888]">10 payouts</p>
             </article>
           </div>
 
@@ -132,17 +132,17 @@ export default function FinancePayoutsPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[680px] border-collapse text-left">
               <thead>
-                <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-                  <th className="px-2 py-3">Payout ID</th>
-                  <th className="px-2 py-3">Date &amp; time</th>
-                  <th className="px-2 py-3">Amount</th>
-                  <th className="px-2 py-3">Transactions</th>
-                  <th className="px-2 py-3">Status</th>
+                <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+                  <th className="px-3 py-5">Payout ID</th>
+                  <th className="px-3 py-5">Date &amp; time</th>
+                  <th className="px-3 py-5">Amount</th>
+                  <th className="px-3 py-5">Transactions</th>
+                  <th className="px-3 py-5">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map((payout) => (
-                  <tr key={payout.id} className="border-b border-black/55 text-[12px] text-black">
+                  <tr key={payout.id} className="border-b border-black text-[16px] text-black">
                     <td className="whitespace-nowrap px-2 py-3.5">{payout.id}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">{payout.date}</td>
                     <td className="whitespace-nowrap px-2 py-3.5">{formatPounds(payout.amount)}</td>

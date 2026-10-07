@@ -62,7 +62,7 @@ export default function ScanEntryTab({ eventTitle }: { eventTitle: string }) {
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[880px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
+            <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
               <th className="px-2.5 py-3.5">Name</th>
               <th className="px-2.5 py-3.5">Ticket name</th>
               <th className="px-2.5 py-3.5">Offer &amp; price</th>
@@ -77,7 +77,7 @@ export default function ScanEntryTab({ eventTitle }: { eventTitle: string }) {
               <tr key={scan.id} className="border-b border-black/75 text-[13px] text-black">
                 <td className="px-2.5 py-3.5">
                   <strong className="block font-bold">{scan.name}</strong>
-                  <span className="text-[12px] text-[#777]">{scan.email}</span>
+                  <span className="text-[14px] text-[#777]">{scan.email}</span>
                 </td>
                 <td className="px-2.5 py-4">{scan.ticket}</td>
                 <td className="px-2.5 py-4">{scan.offer} - ${scan.price.toFixed(2)}</td>

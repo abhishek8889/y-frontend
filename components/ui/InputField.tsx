@@ -2,6 +2,7 @@ import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "rea
 
 type SharedProps = {
   label?: string;
+  labelClassName?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
   prefixClassName?: string;
@@ -20,6 +21,7 @@ type InputFieldProps = SharedProps &
 export function InputField(props: InputFieldProps) {
   const {
     label,
+    labelClassName = "",
     id,
     as = "input",
     prefix,
@@ -39,7 +41,7 @@ export function InputField(props: InputFieldProps) {
       {label ? (
         <label
           htmlFor={inputId}
-          className="mb-[6px] block text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black"
+          className={`mb-[6px] block text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black ${labelClassName}`.trim()}
         >
           {label}
         </label>

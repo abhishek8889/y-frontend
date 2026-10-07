@@ -70,7 +70,7 @@ export default function EventsTab() {
             <div className="relative h-[54px] w-[54px] shrink-0 overflow-hidden bg-[#eee]">
               <Image src={eventCoverImage} alt="" fill sizes="54px" className="object-cover" />
             </div>
-            <p className="min-w-0 flex-1 text-[13px] text-black">{event.title}</p>
+            <p className="min-w-0 flex-1 text-[16px] text-black">{event.title}</p>
             <button
               type="button"
               onClick={() => removeEvent(event.id)}

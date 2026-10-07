@@ -72,7 +72,7 @@ export default function AttendanceTab() {
             ]}
             density="compact"
             containerClassName="!min-w-[125px] !rounded-none"
-            className="!rounded-none !border-black/75 !px-2.5 !pr-8 !text-[11px] !font-bold !uppercase"
+            className="!rounded-none !border-black/75 !px-2.5 !pr-8 !text-[14px] !font-bold !uppercase"
           />
           <MonthFilter value={month} onChange={(value) => { setMonth(value); setCurrentPage(1); }} />
         </div>
@@ -85,20 +85,20 @@ export default function AttendanceTab() {
       <div className="mt-5 min-w-0 flex-1 overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/70 text-[10px] font-bold uppercase text-black">
-              <th className="px-3 py-3">Event</th>
-              <th className="px-3 py-3">Venue</th>
-              <th className="px-3 py-3">Ticket</th>
-              <th className="px-3 py-3">Offer</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3">Check in time</th>
-              <th className="px-3 py-3">Ticket ID</th>
-              <th className="px-3 py-3 text-center">Action</th>
+            <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+              <th className="py-5 px-3">Event</th>
+              <th className="py-5 px-3">Venue</th>
+              <th className="py-5 px-3">Ticket</th>
+              <th className="py-5 px-3">Offer</th>
+              <th className="py-5 px-3">Status</th>
+              <th className="py-5 px-3">Check in time</th>
+              <th className="py-5 px-3">Ticket ID</th>
+              <th className="py-5 px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {visibleRecords.map((record) => (
-              <tr key={record.id} className="border-b border-black/70 text-[13px] text-black">
+              <tr key={record.id} className="border-b border-black text-[16px] text-black">
                 <td className="px-3 py-3">{record.event}</td>
                 <td className="px-3 py-3">{record.venue}</td>
                 <td className="px-3 py-3">{record.ticket}</td>

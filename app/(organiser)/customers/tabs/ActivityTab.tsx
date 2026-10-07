@@ -44,7 +44,7 @@ export default function ActivityTab() {
         />
       </div>
 
-      <div className="border-b border-black/70 pb-3">
+      <div className="pb-3">
         <TabSearch
           value={search}
           onChange={(value) => {
@@ -57,18 +57,18 @@ export default function ActivityTab() {
       <div className="mt-4 min-w-0 flex-1 overflow-x-auto">
         <table className="w-full min-w-[620px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/70 text-[10px] font-bold uppercase text-black">
-              <th className="px-3 py-3">Date &amp; time</th>
-              <th className="px-3 py-3">Activity</th>
-              <th className="px-3 py-3">Details</th>
+            <tr className="border-y border-black/70 text-[14px] font-bold uppercase text-black">
+              <th className="py-5 px-3">Date &amp; time</th>
+              <th className="py-5 px-3">Activity</th>
+              <th className="py-5 px-3">Details</th>
             </tr>
           </thead>
           <tbody>
             {visibleRecords.map((record) => (
-              <tr key={record.id} className="border-b border-black/70 text-[12px] text-black">
-                <td className="px-3 py-3">{record.dateTime}</td>
-                <td className="px-3 py-3">{record.activity}</td>
-                <td className="px-3 py-3">{record.details}</td>
+              <tr key={record.id} className="border-b border-black text-[16px] text-black">
+                <td className="py-5 px-3">{record.dateTime}</td>
+                <td className="py-5 px-3">{record.activity}</td>
+                <td className="py-5 px-3">{record.details}</td>
               </tr>
             ))}
           </tbody>

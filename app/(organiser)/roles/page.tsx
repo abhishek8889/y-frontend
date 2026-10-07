@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { InputField } from "@/components/ui/InputField";
 
 type RoleStatus = "Active" | "Inactive";
 
@@ -250,7 +251,7 @@ export default function RolesPage() {
           <button
             type="button"
             onClick={openCreateDialog}
-            className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[3px] border border-black bg-black px-3 text-[11px] font-bold uppercase text-white transition hover:bg-white hover:text-black"
+            className="inline-flex h-[40px] items-center justify-center gap-1.5 rounded-[3px] border border-black bg-black px-3 text-[14px] font-bold uppercase text-white transition hover:bg-white hover:text-black"
           >
             <span aria-hidden="true" className="text-[15px] leading-none">+</span>
             Create role
@@ -269,7 +270,7 @@ export default function RolesPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search"
                 aria-label="Search roles"
-                className="min-w-0 flex-1 bg-transparent text-[11px] uppercase text-black placeholder:text-[#888] focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[14px] uppercase text-black placeholder:text-[#888] focus:outline-none"
               />
             </label>
             <div className="flex gap-2">
@@ -278,7 +279,7 @@ export default function RolesPage() {
                 id="role-status-filter"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="h-[34px] min-w-[120px] border border-black/65 bg-white px-2 text-[10px] font-bold uppercase text-black"
+                className="h-[40px] min-w-[120px] border border-black bg-white px-2 text-[14px] font-bold uppercase text-black"
               >
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
@@ -291,7 +292,7 @@ export default function RolesPage() {
                 value={month}
                 onChange={(event) => setMonth(event.target.value)}
                 aria-label="Filter roles by month"
-                className="h-[34px] min-w-[120px] border border-black/65 bg-white px-2 text-[10px] font-bold uppercase text-black"
+                className="h-[40px] min-w-[120px] border border-black bg-white px-2 text-[14px] font-bold uppercase text-black"
               />
             </div>
           </div>
@@ -299,20 +300,20 @@ export default function RolesPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[1040px] border-collapse text-left">
               <thead>
-                <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-                  <th className="px-2.5 py-3">Role name</th>
-                  <th className="px-2.5 py-3">Description</th>
-                  <th className="px-2.5 py-3">Staff member</th>
-                  <th className="px-2.5 py-3">Permissions</th>
-                  <th className="px-2.5 py-3">Status</th>
-                  <th className="px-2.5 py-3">Created</th>
-                  <th className="px-2.5 py-3">Last updated</th>
-                  <th className="px-2.5 py-3 text-center">Actions</th>
+                <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+                  <th className="py-4 px-3">Role name</th>
+                  <th className="py-4 px-3">Description</th>
+                  <th className="py-4 px-3">Staff member</th>
+                  <th className="py-4 px-3">Permissions</th>
+                  <th className="py-4 px-3">Status</th>
+                  <th className="py-4 px-3">Created</th>
+                  <th className="py-4 px-3">Last updated</th>
+                  <th className="py-4 px-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRoles.map((role) => (
-                  <tr key={role.id} className="border-b border-black/55 text-[12px] text-black">
+                  <tr key={role.id} className="border-b border-black text-[16px] text-black">
                     <td className="whitespace-nowrap px-2.5 py-4">{role.name}</td>
                     <td className="max-w-[310px] px-2.5 py-3.5">{role.description}</td>
                     <td className="px-2.5 py-4">{role.staffMembers}</td>
@@ -331,7 +332,7 @@ export default function RolesPage() {
                           aria-label={`Actions for ${role.name}`}
                           aria-expanded={openActionsId === role.id}
                           onClick={() => setOpenActionsId((current) => current === role.id ? null : role.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
+                          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
                         >
                           ⋮
                         </button>
@@ -373,15 +374,15 @@ export default function RolesPage() {
               aria-modal="true"
               aria-labelledby="role-dialog-title"
               onSubmit={saveRole}
-              className="flex max-h-full w-full max-w-[488px] flex-col border border-black/60 bg-white shadow-xl"
+              className="flex max-h-full w-full max-w-[640px] flex-col border border-black/60 bg-white shadow-xl"
             >
-              <div className="flex shrink-0 items-center gap-2 border-b border-black/60 px-3.5 py-3">
+              <div className="flex shrink-0 items-center gap-2 border-b border-black/60 p-5">
                 <span aria-hidden="true" className="h-[34px] w-[34px] shrink-0 rounded-[3px] bg-black" />
                 <div className="min-w-0 flex-1">
-                  <h2 id="role-dialog-title" className="text-[13px] font-black uppercase leading-4">
+                  <h2 id="role-dialog-title" className="text-[18px] font-black uppercase leading-4">
                     {editingRoleId === null ? "Create role" : "Edit role"}
                   </h2>
-                  <p className="mt-0.5 text-[11px] leading-4 text-[#777]">
+                  <p className="mt-0.5 text-[14px] leading-4 text-[#777]">
                     Set permissions for this role. You can enable or disable specific actions.
                   </p>
                 </div>
@@ -389,35 +390,39 @@ export default function RolesPage() {
                   type="button"
                   onClick={() => setRoleDialogOpen(false)}
                   aria-label="Close role dialog"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center text-[17px] leading-none text-black hover:bg-black/5"
+                  className=" cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center text-[17px] leading-none text-black hover:bg-black/5"
                 >
                   ×
                 </button>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4">
-                <label className="block text-[10px] font-bold uppercase" htmlFor="role-name">Role name *</label>
-                <input
+                <InputField
+                  label="Role name *"
+                  labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
                   id="role-name"
                   autoFocus
                   required
                   value={roleName}
                   onChange={(event) => setRoleName(event.target.value)}
                   placeholder="Enter role name"
-                  className="mt-1 h-8 w-full rounded-[3px] border border-black/65 px-2.5 text-[11px] placeholder:text-[#888]"
+                  density="compact"
                 />
 
-                <label className="mt-3.5 block text-[10px] font-bold uppercase" htmlFor="role-description">Role description</label>
-                <textarea
-                  id="role-description"
-                  rows={3}
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Provide a description of the role..."
-                  className="mt-1 min-h-[72px] w-full resize-y rounded-[3px] border border-black/65 px-2.5 py-2 text-[11px] placeholder:text-[#888]"
-                />
+                <div className="mt-3.5">
+                  <InputField
+                    as="textarea"
+                    label="Role description"
+                    labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                    id="role-description"
+                    rows={3}
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder="Provide a description of the role..."
+                  />
+                </div>
 
-                <h3 className="mt-3.5 text-[10px] font-bold uppercase">Permissions</h3>
+                <h3 className="mt-3.5 text-[14px] font-bold uppercase">Permissions</h3>
                 <div className="mt-2.5 space-y-2.5">
                   {permissionGroups.map((group) => {
                     const groupPermissionIds = group.actions.map((action) => `${group.id}:${action}`);
@@ -441,8 +446,8 @@ export default function RolesPage() {
                             className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
                           >
                             <span className="min-w-0">
-                              <span className="block text-[11px] font-bold leading-4 text-[#111827]">{group.name}</span>
-                              <span className="mt-0.5 block text-[10px] leading-3.5 text-[#737b8c]">{group.description}</span>
+                              <span className="block text-[16px] font-bold leading-5 text-[#111827]">{group.name}</span>
+                              <span className="mt-0.5 block text-[14px] leading-4 text-[#6B7280]">{group.description}</span>
                             </span>
                             <svg
                               viewBox="0 0 20 20"
@@ -455,11 +460,11 @@ export default function RolesPage() {
                           </button>
                         </div>
                         {groupExpanded ? (
-                          <div className="flex flex-wrap gap-x-4 gap-y-2 px-2.5 pb-2.5 pl-3">
+                          <div className="flex flex-wrap gap-x-4 gap-y-2 px-2.5 pb-2.5 pl-3 pt-[8px]">
                             {group.actions.map((action) => {
                               const permissionId = `${group.id}:${action}`;
                               return (
-                                <label key={permissionId} className="inline-flex items-center gap-1.5 text-[10px] leading-4 text-[#111827]">
+                                <label key={permissionId} className="inline-flex items-center gap-1.5 text-[14px] leading-5 text-[#111827]">
                                   <input
                                     type="checkbox"
                                     checked={selectedPermissions.includes(permissionId)}
@@ -482,13 +487,13 @@ export default function RolesPage() {
                 <button
                   type="button"
                   onClick={() => setRoleDialogOpen(false)}
-                  className="h-8 flex-1 rounded-[3px] border border-black/65 text-[10px] uppercase hover:bg-black/5"
+                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black/65 text-[14px] uppercase hover:bg-black/5"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-8 flex-1 rounded-[3px] border border-black bg-black text-[10px] uppercase text-white hover:bg-white hover:text-black"
+                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black bg-black text-[14px] uppercase text-white hover:bg-white hover:text-black"
                 >
                   {editingRoleId === null ? "Create" : "Save changes"}
                 </button>

@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { InputField } from "@/components/ui/InputField";
 
 type StaffStatus = "Active" | "Invite Sent" | "Inactive" | "Removed";
 
@@ -158,17 +159,17 @@ export default function StaffPage() {
       <main className="min-h-full bg-white px-4 py-5 md:px-5 md:py-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-black uppercase leading-6 text-black">Staff</h1>
-            <p className="mt-1 text-[13px] leading-5 text-[#777]">
+            <h1 className="text-[26px] font-black uppercase leading-6 text-black">Staff</h1>
+            <p className="mt-1 text-[14px] leading-5 text-[#777]">
               Invite and manage staff members. Assign roles to control what they can access and do.
             </p>
           </div>
           <button
             type="button"
             onClick={openInviteDialog}
-            className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[3px] border border-black bg-black px-3 text-[11px] font-bold uppercase text-white transition hover:bg-white hover:text-black"
+            className="cursor-pointer inline-flex h-[40px] items-center justify-center gap-1.5 rounded-[3px] border border-black bg-black px-3 text-[14px] font-bold uppercase text-white transition hover:bg-white hover:text-black"
           >
-            <span aria-hidden="true" className="text-[15px] leading-none">+</span>
+            <span aria-hidden="true" className="text-[14px] leading-none">+</span>
             Add staff member
           </button>
         </header>
@@ -185,7 +186,7 @@ export default function StaffPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search"
                 aria-label="Search staff by name, email or role"
-                className="min-w-0 flex-1 bg-transparent text-[11px] uppercase text-black placeholder:text-[#888] focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[14px] uppercase text-black placeholder:text-[#888] focus:outline-none"
               />
             </label>
             <div className="flex gap-2">
@@ -194,7 +195,7 @@ export default function StaffPage() {
                 id="staff-status-filter"
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="h-[34px] min-w-[120px] border border-black/65 bg-white px-2 text-[10px] font-bold uppercase text-black"
+                className="h-[40px] min-w-[120px] border border-black/65 bg-white px-2 text-[14px] font-bold uppercase text-black"
               >
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
@@ -209,7 +210,7 @@ export default function StaffPage() {
                 value={month}
                 onChange={(event) => setMonth(event.target.value)}
                 aria-label="Filter staff by month joined or invited"
-                className="h-[34px] min-w-[120px] border border-black/65 bg-white px-2 text-[10px] font-bold uppercase text-black"
+                className="h-[40px] min-w-[120px] border border-black/65 bg-white px-2 text-[14px] font-bold uppercase text-black"
               />
             </div>
           </div>
@@ -217,19 +218,19 @@ export default function StaffPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[850px] border-collapse text-left">
               <thead>
-                <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-                  <th className="px-2.5 py-3">Name</th>
-                  <th className="px-2.5 py-3">Email</th>
-                  <th className="px-2.5 py-3">Role assigned</th>
-                  <th className="px-2.5 py-3">Status</th>
-                  <th className="px-2.5 py-3">Joined</th>
-                  <th className="px-2.5 py-3 text-center">Actions</th>
+                <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+                  <th className="py-4 px-3">Name</th>
+                  <th className="py-4 px-3">Email</th>
+                  <th className="py-4 px-3">Role assigned</th>
+                  <th className="py-4 px-3">Status</th>
+                  <th className="py-4 px-3">Joined</th>
+                  <th className="py-4 px-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMembers.map((member) => (
-                  <tr key={member.id} className="border-b border-black/55 text-[12px] text-black">
-                    <td className="whitespace-nowrap px-2.5 py-3.5">
+                  <tr key={member.id} className="border-b border-black text-[16px] text-black">
+                    <td className="whitespace-nowrap py-4 px-3">
                       <span className="flex items-center gap-2.5">
                         <span
                           aria-hidden="true"
@@ -240,9 +241,9 @@ export default function StaffPage() {
                         <span>{member.name}</span>
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-3.5">{member.email}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3.5">{member.role}</td>
-                    <td className="whitespace-nowrap px-2.5 py-3.5">
+                    <td className="whitespace-nowrap py-4 px-3">{member.email}</td>
+                    <td className="whitespace-nowrap py-4 px-3">{member.role}</td>
+                    <td className="whitespace-nowrap py-4 px-3">
                       {member.status === "Invite Sent" ? (
                         <span aria-label="Invite sent">-</span>
                       ) : (
@@ -251,7 +252,7 @@ export default function StaffPage() {
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-3.5">{member.joined}</td>
+                    <td className="whitespace-nowrap py-4 px-3">{member.joined}</td>
                     <td className="px-2.5 py-3 text-center">
                       <div className="relative inline-flex">
                         <button
@@ -259,7 +260,7 @@ export default function StaffPage() {
                           aria-label={`Actions for ${member.name}`}
                           aria-expanded={openActionsId === member.id}
                           onClick={() => setOpenActionsId((current) => current === member.id ? null : member.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
+                          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
                         >
                           ⋮
                         </button>
@@ -325,66 +326,62 @@ export default function StaffPage() {
               aria-modal="true"
               aria-labelledby="staff-dialog-title"
               onSubmit={addMember}
-              className="flex max-h-full w-full max-w-[580px] flex-col border border-black/60 bg-white shadow-xl"
+              className="flex max-h-full w-full max-w-[640px] flex-col bg-white shadow-xl"
             >
-              <div className="flex shrink-0 items-center gap-2.5 border-b border-black/50 px-4 py-3.5">
+              <div className="flex shrink-0 items-center gap-2.5 border-b border-black/50 p-5">
                 <span aria-hidden="true" className="h-10 w-10 shrink-0 rounded-[3px] bg-black" />
                 <div className="min-w-0 flex-1">
-                  <h2 id="staff-dialog-title" className="text-[14px] font-black uppercase">Add staff member</h2>
+                  <h2 id="staff-dialog-title" className="text-[18px] font-black uppercase">Add staff member</h2>
                 </div>
                 <button type="button" onClick={() => setDialogOpen(false)} aria-label="Close dialog" className="h-7 w-7 text-[17px]">×</button>
               </div>
               <div className="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-4 py-4">
                 <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-                  <label className="block text-[10px] font-bold uppercase" htmlFor="staff-first-name">
-                    First name *
-                    <input
-                      id="staff-first-name"
-                      autoFocus
-                      required
-                      value={firstName}
-                      onChange={(event) => setFirstName(event.target.value)}
-                      placeholder="Enter first name"
-                      className="mt-1 h-9 w-full rounded-[3px] border border-black/60 px-3 text-[12px] font-normal normal-case placeholder:text-[#888]"
-                    />
-                  </label>
-                  <label className="block text-[10px] font-bold uppercase" htmlFor="staff-last-name">
-                    Last name *
-                    <input
-                      id="staff-last-name"
-                      required
-                      value={lastName}
-                      onChange={(event) => setLastName(event.target.value)}
-                      placeholder="Enter last name"
-                      className="mt-1 h-9 w-full rounded-[3px] border border-black/60 px-3 text-[12px] font-normal normal-case placeholder:text-[#888]"
-                    />
-                  </label>
-                  <label className="block text-[10px] font-bold uppercase" htmlFor="staff-email">
-                    Email address *
-                    <input
-                      id="staff-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="Enter email"
-                      className="mt-1 h-9 w-full rounded-[3px] border border-black/60 px-3 text-[12px] font-normal normal-case placeholder:text-[#888]"
-                    />
-                  </label>
-                  <label className="block text-[10px] font-bold uppercase" htmlFor="staff-phone">
-                    Phone number
-                    <input
-                      id="staff-phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(event) => setPhone(event.target.value)}
-                      className="mt-1 h-9 w-full rounded-[3px] border border-black/60 px-3 text-[12px] font-normal normal-case"
-                    />
-                  </label>
+                  <InputField
+                    label="First name *"
+                    labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                    id="staff-first-name"
+                    autoFocus
+                    required
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                    placeholder="Enter first name"
+                    density="compact"
+                  />
+                  <InputField
+                    label="Last name *"
+                    labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                    id="staff-last-name"
+                    required
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                    placeholder="Enter last name"
+                    density="compact"
+                  />
+                  <InputField
+                    label="Email address *"
+                    labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                    id="staff-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="Enter email"
+                    density="compact"
+                  />
+                  <InputField
+                    label="Phone number"
+                    labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                    id="staff-phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    density="compact"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase" htmlFor="staff-role-picker">
+                  <label className="mb-[6px] block text-[14px] font-bold uppercase leading-[16px]" htmlFor="staff-role-picker">
                     Assign role(s) *
                   </label>
                   <p className="mt-1 text-[11px] text-[#737b8c]">Select one or more roles for this staff member.</p>
@@ -395,7 +392,7 @@ export default function StaffPage() {
                       aria-haspopup="listbox"
                       aria-expanded={rolePickerOpen}
                       onClick={() => setRolePickerOpen((open) => !open)}
-                      className="flex h-9 w-full items-center justify-between rounded-[3px] border border-black/60 px-3 text-left text-[12px] text-[#555]"
+                      className="flex h-10 w-full items-center justify-between rounded-[3px] border border-black/60 px-3 text-left text-[14px] text-[#555]"
                     >
                       Select role
                       <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className={`h-3.5 w-3.5 transition-transform ${rolePickerOpen ? "rotate-180" : ""}`}>
@@ -434,7 +431,7 @@ export default function StaffPage() {
                   <div className="mt-1.5 flex items-center gap-3">
                     <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eee] text-[15px] text-[#999]">▧</span>
                     <div>
-                      <label className="inline-flex h-7 cursor-pointer items-center rounded-[3px] border border-black/60 px-3 text-[11px] hover:bg-black/5">
+                      <label className="inline-flex h-10 cursor-pointer items-center rounded-[3px] border border-black/60 px-3 text-[14px] hover:bg-black/5">
                         Add Photo
                         <input
                           type="file"
@@ -448,21 +445,22 @@ export default function StaffPage() {
                   </div>
                 </div>
 
-                <label className="block text-[10px] font-bold uppercase" htmlFor="staff-description">
-                  Description
-                  <textarea
-                    id="staff-description"
-                    rows={3}
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    placeholder="Provide a short brief..."
-                    className="mt-1 min-h-[74px] w-full resize-y rounded-[3px] border border-black/60 px-3 py-2 text-[12px] font-normal normal-case placeholder:text-[#888]"
-                  />
-                </label>
+                <InputField
+                  as="textarea"
+                  label="Description"
+                  labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
+                  id="staff-description"
+                  rows={3}
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Provide a short brief..."
+                  className="!resize-y !px-3 !py-2"
+                  containerClassName="!min-h-[74px]"
+                />
               </div>
               <div className="flex shrink-0 gap-2 border-t border-black/50 px-4 py-3">
-                <button type="button" onClick={() => setDialogOpen(false)} className="h-9 flex-1 rounded-[3px] border border-black/60 text-[10px] uppercase hover:bg-black/5">Cancel</button>
-                <button type="submit" disabled={selectedRoles.length === 0 || Boolean(photoError)} className="h-9 flex-1 rounded-[3px] border border-black bg-black text-[10px] uppercase text-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50">Send invitation</button>
+                <button type="button" onClick={() => setDialogOpen(false)} className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black/60 text-[14px] uppercase hover:bg-black/5">Cancel</button>
+                <button type="submit" disabled={selectedRoles.length === 0 || Boolean(photoError)} className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black bg-black text-[14px] uppercase text-white hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50">Send invitation</button>
               </div>
             </form>
           </div>
@@ -480,7 +478,7 @@ export default function StaffPage() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="invitation-sent-title"
-              className="relative w-full max-w-[450px] rounded-[4px] bg-white px-7 py-8 text-center shadow-xl sm:px-10"
+              className="relative w-full max-w-[500px] rounded-[4px] bg-white px-7 py-8 text-center shadow-xl sm:px-10"
             >
               <button
                 type="button"
@@ -494,15 +492,15 @@ export default function StaffPage() {
                 <circle cx="38" cy="42" r="28" stroke="currentColor" strokeWidth="5" strokeDasharray="145 40" transform="rotate(-42 38 42)" />
                 <path d="m24 41 10 10 24-25" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <h2 id="invitation-sent-title" className="mt-4 text-[19px] font-black uppercase">Invitation sent</h2>
-              <p className="mt-4 text-[14px] leading-5 text-black">
+              <h2 id="invitation-sent-title" className="mt-4 text-[22px] font-black uppercase leading-[38px]">Invitation sent</h2>
+              <p className="mt-4 text-[16px] leading-5 text-black">
                 An invitation email has been sent to<br />
                 <strong className="font-bold">{invitationEmail}</strong>. They can now join your organisation.
               </p>
               <button
                 type="button"
                 onClick={() => setInvitationSent(false)}
-                className="mt-8 h-12 w-full rounded-[3px] border border-black bg-black text-[12px] uppercase text-white transition hover:bg-white hover:text-black"
+                className="cursor-pointer mt-8 h-10 w-full rounded-[3px] border border-black bg-black text-[14px] uppercase text-white transition hover:bg-white hover:text-black"
               >
                 Okay
               </button>

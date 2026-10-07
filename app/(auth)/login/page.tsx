@@ -167,7 +167,7 @@ export default function LoginPage() {
 
             {modalState === "reset" ? (
               <>
-                <h2 className="text-center font-[Univers] text-[24px] font-bold uppercase leading-[38px] tracking-[0%] text-black" style={{ fontFamily: 'Univers, sans-serif', fontStyle: 'normal' }}>
+                <h2 className="text-center text-[24px] font-bold uppercase leading-[38px] tracking-[0%] text-black">
                   Reset your password
                 </h2>
 

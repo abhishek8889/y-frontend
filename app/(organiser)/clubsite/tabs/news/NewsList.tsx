@@ -43,7 +43,7 @@ export default function NewsList({ news, onAddNews, onEditNews, onDeleteNews }: 
         <button
           type="button"
           onClick={onAddNews}
-          className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white transition hover:bg-white hover:text-black"
+          className="inline-flex h-[40px] shrink-0 items-center gap-2 rounded cursor-pointer border border-black bg-black px-4 text-[14px] uppercase text-white transition hover:bg-white hover:text-black"
         >
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="h-3 w-3">
             <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -55,7 +55,7 @@ export default function NewsList({ news, onAddNews, onEditNews, onDeleteNews }: 
       <div className="mt-5 overflow-x-auto">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-black/70 text-[9px] font-bold uppercase">
+            <tr className="border-b border-black text-[14px] font-bold uppercase">
               <th scope="col" className="px-2 py-3">News Title</th>
               <th scope="col" className="px-2 py-3">Publish Date</th>
               <th scope="col" className="px-2 py-3">Publish Time</th>
@@ -68,7 +68,7 @@ export default function NewsList({ news, onAddNews, onEditNews, onDeleteNews }: 
             {news.map((item) => {
               const status = getStatus(item);
               return (
-                <tr key={item.id} className="border-b border-black/60 text-[11px]">
+                <tr key={item.id} className="border-b border-black text-[16px]">
                   <td className="max-w-[260px] truncate px-2 py-5" title={item.title}>{item.title}</td>
                   <td className="whitespace-nowrap px-2 py-5">{formatDate(item.publishDate)}</td>
                   <td className="whitespace-nowrap px-2 py-5">{formatTime(item.publishTime)}</td>
@@ -85,7 +85,7 @@ export default function NewsList({ news, onAddNews, onEditNews, onDeleteNews }: 
                       aria-label={`Actions for ${item.title}`}
                       aria-expanded={openMenuId === item.id}
                       onClick={() => setOpenMenuId((current) => current === item.id ? null : item.id)}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04] text-[16px] leading-none hover:bg-black/10"
+                      className="cursor-pointer inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.04] text-[16px] leading-none hover:bg-black/10"
                     >
                       ⋮
                     </button>

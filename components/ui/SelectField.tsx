@@ -7,20 +7,24 @@ interface SelectOption {
 
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> & {
   label?: string;
+  labelClassName?: string;
   options: SelectOption[];
   placeholder?: string;
   prefix?: ReactNode;
   containerClassName?: string;
+  wrapperClassName?: string;
   density?: "default" | "compact";
 };
 
 export function SelectField({
   label,
+  labelClassName = "",
   options,
   placeholder,
   prefix,
   className = "",
   containerClassName = "",
+  wrapperClassName = "",
   density = "default",
   id,
   ...props
@@ -28,9 +32,9 @@ export function SelectField({
   const selectId = id ?? props.name;
 
   return (
-    <div className="flex flex-col gap-[6px]">
+    <div className={`flex flex-col gap-[6px] ${wrapperClassName}`.trim()}>
       {label ? (
-        <label htmlFor={selectId} className="text-[16px] font-bold uppercase leading-[24px] text-black">
+        <label htmlFor={selectId} className={`text-[16px] font-bold uppercase leading-[24px] text-black ${labelClassName}`.trim()}>
           {label}
         </label>
       ) : null}

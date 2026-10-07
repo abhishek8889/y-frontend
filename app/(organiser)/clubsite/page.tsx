@@ -37,7 +37,7 @@ function sectionDescription(section: ClubsiteSection) {
     case "Hero Section":
       return "Create your branded platform";
     default:
-      return `Manage your clubsite ${section.toLowerCase()} content.`;
+      return `All things your customers want to know and love about your brand ${section.toLowerCase()} content.`;
   }
 }
 
@@ -67,7 +67,7 @@ export default function ClubsitePage() {
                 aria-current={activeSection === section ? "page" : undefined}
                 onClick={() => selectSection(section)}
                 className={[
-                  "h-[34px] rounded-[3px] px-2 text-left text-[13px] transition",
+                  "h-[36px] cursor-pointer rounded-[3px] px-2 text-left text-[16px] leading-20px transition",
                   activeSection === section ? "border border-black/70 bg-white text-black" : "text-black/85 hover:bg-black/5",
                 ].join(" ")}
               >
@@ -78,10 +78,10 @@ export default function ClubsitePage() {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex min-h-[78px] flex-wrap items-center justify-between gap-4 border-b border-black/60 px-5 py-3 md:px-5">
+          <header className="px-[30px] py-[24px] flex flex-wrap items-center justify-between gap-4 border-b border-black/60 px-5 py-3 md:px-5">
             <div>
-              <h1 className="text-[21px] font-black uppercase leading-6 text-black">Your Clubsite</h1>
-              <p className="mt-1 text-[12px] text-[#777]">Create your branded platform</p>
+              <h1 className="text-[26px] font-black uppercase leading-6 text-black">Your Clubsite</h1>
+              <p className="mt-1 text-[14px] text-[#6F6E69]">Create your branded platform</p>
             </div>
             {isBrandingTab ? (
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -130,7 +130,7 @@ export default function ClubsitePage() {
           </header>
 
           <section
-            className="min-w-0 flex-1 px-5 py-4 md:px-5"
+            className="min-w-0 flex-1 p-[24px]"
             aria-labelledby={activeSection === "News" || activeSection === "Contact" ? undefined : "clubsite-section-title"}
             aria-label={activeSection === "News" ? "Clubsite news" : activeSection === "Contact" ? "Clubsite contact page" : undefined}
           >
@@ -147,12 +147,12 @@ export default function ClubsitePage() {
               />
             </div>
 
-            <div hidden={activeSection === "News" || activeSection === "Contact"}>
-              <h2 id="clubsite-section-title" className="text-[19px] font-black uppercase leading-6 text-black">
+            {/* <div hidden={activeSection === "News" || activeSection === "Contact"}>
+              <h2 id="clubsite-section-title" className="text-[24px] font-black uppercase leading-6 text-black">
                 {activeSection === "Main Assets" ? "Branding" : activeSection === "Hero Section" ? "Set up Clubsite" : activeSection}
               </h2>
-              <p className="mt-1 text-[12px] text-[#777]">{sectionDescription(activeSection)}</p>
-            </div>
+              <p className="mt-1 text-[14px] text-[#6F6E69]">{sectionDescription(activeSection)}</p>
+            </div> */}
 
             {pageNotice ? <p role="status" className="mt-3 text-[11px] text-[#666]">{pageNotice}</p> : null}
 

@@ -131,10 +131,10 @@ export default function HeroSectionTab() {
     <form onSubmit={saveHero} className="mt-4">
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <label htmlFor="hero-video-upload" className="flex min-h-[205px] cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 px-5 py-6 text-center transition hover:bg-black/[0.025]">
+          <label htmlFor="hero-video-upload" className="flex cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 p-14 text-center transition hover:bg-black/[0.025]">
             <PlayIcon />
-            <span className="mt-2.5 text-[12px] font-bold text-black">{video ? video.name : "Add Banner Video"}</span>
-            <span className="mt-2 max-w-[320px] text-[10px] leading-[15px] text-[#999]">
+            <span className="mt-2.5 text-[16px] font-bold text-black">{video ? video.name : "Add Banner Video"}</span>
+              <span className="mt-2 text-[14px] font-[300] leading-[20px] text-[#939393]">
               Add a quick video highlight for your Clubsite. MP4 or MOV,<br className="hidden sm:block" />
               max 100MB. Keep it under 60 seconds.<br />1440 × 720 px preferred
             </span>
@@ -144,7 +144,7 @@ export default function HeroSectionTab() {
         </div>
 
         <div>
-          <label htmlFor="hero-image-upload" className="flex min-h-[205px] cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 px-5 py-6 text-center transition hover:bg-black/[0.025]">
+          <label htmlFor="hero-image-upload" className="flex cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 p-14 text-center transition hover:bg-black/[0.025]">
             {image ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -152,8 +152,8 @@ export default function HeroSectionTab() {
                 <span className="text-[11px] font-bold">{image.name}</span>
               </>
             ) : <PlayIcon />}
-            {!image ? <span className="mt-2.5 text-[12px] font-bold text-black">Add Banner Image</span> : null}
-            <span className="mt-2 max-w-[320px] text-[10px] leading-[15px] text-[#999]">
+            {!image ? <span className="mt-2.5 text-[16px] font-bold text-black">Add Banner Image</span> : null}
+            <span className="mt-2 text-[14px] leading-[20px] text-[#939393]">
               Upload a clear image for your Clubsite. JPG or PNG, under<br className="hidden sm:block" />
               5MB. You can change this anytime.<br />1440 × 720 px preferred
             </span>
@@ -165,27 +165,23 @@ export default function HeroSectionTab() {
 
       <div className="mt-4 grid gap-x-6 gap-y-3.5 lg:grid-cols-2">
         <div>
-          <label htmlFor="hero-title" className="block text-[10px] font-bold uppercase">Hero title *</label>
-          <InputField id="hero-title" required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Enter headline" density="compact" containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
+          <InputField labelClassName="!text-[14px] !mb-[6px] !leading-[20px]" label="Hero title *" id="hero-title" required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Enter headline" density="compact" containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
         </div>
         <div>
-          <label htmlFor="hero-subtitle" className="block text-[10px] font-bold uppercase">Hero subtitle *</label>
-          <InputField id="hero-subtitle" required value={subtitle} onChange={(event) => setSubtitle(event.target.value)} placeholder="Supporting text..." density="compact" containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
+          <InputField labelClassName="!text-[14px] !mb-[6px] !leading-[20px]" label="Hero subtitle *" id="hero-subtitle" required value={subtitle} onChange={(event) => setSubtitle(event.target.value)} placeholder="Supporting text..." density="compact" containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
         </div>
         <div>
-          <label htmlFor="hero-cta-label" className="block text-[10px] font-bold uppercase">CTA button label *</label>
-          <InputField id="hero-cta-label" required value={buttonLabel} onChange={(event) => setButtonLabel(event.target.value)} placeholder="CTA button label" density="compact" containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
+          <InputField labelClassName="!text-[14px] !mb-[6px] !leading-[20px]" label="CTA button label *" id="hero-cta-label" required value={buttonLabel} onChange={(event) => setButtonLabel(event.target.value)} placeholder="CTA button label" density="compact" containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
         </div>
         <div>
-          <label htmlFor="hero-cta-url" className="block text-[10px] font-bold uppercase">CTA button URL *</label>
-          <InputField id="hero-cta-url" required value={buttonUrl} onChange={(event) => { setButtonUrl(event.target.value); setErrors((current) => ({ ...current, form: "" })); setNotice(""); }} placeholder="CTA Button URL" density="compact" containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
+          <InputField labelClassName="!text-[14px] !mb-[6px] !leading-[20px]" label="CTA button URL *" id="hero-cta-url" required value={buttonUrl} onChange={(event) => { setButtonUrl(event.target.value); setErrors((current) => ({ ...current, form: "" })); setNotice(""); }} placeholder="CTA Button URL" density="compact" containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0" className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]" />
         </div>
       </div>
       {errors.form ? <p role="alert" className="mt-2 text-[11px] text-red-600">{errors.form}</p> : null}
       <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
         {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}
-        <button type="button" onClick={cancelChanges} className="h-[35px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white">Cancel</button>
-        <button type="submit" className="h-[35px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black">Save</button>
+        <button type="button" onClick={cancelChanges} className="h-[40px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[12px] uppercase hover:bg-black hover:text-white">Cancel</button>
+        <button type="submit" className="h-[40px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black">Save</button>
       </div>
     </form>
   );

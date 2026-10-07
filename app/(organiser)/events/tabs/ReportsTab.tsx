@@ -45,22 +45,22 @@ export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
   return (
     <section className="pt-4" aria-label={`${eventTitle} reports`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[22px] font-black uppercase leading-none text-black">Report</h3>
+        <h3 className="text-[26px] font-black uppercase leading-none text-black">Report</h3>
         <MonthFilter value={month} onChange={setMonth} />
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {summary.map((item) => (
-          <article key={item.label} className="border border-black/65 px-3 py-3">
-            <h4 className="text-[10px] font-bold uppercase text-[#A0A0A0]">{item.label}</h4>
-            <p className="mt-1 text-[17px] font-bold leading-none text-black">{item.value}</p>
+          <article key={item.label} className="border border-black/65 p-[18px]">
+            <h4 className="text-[14px] font-bold uppercase text-[#AAAAAC]">{item.label}</h4>
+            <p className="mt-1 text-[22px] leading-[24px] font-bold leading-none text-black">{item.value}</p>
           </article>
         ))}
       </div>
 
       <section className="border border-black/65 p-4" aria-label="Revenue overview chart">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-          <h4 className="text-[12px] font-bold uppercase text-black">Revenue overview</h4>
+          <h4 className="text-[18px] font-bold uppercase text-black">Revenue overview</h4>
           <p className="text-[11px] text-[#888]">{monthLabel}</p>
         </div>
         <div className="h-[250px] w-full" role="img" aria-label={`Daily revenue in pounds for ${monthLabel}`}>
@@ -102,28 +102,28 @@ export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
       </section>
 
       <section className="mt-5 border border-black/65 p-4">
-        <h4 className="mb-4 text-[12px] font-bold uppercase text-black">Sales by ticket type</h4>
+        <h4 className="mb-[30px] text-[18px] font-bold uppercase text-black">Sales by ticket type</h4>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] border-collapse text-left">
             <thead>
-              <tr className="border-y border-black/65 text-[10px] font-bold uppercase text-black">
-                <th className="px-2.5 py-3">Ticket</th>
-                <th className="px-2.5 py-3">Offer</th>
-                <th className="px-2.5 py-3">Sold</th>
-                <th className="px-2.5 py-3">Gross sale</th>
-                <th className="px-2.5 py-3">Refund</th>
-                <th className="px-2.5 py-3">Net sale</th>
+              <tr className="border-y border-black/65 text-[14px] font-bold uppercase text-black">
+                <th className="px-2.5 py-3.5">Ticket</th>
+                <th className="px-2.5 py-3.5">Offer</th>
+                <th className="px-2.5 py-3.5">Sold</th>
+                <th className="px-2.5 py-3.5">Gross sale</th>
+                <th className="px-2.5 py-3.5">Refund</th>
+                <th className="px-2.5 py-3.5">Net sale</th>
               </tr>
             </thead>
             <tbody>
               {salesByTicket.map((row) => (
-                <tr key={row.ticket} className="border-b border-black/55 text-[12px] text-black">
-                  <td className="px-2.5 py-3.5">{row.ticket}</td>
-                  <td className="px-2.5 py-3.5">{row.offers}</td>
-                  <td className="px-2.5 py-3.5">{row.sold}</td>
-                  <td className="px-2.5 py-3.5">${row.gross}</td>
-                  <td className="px-2.5 py-3.5">${row.refund}</td>
-                  <td className="px-2.5 py-3.5">${row.net}</td>
+                <tr key={row.ticket} className="border-b border-black text-[16px] text-black">
+                  <td className="px-2.5 py-4">{row.ticket}</td>
+                  <td className="px-2.5 py-4">{row.offers}</td>
+                  <td className="px-2.5 py-4">{row.sold}</td>
+                  <td className="px-2.5 py-4">${row.gross}</td>
+                  <td className="px-2.5 py-4">${row.refund}</td>
+                  <td className="px-2.5 py-4">${row.net}</td>
                 </tr>
               ))}
             </tbody>

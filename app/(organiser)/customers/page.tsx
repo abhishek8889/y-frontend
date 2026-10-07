@@ -54,8 +54,8 @@ function CustomerActionDrawer({
               )}
             </div>
             <div className="min-w-0">
-              <h2 id="customer-action-title" className="text-[17px] font-bold uppercase leading-[22px] text-black">{title}</h2>
-              <p className="mt-0.5 text-[13px] leading-[18px] text-[#6F6E69]">{description}</p>
+              <h2 id="customer-action-title" className="text-[18px] font-bold uppercase leading-[26px] text-black">{title}</h2>
+              <p className="mt-0.5 text-[14px] leading-[18px] text-[#6E6B69]">{description}</p>
             </div>
           </div>
           <button type="button" aria-label="Close" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center text-[24px] leading-none text-black hover:bg-black/5">×</button>
@@ -162,8 +162,8 @@ function CustomerActionDrawer({
           </div>
 
           <footer className="grid grid-cols-2 gap-3 border-t border-black px-5 py-3">
-            <Button type="button" onClick={onClose} className="h-[40px] border border-black bg-white text-[13px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
-            <Button type="submit" className="h-[40px] border border-black bg-black text-[13px] font-medium uppercase text-white hover:bg-white hover:text-black">
+            <Button type="button" onClick={onClose} className="rounded cursor-pointer h-[40px] border border-black bg-white text-[13px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
+            <Button type="submit" className="h-[40px] border rounded cursor-pointer border-black bg-black text-[13px] font-medium uppercase text-white hover:bg-white hover:text-black">
               {action === "suspend" ? "Confirm suspension" : action === "message" ? "Send message" : "Issue ticket"}
             </Button>
           </footer>
@@ -189,8 +189,11 @@ function CustomerProfile({
 
   return (
     <main className="min-h-full bg-white p-5 md:p-6">
-      <button type="button" onClick={onBack} className="mb-3 text-[12px] text-[#78899c] hover:text-black">
-        ‹ Back to Customers
+      <button type="button" onClick={onBack} className="cursor-pointer flex items-center gap-[6px] mb-3 text-[12px] text-[#919EAB] hover:text-black">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6.99786 2.91406L2.91406 6.99786L6.99786 11.0817M2.91406 6.99786H11.0817" stroke="#919EAB" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Back to Customers
       </button>
 
       <section className="flex flex-wrap items-center gap-4 border border-black p-4 md:px-5 md:py-6">
@@ -199,22 +202,43 @@ function CustomerProfile({
         </div>
         <div className="min-w-[200px] flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[20px] font-bold leading-6 text-[#202b38]">{fullName}</h1>
-            <span className="bg-[#e8f8ee] px-2 py-1 text-[10px] font-bold uppercase text-[#24b26b]">● Active</span>
+            <h1 className="text-[24px] font-bold leading-6 text-[#212B36]">{fullName}</h1>
+            <span className="bg-[#E2FBE9] px-2 py-1 text-[11px] rounded font-bold uppercase text-[#34C759]">● Active</span>
           </div>
-          <p className="mt-1 text-[12px] text-black/80">CUST-{String(customer.id).slice(-6)}</p>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-black/60">
-            <span>{customer.email}</span>
-            {customer.phone ? <span>{customer.phone}</span> : null}
-            <span>Birmingham, UK</span>
+          <p className="mt-1 text-[14px] text-black/80">CUST-{String(customer.id).slice(-6)}</p>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[#666666]">
+            <span className="flex items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.8317 4.08576L7.58649 7.42618C7.4085 7.52954 7.20633 7.58399 7.00049 7.58399C6.79465 7.58399 6.59248 7.52954 6.41448 7.42618L1.16406 4.08576M2.33082 2.33594H11.6649C12.3093 2.33594 12.8317 2.85822 12.8317 3.50249V10.5018C12.8317 11.1461 12.3093 11.6683 11.6649 11.6683H2.33082C1.68644 11.6683 1.16406 11.1461 1.16406 10.5018V3.50249C1.16406 2.85822 1.68644 2.33594 2.33082 2.33594Z" stroke="black" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+              {customer.email}
+            </span>
+            {customer.phone ? 
+              <span className="flex items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g clip-path="url(#clip0_257_20682)">
+                <path d="M8.45147 9.69859C8.32284 9.73072 8.1871 9.71808 8.06662 9.66274C6.44623 8.86748 5.13494 7.55783 4.33765 5.93844C4.2786 5.81732 4.2633 5.67949 4.29436 5.54837C4.32541 5.41724 4.4009 5.30091 4.508 5.21914L4.78102 5.01437C4.92593 4.90569 5.04354 4.76476 5.12454 4.60275C5.20555 4.44074 5.24772 4.2621 5.24772 4.08096V2.33082C5.24772 2.02138 5.1248 1.72461 4.90599 1.5058C4.68718 1.28699 4.39041 1.16406 4.08096 1.16406H2.33082C2.02138 1.16406 1.72461 1.28699 1.5058 1.5058C1.28699 1.72461 1.16406 2.02138 1.16406 2.33082C1.16406 5.11582 2.2704 7.78675 4.23969 9.75604C6.20898 11.7253 8.87991 12.8317 11.6649 12.8317C11.9743 12.8317 12.2711 12.7087 12.4899 12.4899C12.7087 12.2711 12.8317 11.9743 12.8317 11.6649V9.91476C12.8317 9.60532 12.7087 9.30855 12.4899 9.08974C12.2711 8.87093 11.9743 8.748 11.6649 8.748H9.91476C9.73363 8.748 9.55498 8.79018 9.39297 8.87118C9.23096 8.95219 9.09003 9.0698 8.98135 9.21471L8.77426 9.48598C8.69394 9.59147 8.5801 9.66646 8.45147 9.69859Z" stroke="black" stroke-width="1.4" stroke-linecap="round"/>
+                </g>
+                <defs>
+                <clipPath id="clip0_257_20682">
+                <rect width="14" height="14" fill="white"/>
+                </clipPath>
+                </defs>
+                </svg>
+                {customer.phone}
+              </span> : null}
+            <span className="flex items-center gap-1">
+              <svg width="14px" height="14px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c-4.4 0-8 3.6-8 8 0 5.4 7 11.5 7.3 11.8.2.1.5.2.7.2.2 0 .5-.1.7-.2.3-.3 7.3-6.4 7.3-11.8 0-4.4-3.6-8-8-8zm0 17.7c-2.1-2-6-6.3-6-9.7 0-3.3 2.7-6 6-6s6 2.7 6 6-3.9 7.7-6 9.7zM12 6c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="#0D0D0D"/></svg>
+              Birmingham, UK
+            </span>
           </div>
         </div>
-        <div className="flex gap-7 text-[11px]">
-          <div><p className="font-bold uppercase text-[#94a0af]">Customer since</p><p className="mt-1 font-semibold text-[#202b38]">12 Jan 2024</p></div>
-          <div><p className="font-bold uppercase text-[#94a0af]">Last activity</p><p className="mt-1 font-semibold text-[#202b38]">12 Jan 2025</p></div>
+        <div className="flex gap-7 text-[12px]">
+          <div><p className="font-bold uppercase text-[#919EAB]">Customer since</p><p className="mt-1 font-semibold text-[14px] text-[#212B36]">12 Jan 2024</p></div>
+          <div><p className="font-bold uppercase text-[#919EAB]">Last activity</p><p className="mt-1 font-semibold text-[14px] text-[#212B36]">12 Jan 2025</p></div>
         </div>
-        <Button type="button" onClick={() => onAction("message")} className="h-[36px] border border-black px-3 text-[11px] font-bold uppercase text-black hover:bg-black hover:text-white">Send message</Button>
-        <button type="button" aria-label="More customer actions" className="h-8 w-8 border border-black/15 text-[18px] text-black/70 hover:bg-black/5">⋮</button>
+        <Button type="button" onClick={() => onAction("message")} className="h-[36px] border border-black px-3 rounded cursor-pointer text-[13px] font-bold uppercase text-black hover:bg-black hover:text-white">Send message</Button>
+        <button type="button" aria-label="More customer actions" className="h-8 w-8 border border-black/15 text-[18px] rounded cursor-pointer text-black/70 hover:bg-black/5">⋮</button>
       </section>
 
       <section aria-label="Customer statistics" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -224,9 +248,9 @@ function CustomerProfile({
           { label: "Events attended", value: "0" },
           { label: "Upcoming events", value: "0" },
         ].map((stat) => (
-          <div key={stat.label} className="min-h-[70px] border border-black p-3">
-            <p className="text-[10px] font-bold uppercase text-[#999999]">{stat.label}</p>
-            <p className="mt-1 text-[18px] font-bold text-black">{stat.value}</p>
+          <div key={stat.label} className="border border-black p-[18px]">
+            <p className="text-[14px] leading-[20px] font-bold uppercase text-[#9B9994]">{stat.label}</p>
+            <p className="mt-1 text-[22px] leading-[24px] font-bold text-black">{stat.value}</p>
           </div>
         ))}
       </section>
@@ -239,7 +263,7 @@ function CustomerProfile({
             role="tab"
             aria-selected={activeTab === tab}
             onClick={() => setActiveTab(tab)}
-            className={`shrink-0 border-b-2 px-1 py-3 text-[11px] font-bold uppercase ${activeTab === tab ? "border-black text-black" : "border-transparent text-black/40 hover:text-black"}`}
+            className={`shrink-0 border-b-2 px-1 py-3 text-[16px]  font-bold uppercase ${activeTab === tab ? "border-black text-black" : "border-transparent text-[#949494] cursor-pointer hover:text-black"}`}
           >
             {tab}
           </button>
@@ -343,10 +367,10 @@ export default function CustomersPage() {
             { label: "Ticket buyers", value: customers.length.toLocaleString() },
             { label: "Total orders", value: "0" },
           ].map((stat) => (
-            <div key={stat.label} className="min-h-[82px] border border-black p-4">
-              <p className="text-[11px] font-bold uppercase text-[#AAAAAC]">{stat.label}</p>
-              <p className="mt-1 text-[20px] font-bold leading-6 text-black">{stat.value}</p>
-              <p className="mt-1 text-[12px] text-black/45">Current overview</p>
+            <div key={stat.label} className="border border-black p-[18px]">
+              <p className="text-[14px] font-bold uppercase text-[#AAAAAC]">{stat.label}</p>
+              <p className="mt-[6px] mb-[10px] text-[22px] leading-[24px] font-bold text-black">{stat.value}</p>
+              <p className="mt-1 text-[14px] text-[#6F6E69]"> from last month</p>
             </div>
           ))}
         </section>
@@ -369,17 +393,33 @@ export default function CustomersPage() {
             />
           </label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:flex">
-            <select aria-label="Site" defaultValue="all" className="h-[38px] min-w-0 border border-black bg-white px-2 text-[11px] font-bold uppercase text-black xl:w-[125px]">
-              <option value="all">All sites</option>
-            </select>
-            <select aria-label="Event" defaultValue="all" className="h-[38px] min-w-0 border border-black bg-white px-2 text-[11px] font-bold uppercase text-black xl:w-[125px]">
-              <option value="all">All events</option>
-            </select>
-            <select aria-label="Status" defaultValue="all" className="h-[38px] min-w-0 border border-black bg-white px-2 text-[11px] font-bold uppercase text-black xl:w-[125px]">
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-            </select>
-            <button type="button" className="h-[38px] border border-black px-3 text-[11px] font-bold uppercase text-black">More filters</button>
+            <SelectField
+              aria-label="Site"
+              defaultValue="all"
+              density="compact"
+              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
+              options={[{ value: "all", label: "All sites" }]}
+            />
+            <SelectField
+              aria-label="Event"
+              defaultValue="all"
+              density="compact"
+              containerClassName="!h-[38px]"
+              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
+              options={[{ value: "all", label: "All events" }]}
+            />
+            <SelectField
+              aria-label="Status"
+              defaultValue="all"
+              density="compact"
+              containerClassName="!h-[38px]"
+              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
+              options={[
+                { value: "all", label: "All statuses" },
+                { value: "active", label: "Active" },
+              ]}
+            />
+            <button type="button" className="h-[38px] border border-black px-3 text-[14px] font-bold uppercase text-black">More filters</button>
           </div>
         </div>
 
@@ -387,32 +427,32 @@ export default function CustomersPage() {
           <div className="min-w-0 flex-1 overflow-x-auto">
             <table className="w-full min-w-[1050px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-black/35 text-[10px] font-bold uppercase text-black/75">
-                <th className="px-2 py-3">First name</th>
-                <th className="px-2 py-3">Email</th>
-                <th className="px-2 py-3">Phone</th>
-                <th className="px-2 py-3">Customer ID</th>
-                <th className="px-2 py-3">Total orders</th>
-                <th className="px-2 py-3">Attended</th>
-                <th className="px-2 py-3">Total spend</th>
-                <th className="px-2 py-3">Last activity</th>
-                <th className="px-2 py-3">Status</th>
-                <th className="px-2 py-3 text-right">Action</th>
+              <tr className="border-b border-black text-[14px] font-bold uppercase text-black">
+                <th className="py-[18px] px-3">First name</th>
+                <th className="py-[18px] px-3">Email</th>
+                <th className="py-[18px] px-3">Phone</th>
+                <th className="py-[18px] px-3">Customer ID</th>
+                <th className="py-[18px] px-3">Total orders</th>
+                <th className="py-[18px] px-3">Attended</th>
+                <th className="py-[18px] px-3">Total spend</th>
+                <th className="py-[18px] px-3">Last activity</th>
+                <th className="py-[18px] px-3">Status</th>
+                <th className="py-[18px] px-3 text-right">Action</th>
               </tr>
             </thead>
             {filteredCustomers.length ? (
               <tbody>
                 {pageCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-black/35 text-[12px] text-black last:border-b-0">
-                    <td className="px-2 py-3">{customer.firstName} {customer.lastName}</td>
-                    <td className="px-2 py-3">{customer.email}</td>
-                    <td className="px-2 py-3">{customer.phone || "-"}</td>
-                    <td className="px-2 py-3">CUS-{String(customer.id).slice(-6)}</td>
-                    <td className="px-2 py-3">0</td>
-                    <td className="px-2 py-3">0</td>
-                    <td className="px-2 py-3">£0</td>
-                    <td className="px-2 py-3">-</td>
-                    <td className="px-2 py-3 font-bold uppercase text-[#24b26b]">● Active</td>
+                  <tr key={customer.id} className="border-b border-black/35 text-[14px] text-black last:border-b-0">
+                    <td className="py-[16px] px-[12]">{customer.firstName} {customer.lastName}</td>
+                    <td className="py-[16px] px-[12]">{customer.email}</td>
+                    <td className="py-[16px] px-[12]">{customer.phone || "-"}</td>
+                    <td className="py-[16px] px-[12]">CUS-{String(customer.id).slice(-6)}</td>
+                    <td className="py-[16px] px-[12]">0</td>
+                    <td className="py-[16px] px-[12]">0</td>
+                    <td className="py-[16px] px-[12]">£0</td>
+                    <td className="py-[16px] px-[12]">-</td>
+                    <td className="py-[16px] px-[12] font-bold uppercase text-[#24b26b]">● Active</td>
                     <td className="px-2 py-2 text-right">
                       <div className="relative inline-block">
                         <button
@@ -421,7 +461,7 @@ export default function CustomersPage() {
                           aria-haspopup="menu"
                           aria-expanded={openActionId === customer.id}
                           onClick={() => setOpenActionId(openActionId === customer.id ? null : customer.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-[20px] leading-none text-black/70 hover:bg-black/5"
+                          className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full text-[20px] leading-none text-black/70 hover:bg-black/5"
                         >
                           ⋮
                         </button>
@@ -467,7 +507,7 @@ export default function CustomersPage() {
             {!filteredCustomers.length ? (
               <section className="flex min-h-[280px] items-center justify-center px-4 py-12 text-center" aria-live="polite">
               <div>
-                <h2 className="text-[20px] font-bold uppercase leading-[26px] text-black">No customers found</h2>
+                <h2 className="text-[22px] font-bold uppercase leading-[26px] text-black">No customers found</h2>
                 <p className="mt-2 text-[14px] leading-[21px] text-black/60">
                   {customers.length ? "Try a different search." : "Add your first customer to see them listed here."}
                 </p>
@@ -561,8 +601,8 @@ export default function CustomersPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 id="add-customer-title" className="text-[20px] font-bold uppercase leading-[26px] text-black">Add customer</h2>
-                  <p className="mt-1 text-[14px] leading-[20px] text-[#6F6E69]">Fill in the details to register a customer.</p>
+                  <h2 id="add-customer-title" className="text-[18px] font-bold uppercase leading-[26px] text-black">Add customer</h2>
+                  <p className="mt-1 text-[14px] leading-[20px] text-[#6E6B69]">Fill in the details to register a customer.</p>
                 </div>
               </div>
               <button type="button" aria-label="Close" onClick={() => setIsDialogOpen(false)} className="flex h-8 w-8 shrink-0 items-center justify-center text-[26px] leading-none text-black hover:bg-black/5">×</button>
@@ -595,8 +635,8 @@ export default function CustomersPage() {
               </div>     
 
               <footer className="grid grid-cols-2 gap-3 border-t border-black px-6 py-4 md:px-8">
-                <Button type="button" onClick={() => setIsDialogOpen(false)} className="h-[49px] rounded-[4px] border border-black bg-white text-[14px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
-                <Button type="submit" className="h-[49px] rounded-[4px] border border-black bg-black text-[14px] font-medium uppercase text-white hover:bg-white hover:text-black">+ Add supporter</Button>
+                <Button type="button" onClick={() => setIsDialogOpen(false)} className="cursor-pointer h-[40px] rounded-[4px] border border-black bg-white text-[14px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
+                <Button type="submit" className="h-[40px] rounded-[4px] cursor-pointer border border-black bg-black text-[14px] font-medium uppercase text-white hover:bg-white hover:text-black">+ Add supporter</Button>
               </footer>
             </form>
           </section>

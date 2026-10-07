@@ -67,7 +67,7 @@ export default function AddNavigationModal({
             type="button"
             aria-label="Close add navigation menu"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center text-[22px] leading-none hover:bg-black/5"
+            className="cursor-pointer flex h-8 w-8 shrink-0 items-center justify-center text-[22px] leading-none hover:bg-black/5"
           >
             ×
           </button>
@@ -76,10 +76,11 @@ export default function AddNavigationModal({
         <form onSubmit={submitItem} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto px-[18px] py-5">
             <div>
-              <label htmlFor="navigation-label-name" className="block text-[12px] font-bold uppercase">Label name *</label>
               <InputField
                 id="navigation-label-name"
                 required
+                label="Label name *"
+                labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
                 autoFocus
                 value={name}
                 onChange={(event) => {
@@ -88,37 +89,36 @@ export default function AddNavigationModal({
                 }}
                 placeholder="Enter name"
                 density="compact"
-                containerClassName="mt-1.5 !h-[34px] !rounded-[4px] !border-black/80 focus-within:!ring-0"
-                className="!px-2.5 !text-[13px] normal-case placeholder:!text-[#777]"
+                
               />
             </div>
 
             <div>
-              <label htmlFor="navigation-url-link" className="block text-[12px] font-bold uppercase">URL link *</label>
               <InputField
                 id="navigation-url-link"
                 type="url"
                 required
                 value={url}
+                label="URL link *"
+                labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
                 onChange={(event) => {
                   setUrl(event.target.value);
                   setError("");
                 }}
                 placeholder="https://yourlist.com"
                 density="compact"
-                containerClassName="mt-1.5 !h-[34px] !rounded-[4px] !border-black/80 focus-within:!ring-0"
-                className="!px-2.5 !text-[13px] normal-case placeholder:!text-[#777]"
               />
             </div>
 
             <div>
-              <label htmlFor="navigation-priority" className="block text-[12px] font-bold uppercase">Set priority *</label>
               <InputField
                 id="navigation-priority"
                 type="number"
                 min="1"
                 step="1"
                 required
+                label="Priority"
+                labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
                 value={priority}
                 onChange={(event) => {
                   setPriority(event.target.value);
@@ -126,8 +126,6 @@ export default function AddNavigationModal({
                 }}
                 placeholder="6"
                 density="compact"
-                containerClassName="mt-1.5 !h-[34px] !rounded-[4px] !border-black/80 focus-within:!ring-0"
-                className="!px-2.5 !text-[13px]"
               />
             </div>
 
@@ -138,13 +136,13 @@ export default function AddNavigationModal({
             <button
               type="button"
               onClick={onClose}
-              className="h-[41px] rounded-[4px] border border-black px-4 text-[13px] uppercase hover:bg-black hover:text-white"
+              className="h-[41px] rounded-[4px] border border-black px-4 text-[14px] cursor-pointer uppercase hover:bg-black hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="h-[41px] rounded-[4px] border border-black bg-black px-4 text-[13px] uppercase text-white hover:bg-white hover:text-black"
+              className="h-[41px] rounded-[4px] border border-black bg-black px-4 text-[14px] cursor-pointer uppercase text-white hover:bg-white hover:text-black"
             >
               Save
             </button>

@@ -5,10 +5,9 @@ import "./globals.css";
 
 const univers = localFont({
   src: [
+    { path: "../assets/univers/UniversLight.ttf", weight: "300", style: "normal" },
     { path: "../assets/univers/UniversRegular.ttf", weight: "400", style: "normal" },
     { path: "../assets/univers/UniversBold.ttf", weight: "700", style: "normal" },
-    // { path: "../assets/univers/UniversCnRg.ttf", weight: "400", style: "normal" },
-    // { path: "../assets/univers/UniversCnBold.ttf", weight: "700", style: "normal" },
   ],
   variable: "--font-univers",
   display: "swap",

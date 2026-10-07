@@ -42,7 +42,7 @@ export default function AccountUnderReviewPage() {
 
                   <a
                     href="mailto:support@yourlist.com"
-                    className="mt-5 inline-flex h-[40px] items-center justify-center gap-2 rounded-[4px] border border-black bg-white px-[16px] py-0 font-[Univers] text-[14px] font-normal leading-[19.6px] text-black transition-colors duration-200 hover:bg-black hover:text-white"
+                    className="mt-5 inline-flex h-[40px] items-center justify-center gap-2 rounded-[4px] border border-black bg-white px-[16px] py-0 text-[14px] font-normal leading-[19.6px] text-black transition-colors duration-200 hover:bg-black hover:text-white"
                   >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="h-4 w-4">
                       <path d="M2.5 4.5A1.5 1.5 0 0 1 4 3h8a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 12 12H4a1.5 1.5 0 0 1-1.5-1.5v-7Z" stroke="currentColor" strokeWidth="1.2" />

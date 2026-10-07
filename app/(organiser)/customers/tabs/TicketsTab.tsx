@@ -108,22 +108,22 @@ export default function TicketsTab() {
       <div className="mt-5 min-w-0 flex-1 overflow-x-auto">
         <table className="w-full min-w-[1120px] border-collapse text-left">
           <thead>
-            <tr className="border-y border-black/70 text-[10px] font-bold uppercase text-black">
-              <th className="px-3 py-3.5">Ticket ID</th>
-              <th className="px-3 py-3.5">Ticket</th>
-              <th className="px-3 py-3.5">Offer</th>
-              <th className="px-3 py-3.5">Date &amp; time</th>
-              <th className="px-3 py-3.5">Event</th>
-              <th className="px-3 py-3.5">Venue</th>
-              <th className="px-3 py-3.5 text-center">QR code</th>
-              <th className="px-3 py-3.5">Ticket status</th>
-              <th className="px-3 py-3.5">Order ID</th>
-              <th className="px-3 py-3.5 text-center">Action</th>
+            <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+              <th className="py-5 px-3">Ticket ID</th>
+              <th className="py-5 px-3">Ticket</th>
+              <th className="py-5 px-3">Offer</th>
+              <th className="py-5 px-3">Date &amp; time</th>
+              <th className="py-5 px-3">Event</th>
+              <th className="py-5 px-3">Venue</th>
+              <th className="py-5 px-3 text-center">QR code</th>
+              <th className="py-5 px-3">Ticket status</th>
+              <th className="py-5 px-3">Order ID</th>
+              <th className="py-5 px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {visibleTickets.map((ticket) => (
-              <tr key={ticket.id} className="border-b border-black/70 text-[13px] text-black">
+              <tr key={ticket.id} className="border-b border-black text-[16px] text-black">
                 <td className="px-3 py-2.5">{ticket.id}</td>
                 <td className="px-3 py-2.5">{ticket.ticket}</td>
                 <td className="px-3 py-2.5">{ticket.offer}</td>

@@ -39,13 +39,13 @@ export default function DomainTab({
         <path d="M89 62 110 99a7 7 0 0 1-6 10H62a7 7 0 0 1-6-10l21-37a7 7 0 0 1 12 0Z" fill="white" stroke="currentColor" strokeWidth="4" />
         <path d="M83 76v12m0 6v.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
       </svg>
-      <h3 className="mt-5 text-[17px] font-black uppercase text-black">Clubsite not live yet</h3>
-      <p className="mt-3 max-w-[440px] text-center text-[12px] leading-[18px] text-[#777]">
+      <h3 className="mt-8 text-[22px] font-black uppercase text-black">Clubsite not live yet</h3>
+      <p className="mt-5 max-w-[440px] text-center text-[14px] leading-[20px] text-[#666666]">
         Your clubsite needs a connected domain before it can go live.
         <br className="hidden sm:block" /> Once configured, customers will be able to access it.
       </p>
-      <form onSubmit={connectDomain} className="mt-6 w-full max-w-[475px]">
-        <div className="flex h-[34px] items-center rounded-[3px] border border-black/75 p-[2px]">
+      <form onSubmit={connectDomain} className="mt-6 w-full max-w-[600px]">
+        <div className="flex h-[40px] justify-between items-center gap-1 rounded-[6px] border border-black/80 p-[4px]">
           <InputField
             id="clubsite-domain"
             type="text"
@@ -58,9 +58,12 @@ export default function DomainTab({
             placeholder="Enter your domain"
             aria-describedby={domainError ? "domain-error" : formNotice || notice ? "domain-notice" : undefined}
             containerClassName="!h-full !min-w-0 !flex-1 !rounded-none !border-0 focus-within:!ring-0"
-            className="!px-2 !text-[11px] !text-black placeholder:!text-black"
+            className="!px-[10px] !text-[14px] !leading-6 !text-black placeholder:!text-black"
           />
-          <button type="submit" className="h-[27px] shrink-0 rounded-[3px] border border-black bg-black px-3 text-[10px] uppercase text-white transition hover:bg-white hover:text-black sm:px-4">
+          <button
+            type="submit"
+            className="h-full w-[228px] max-w-[40%] shrink-0 rounded-[4px] border border-black bg-black text-[14px] uppercase leading-6 text-white transition hover:bg-white hover:text-black"
+          >
             Connect domain
           </button>
         </div>

@@ -90,10 +90,11 @@ export default function MainAssetsTab() {
   return (
     <form onSubmit={saveAssets} className="mt-4">
       <div>
-        <label htmlFor="microsite-name" className="block text-[10px] font-bold uppercase">Microsite name *</label>
         <InputField
           id="microsite-name"
           required
+          label="Microsite name"
+          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
           value={microSiteName}
           onChange={(event) => {
             setMicroSiteName(event.target.value);
@@ -101,7 +102,7 @@ export default function MainAssetsTab() {
           }}
           placeholder="e.g. United Sports Elite"
           density="compact"
-          containerClassName="mt-1 !h-[34px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
+          containerClassName="mt-1"
           className="!px-3 !text-[11px] placeholder:!text-[#777]"
         />
       </div>
@@ -112,7 +113,7 @@ export default function MainAssetsTab() {
           { id: "favicon", label: "Favicon", value: favicon, hint: "Click to upload favicon" },
         ] as const).map((asset) => (
           <div key={asset.id}>
-            <label className="mb-1 block text-[10px] font-bold uppercase">{asset.label}</label>
+            <label className="mb-1 block text-[14px] font-bold uppercase">{asset.label}</label>
             <label htmlFor={`clubsite-${asset.id}-upload`} className="flex min-h-[142px] cursor-pointer items-center gap-4 border border-dashed border-black/65 p-3.5 transition hover:bg-black/[0.025] sm:gap-5 sm:px-4">
               <span className="flex h-[112px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-[#f4f4f4]">
                 {asset.value ? (
@@ -124,8 +125,8 @@ export default function MainAssetsTab() {
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mb-2 h-6 w-6 text-black">
                   <path d="M12 16V3m0 0L7 8m5-5 5 5M4 15v5h16v-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="block text-[10px] font-bold uppercase">{asset.value?.name ?? asset.hint}</span>
-                <span className="mt-2 block text-[11px] leading-4 text-black">PNG or SVG · max 2MB<br />(Min 200x200px)</span>
+                <span className="block text-[14px] font-bold uppercase">{asset.value?.name ?? asset.hint}</span>
+                <span className="mt-2 block text-[14px] leading-4 text-black font-normal">PNG or SVG · max 2MB<br />(Min 200x200px)</span>
               </span>
               <input
                 id={`clubsite-${asset.id}-upload`}
@@ -142,8 +143,8 @@ export default function MainAssetsTab() {
 
       <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
         {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}
-        <button type="button" onClick={cancelChanges} className="h-[35px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white">Cancel</button>
-        <button type="submit" className="h-[35px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black">Save</button>
+        <button type="button" onClick={cancelChanges} className="cursor-pointer h-[40px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white">Cancel</button>
+        <button type="submit" className="cursor-pointer h-[40px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black">Save</button>
       </div>
     </form>
   );

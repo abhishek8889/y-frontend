@@ -56,15 +56,15 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
   const [financeExpanded, setFinanceExpanded] = useState(pathname.startsWith("/finance"));
 
   return (
-    <aside className="h-[calc(100vh-45px)] w-[250px] border-r border-[#000000] bg-[#fff]">
+    <aside className="h-[calc(100vh-45px)] w-[260px] border-r border-[#000000] bg-[#fff]">
       <nav className="flex h-full flex-col gap-2.5 p-6">
         {items.map((item) => {
           const isFinance = item.label === "Finance";
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href && !isFinance;
 
           return (
             <div key={item.label}>
-              <div className="flex items-center">
+              <div className="flex items-center relative">
                 <Link
                   href={item.href}
                   className={[
@@ -89,19 +89,19 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
                     aria-expanded={financeExpanded}
                     onClick={() => setFinanceExpanded((expanded) => !expanded)}
                     className={[
-                      "flex h-10 w-8 shrink-0 items-center justify-center transition",
+                      "cursor-pointer absolute right-0 flex h-10 w-8 shrink-0 items-center justify-center transition",
                       isActive ? "text-white" : "text-black/70 hover:text-black",
                     ].join(" ")}
                   >
-                    <IconCard
-                      name={CHEVRON_DOWN_ICON}
-                      className={`h-3.5 w-3.5 transition-transform ${financeExpanded ? "rotate-180" : ""}`}
-                    />
+                    <svg width="16px" height="16px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="48" height="48" fill="white" fill-opacity="0.01"/>
+                      <path d="M37 18L25 30L13 18" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </button>
                 ) : null}
               </div>
               {isFinance && financeExpanded ? (
-                <div className="ml-7 mt-1 flex flex-col gap-0.5">
+                <div className="mt-1 flex flex-col gap-0.5">
                   {[
                     { label: "Overview", href: "/finance", active: pathname === "/finance" },
                     { label: "Transaction", href: "/finance/transactions", active: pathname === "/finance/transactions" },
@@ -113,7 +113,7 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
                       href={child.href}
                       aria-current={child.active ? "page" : undefined}
                       className={[
-                        "rounded-[3px] px-3 py-1.5 text-[13px] leading-5 transition",
+                        "pl-7 rounded-[3px] px-3 py-1.5 text-[13px] leading-5 transition",
                         child.active ? "bg-black text-white" : "text-black/75 hover:bg-black/5 hover:text-black",
                       ].join(" ")}
                     >

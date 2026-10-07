@@ -112,7 +112,7 @@ export default function CreateEventPage() {
       <div className="min-h-full bg-white p-5 md:p-6">
         <form onSubmit={handlePublish}>
         <div className="mb-3 flex items-center justify-between gap-3 text-[12px] font-medium uppercase tracking-[0.2em] text-black/70">
-          <div className="flex items-center gap-2 font-['Univers'] font-normal text-[12px] leading-none tracking-normal uppercase text-[#666666]">
+          <div className="flex items-center gap-2 font-normal text-[12px] leading-none tracking-normal uppercase text-[#666666]">
             <button
               type="button"
               onClick={() => router.push("/events")}
