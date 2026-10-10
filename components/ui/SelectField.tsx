@@ -8,6 +8,7 @@ interface SelectOption {
 type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> & {
   label?: string;
   labelClassName?: string;
+  error?: string;
   options: SelectOption[];
   placeholder?: string;
   prefix?: ReactNode;
@@ -19,6 +20,7 @@ type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "prefix"> 
 export function SelectField({
   label,
   labelClassName = "",
+  error,
   options,
   placeholder,
   prefix,
@@ -30,6 +32,7 @@ export function SelectField({
   ...props
 }: SelectFieldProps) {
   const selectId = id ?? props.name;
+  const errorId = selectId ? `${selectId}-error` : undefined;
 
   return (
     <div className={`flex flex-col gap-[6px] ${wrapperClassName}`.trim()}>
@@ -45,7 +48,11 @@ export function SelectField({
         <select
           id={selectId}
           {...props}
-          className={`h-full w-full appearance-none border rounded-[4px] border-black bg-transparent px-5 pr-12 text-[14px] font-normal leading-[20px] text-black outline-none focus:outline-none ${className}`.trim()}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={`h-full w-full appearance-none border rounded-[4px] ${
+            error ? "border-[#d32f2f]" : "border-black"
+          } bg-transparent px-5 pr-12 text-[14px] font-normal leading-[20px] text-black outline-none focus:outline-none ${className}`.trim()}
         >
           {placeholder ? (
             <option value="" disabled>
@@ -66,6 +73,15 @@ export function SelectField({
           </svg>
         </div>
       </div>
+      {error ? (
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-1 text-[12px] leading-[18px] text-[#d32f2f]"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

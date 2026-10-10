@@ -21,7 +21,8 @@ export default function LoginPage() {
   const [login, { isLoading }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [formError, setFormError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [modalState, setModalState] = useState<
     "reset" | "verify" | "create" | "success" | null
@@ -51,11 +52,23 @@ export default function LoginPage() {
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError("");
+    setEmailError("");
+    setPasswordError("");
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) {
-      setFormError("Email and password are required.");
+    if (!trimmedEmail) {
+      setEmailError("Email is required.");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setEmailError("Enter a valid email address.");
+    }
+    if (!password) {
+      setPasswordError("Password is required.");
+    }
+    if (
+      !trimmedEmail ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) ||
+      !password
+    ) {
       return;
     }
 
@@ -65,7 +78,7 @@ export default function LoginPage() {
       const user = result.data?.user;
 
       if (!token || !user) {
-        setFormError("Login succeeded but no access token was returned.");
+        setPasswordError("Login succeeded but no access token was returned.");
         return;
       }
 
@@ -75,7 +88,12 @@ export default function LoginPage() {
       // Host-only cookies on app.localhost; then land on dashboard (or ?next=).
       window.location.assign(resolvePostLoginUrl(user, nextPath, window.location.host));
     } catch (error) {
-      setFormError(getApiErrorMessage(error as never, "Invalid email or password."));
+      const message = getApiErrorMessage(
+        error as never,
+        "Invalid email or password.",
+      );
+      setEmailError(message);
+      setPasswordError(message);
     }
   }
 
@@ -90,7 +108,7 @@ export default function LoginPage() {
           </p>
         }
       >
-        <form className="space-y-[22px]" onSubmit={handleLogin}>
+        <form className="space-y-[22px]" noValidate onSubmit={handleLogin}>
           <InputField
             label="Email"
             type="email"
@@ -98,9 +116,12 @@ export default function LoginPage() {
             name="email"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setEmailError("");
+            }}
+            error={emailError}
             required
-            containerClassName="mb-[22px]"
           />
 
           <InputField
@@ -110,7 +131,11 @@ export default function LoginPage() {
             name="password"
             autoComplete="current-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setPasswordError("");
+            }}
+            error={passwordError}
             required
             suffix={
               <button
@@ -127,7 +152,7 @@ export default function LoginPage() {
             }
           />
 
-          <div className="pt-[12px] pb-[40px] mb-0">
+          <div className="pb-[40px] mb-0">
             <button
               type="button"
               onClick={() => setModalState("reset")}
@@ -136,12 +161,6 @@ export default function LoginPage() {
               Forgot Password?
             </button>
           </div>
-
-          {formError ? (
-            <p role="alert" className="text-[13px] leading-[18px] text-[#d32f2f]">
-              {formError}
-            </p>
-          ) : null}
 
           <button
             type="submit"
@@ -160,7 +179,7 @@ export default function LoginPage() {
               type="button"
               aria-label="Close modal"
               onClick={() => setModalState(null)}
-              className="absolute right-[14px] top-[14px] flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none text-black/70 hover:text-black"
+              className="cursor-pointer absolute right-[14px] top-[14px] flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none text-black/70 hover:text-black"
             >
               <IconCard name={CLOSE_ICON} className="h-6 w-6" />
             </button>

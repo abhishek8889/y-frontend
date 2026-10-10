@@ -3,6 +3,7 @@ import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "rea
 type SharedProps = {
   label?: string;
   labelClassName?: string;
+  error?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
   prefixClassName?: string;
@@ -14,7 +15,7 @@ type SharedProps = {
 
 type InputFieldProps = SharedProps &
   (
-    | ({ as?: "input" } & InputHTMLAttributes<HTMLInputElement>)
+    | ({ as?: "input" } & Omit<InputHTMLAttributes<HTMLInputElement>, "prefix">)
     | ({ as: "textarea" } & TextareaHTMLAttributes<HTMLTextAreaElement>)
   );
 
@@ -22,6 +23,7 @@ export function InputField(props: InputFieldProps) {
   const {
     label,
     labelClassName = "",
+    error,
     id,
     as = "input",
     prefix,
@@ -34,10 +36,11 @@ export function InputField(props: InputFieldProps) {
     ...rest
   } = props;
   const inputId = id ?? ("name" in rest && typeof rest.name === "string" ? rest.name : undefined);
+  const errorId = inputId ? `${inputId}-error` : undefined;
   const isTextarea = as === "textarea";
 
   return (
-    <div className="mb-0">
+    <div className="mb-22px">
       {label ? (
         <label
           htmlFor={inputId}
@@ -48,7 +51,9 @@ export function InputField(props: InputFieldProps) {
       ) : null}
 
       <div
-        className={`flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
+        className={`flex rounded-[4px] border ${
+          error ? "border-[#d32f2f]" : "border-black"
+        } bg-white transition focus-within:ring-1 focus-within:ring-black ${
           isTextarea ? "min-h-[140px] p-0" : density === "compact" ? "h-10 items-center" : "h-[48px] items-center"
         } ${containerClassName}`.trim()}
       >
@@ -59,6 +64,8 @@ export function InputField(props: InputFieldProps) {
             id={inputId}
             rows={"rows" in rest ? rest.rows ?? 4 : 4}
             {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             className={`w-full resize-none border-0 bg-transparent px-5 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
           />
         ) : (
@@ -67,12 +74,19 @@ export function InputField(props: InputFieldProps) {
               id={inputId}
               {...(rest as InputHTMLAttributes<HTMLInputElement>)}
               type={"type" in rest ? rest.type ?? "text" : "text"}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
               className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
             />
             {suffix ? <span className={`flex items-center ${suffixClassName}`}>{suffix}</span> : null}
           </>
         )}
       </div>
+      {error ? (
+        <p id={errorId} role="alert" className="mt-1 text-[12px] leading-[18px] text-[#d32f2f]">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

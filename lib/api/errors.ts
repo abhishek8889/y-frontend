@@ -15,6 +15,10 @@ function getErrorBody(error: FetchBaseQueryError): ApiErrorBody | null {
   return error.data as ApiErrorBody;
 }
 
+function isHtmlResponse(value: string) {
+  return /<(?:!doctype\s+html|html|head|body)\b/i.test(value);
+}
+
 export function getApiErrorMessage(
   error: FetchBaseQueryError | SerializedError | undefined,
   fallback = "Something went wrong. Please try again.",
@@ -22,7 +26,21 @@ export function getApiErrorMessage(
   if (!error) return fallback;
 
   if (isFetchBaseQueryError(error)) {
+    if ("error" in error && typeof error.error === "string" && error.error.trim()) {
+      if (isHtmlResponse(error.error)) {
+        return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+      }
+      return error.error;
+    }
+
     const body = getErrorBody(error);
+
+    if (
+      (typeof body?.message === "string" && isHtmlResponse(body.message)) ||
+      (typeof error.data === "string" && isHtmlResponse(error.data))
+    ) {
+      return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+    }
 
     if (body?.message === "Validation errors" && body.data) {
       const firstKey = Object.keys(body.data)[0];
@@ -40,6 +58,9 @@ export function getApiErrorMessage(
   }
 
   if ("message" in error && typeof error.message === "string" && error.message.trim()) {
+    if (isHtmlResponse(error.message)) {
+      return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+    }
     return error.message;
   }
 
