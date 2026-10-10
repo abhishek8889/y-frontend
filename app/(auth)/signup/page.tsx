@@ -211,7 +211,7 @@ export default function SignupPage() {
             </div>
 
             <p className="mt-[20px] text-center text-[16px] font-normal leading-[24px] text-black">
-              Didn&apos;t get your code? <button type="button" className="!font-bold underline underline-offset-2">Send a new code</button>
+              Didn&apos;t get your code? <button type="button" className="!font-bold underline underline-offset-2 cursor-pointer">Send a new code</button>
             </p>
 
             <div className="mt-[30px] flex items-start gap-[10px] rounded-[4px] bg-[#F5F5F5] px-[22px] py-[12px] text-left text-[14px] font-normal leading-[20px] text-black/100">

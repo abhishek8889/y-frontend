@@ -479,25 +479,10 @@ export default function IconCard({
       );
     case EMAIL_SENT_ICON:
       return (
-        <svg
-          width="22"
-          height="18"
-          viewBox="0 0 22 18"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <path
-            d="M3 5.5C3 4.4 3.9 3.5 5 3.5H17C18.1 3.5 19 4.4 19 5.5V12.5C19 13.6 18.1 14.5 17 14.5H5C3.9 14.5 3 13.6 3 12.5V5.5Z"
-            fill="currentColor"
-          />
-          <path
-            d="M4 5L11 10L18 5"
-            stroke="white"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="52" rx="10" fill="black"/>
+        <path d="M40.9505 17.139C40.8202 16.2679 40.3821 15.4723 39.7156 14.8964C39.0491 14.3205 38.1983 14.0025 37.3175 14H14.6955C13.8147 14.0025 12.9639 14.3205 12.2974 14.8964C11.6309 15.4723 11.1928 16.2679 11.0625 17.139L26.0065 26.809L40.9505 17.139Z" fill="white"/>
+        <path d="M26.543 28.8394C26.3812 28.944 26.1927 28.9996 26 28.9996C25.8073 28.9996 25.6188 28.944 25.457 28.8394L11 19.4854V34.3104C11.0011 35.2884 11.3901 36.2261 12.0817 36.9177C12.7732 37.6093 13.7109 37.9983 14.689 37.9994H37.311C38.2891 37.9983 39.2268 37.6093 39.9183 36.9177C40.6099 36.2261 40.9989 35.2884 41 34.3104V19.4844L26.543 28.8394Z" fill="white"/>
         </svg>
       );
     case CHECK_CIRCLE_ICON:
