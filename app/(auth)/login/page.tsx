@@ -142,7 +142,7 @@ export default function LoginPage() {
                 type="button"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword((value) => !value)}
-                className="flex h-[20px] w-[20px] items-center justify-center text-black/70 transition hover:text-black"
+                className="flex cursor-pointer h-[20px] w-[20px] items-center justify-center text-black/70 transition hover:text-black"
               >
                 <IconCard
                   name={showPassword ? EYE_OFF_ICON : EYE_OPEN_ICON}

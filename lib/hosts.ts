@@ -23,13 +23,16 @@ export function getHostSurface(hostHeader: string): AppSurface {
 export const authPaths = ["/login", "/signup", "/reset-password", "/account-under-review", "/unauthorized"];
 
 export const surfacePaths = {
-  public: ["/", "/event", ...authPaths],
+  public: ["/", "/event", "/events", "/about", ...authPaths],
   organiser: ["/dashboard", "/events", "/venues", "/customers", ...authPaths],
-  superadmin: ["/admin", ...authPaths],
+  superadmin: ["/admin", "/platform-login", ...authPaths],
 } as const;
 
 export function isAuthPath(pathname: string) {
-  return authPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  return (
+    pathname === "/platform-login" ||
+    authPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+  );
 }
 
 export function isPathAllowed(surface: AppSurface, pathname: string) {
