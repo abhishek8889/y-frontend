@@ -1,3 +1,4 @@
+import { withQueryToast } from "@/lib/api/queryToast";
 import { baseApi } from "@/lib/store/baseApi";
 import type { AuthUser } from "@/lib/auth/session";
 
@@ -41,14 +42,26 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          error: true, // backend message
+          // error: "This is not working like this", // custom
+        });
+      },
     }),
     getAboutMe: build.query<AboutMeResponse, void>({
       query: () => "about-me",
       providesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
     }),
     getProfile: build.query<ProfileResponse, void>({
       query: () => "get-profile",
       providesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
     }),
   }),
 });

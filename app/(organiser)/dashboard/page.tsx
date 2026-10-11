@@ -1,20 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGetAboutMeQuery } from "@/apis/auth/authApi";
+import { GridCard, type GridCardItem } from "@/components/common";
 import {
   DashboardHeader,
   DashboardShell,
   DashboardSidebar,
   StripeConnectModal,
 } from "@/components/organiser";
-
-const stats = [
-  { label: "Revenue month", value: "£84,290", trend: "12% vs last month" },
-  { label: "Tickets sold today", value: "1,247", trend: "34% vs avg madthday" },
-  { label: "Upcoming match sales", value: "73%", trend: "2,190 / 3,000 capacity" },
-  { label: "Active members", value: "2,680", trend: "8% Active Members" },
-  { label: "Refund rate", value: "1.8%", trend: "0% vs avg" },
-];
 
 export default function DashboardPage() {
   const { data, isLoading, isFetching } = useGetAboutMeQuery();
@@ -23,6 +17,44 @@ export default function DashboardPage() {
     !isLoading && !isFetching && user?.organisation_approve_status === false;
 
   const displayName = user?.first_name?.trim() || "there";
+
+  // Page owns data/config (same idea as Offthetree `listItems`).
+  // Swap these for live API metrics when dashboard endpoints are ready.
+  const overviewItems = useMemo<GridCardItem[]>(
+    () => [
+      {
+        id: "revenue-month",
+        label: "Revenue month",
+        value: "£84,290",
+        description: "12% vs last month",
+      },
+      {
+        id: "tickets-sold-today",
+        label: "Tickets sold today",
+        value: "1,247",
+        description: "34% vs avg matchday",
+      },
+      {
+        id: "upcoming-match-sales",
+        label: "Upcoming match sales",
+        value: "73%",
+        description: "2,190 / 3,000 capacity",
+      },
+      {
+        id: "active-members",
+        label: "Active members",
+        value: "2,680",
+        description: "8% Active Members",
+      },
+      {
+        id: "refund-rate",
+        label: "Refund rate",
+        value: "1.8%",
+        description: "0% vs avg",
+      },
+    ],
+    [],
+  );
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
@@ -46,18 +78,8 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {stats.map((stat) => (
-              <div key={stat.label} className="border border-black/100 bg-[#fff] p-[18px]">
-                <p className="text-sm font-bold uppercase leading-[20px] tracking-[1px] text-[#AAAAAC]">
-                  {stat.label}
-                </p>
-                <p className="mt-1.5 text-[22px] font-bold leading-[24px] tracking-[-0.04em] text-black">
-                  {stat.value}
-                </p>
-                <p className="mt-[10px] text-[14px] font-light leading-[20px] text-[#9B9994]">{stat.trend}</p>
-              </div>
-            ))}
+          <div className="mt-6">
+            <GridCard items={overviewItems} columns={5} isLoading={isLoading && !data} />
           </div>
 
           {showStripeConnect ? <StripeConnectModal /> : null}

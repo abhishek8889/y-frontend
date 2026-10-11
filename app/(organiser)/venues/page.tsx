@@ -1,130 +1,418 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  useDeleteVenueMutation,
+  useDuplicateVenueMutation,
+  useGetVenuePageOverviewQuery,
+  useGetVenueTypesQuery,
+  useGetVenuesQuery,
+  useLazyGetVenueDetailsQuery,
+  useUpdateVenueMutation,
+  type Venue,
+} from "@/apis/organisation/venuesApi";
+import {
+  ActionMenu,
+  DataTable,
+  GridCard,
+  WarningAlertIcon,
+  YourlistAlert,
+  type ActionMenuItem,
+  type DataTableColumn,
+  type GridCardItem,
+} from "@/components/common";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { buildVenuePayload, mapVenueToFormValues } from "@/components/organiser/venues/venueFormHelpers";
 import { Button } from "@/components/ui/Button";
-import { SelectField } from "@/components/ui/SelectField";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 
-const initialVenues = [
-  {
-    id: 1,
-    name: "Keys Corner",
-    location: "Keys Park Road, Hednesford",
-    type: "Stadium",
-    capacity: "Maximum - 1111\nStanding - 946\nSeated - 946",
-    status: "Active",
-    image: "linear-gradient(135deg, #dfe9dc 0%, #a7bca6 35%, #6f7d69 100%)",
-  },
-  {
-    id: 2,
-    name: "Keys Corner",
-    location: "Keys Park Road, Hednesford",
-    type: "Stadium",
-    capacity: "Maximum - 1111\nStanding - 946\nSeated - 946",
-    status: "Inactive",
-    image: "linear-gradient(135deg, #dfe3ea 0%, #b7b8c3 40%, #5d667a 100%)",
-  },
-];
+type VenueConfirmAction = "delete" | "duplicate" | "deactivate" | "activate";
 
-type Venue = (typeof initialVenues)[number];
-
-function VenueListCard({
-  venue,
-  isOpen,
-  onToggle,
-  onEdit,
-}: {
+type VenueConfirmState = {
+  action: VenueConfirmAction;
   venue: Venue;
-  isOpen: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-}) {
-  return (
-    <div
-      key={venue.id}
-      className="grid grid-cols-[1.2fr_1.1fr_1fr_1.1fr_0.8fr_52px] items-center border-b border-black/20 px-4 py-3 last:border-b-0"
-    >
-      <div className="flex items-center gap-3 pr-3">
-        <div
-          className="h-[52px] w-[80px] border border-black/80 bg-cover bg-center"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect width='120' height='80' fill='%23dfe9dc'/%3E%3Cpath d='M0 58 L120 58 L120 80 L0 80 Z' fill='%2366a96b'/%3E%3Cpath d='M0 0 L120 0 L120 18 L0 18 Z' fill='%23b7c9ab'/%3E%3Cpath d='M0 0 L20 0 L110 80 L0 80 Z' fill='rgba(255,255,255,0.12)'/%3E%3Cpath d='M120 0 L100 0 L10 80 L120 80 Z' fill='rgba(0,0,0,0.08)'/%3E%3C/svg%3E"), ${venue.image}`,
-          }}
-        />
-        <span className="text-[14px] font-medium leading-[18px] text-black">{venue.name}</span>
-      </div>
+};
 
-      <span className="text-[14px] leading-[20px] text-black">{venue.location}</span>
-      <span className="text-[14px] leading-[20px] text-black">{venue.type}</span>
-      <span className="whitespace-pre-line text-[13px] leading-[18px] text-black">{venue.capacity}</span>
-      <span
-        className={`text-[12px] font-bold uppercase tracking-[0.12em] ${
-          venue.status === "Active" ? "text-[#24b26b]" : "text-[#ff3a3a]"
-        }`}
-      >
-        <span
-          className="mr-2 inline-block h-[7px] w-[7px] rounded-full align-middle"
-          style={{ backgroundColor: venue.status === "Active" ? "#24b26b" : "#ff3a3a" }}
-        />
-        {venue.status}
-      </span>
+function formatVenueLocation(venue: Venue) {
+  const address = venue.address;
+  if (!address) return "—";
+  return [address.address_line_1, address.city, address.postal_code].filter(Boolean).join(", ") || "—";
+}
 
-      <div className="relative flex justify-end">
-        <button
-          type="button"
-          aria-label="Open venue actions"
-          onClick={onToggle}
-          className="flex h-8 w-8 items-center justify-center rounded-[4px] text-[22px] leading-none text-black transition hover:bg-black/5"
-        >
-          ⋮
-        </button>
+function formatVenueCapacity(venue: Venue) {
+  const lines = [
+    venue.maximum_capacity != null ? `Maximum - ${venue.maximum_capacity}` : null,
+    venue.standing_capacity != null ? `Standing - ${venue.standing_capacity}` : null,
+    venue.seated_capacity != null ? `Seated - ${venue.seated_capacity}` : null,
+  ].filter(Boolean);
+  return lines.length ? lines.join("\n") : "—";
+}
 
-        {isOpen ? (
-          <div className="absolute right-0 top-[42px] z-10 w-[170px] border border-black bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] text-black hover:bg-black/5">
-              <span>◌</span> View Venue
-            </button>
-            <button
-              type="button"
-              onClick={onEdit}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] text-black hover:bg-black/5"
-            >
-              <span>✎</span> Edit
-            </button>
-            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] text-black hover:bg-black/5">
-              <span>⧉</span> Duplicate
-            </button>
-            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] text-black hover:bg-black/5">
-              <span>◍</span> Deactivate venue
-            </button>
-            <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] text-black hover:bg-black/5">
-              <span>🗑</span> Delete
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
+function getVenueImageUrl(venue: Venue) {
+  const banner = venue.images?.find((image) => image.type === "banner");
+  return banner?.url || venue.images?.[0]?.url || "";
+}
+
+// const EyeIcon = (
+//   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+//     <path
+//       d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"
+//       stroke="currentColor"
+//       strokeWidth="1.6"
+//     />
+//     <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+//   </svg>
+// );
+
+const PencilIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M13 6.5 17.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const CopyIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="8" y="8" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M6 15V6.5A1.5 1.5 0 0 1 7.5 5H16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const CircleXIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+    <path d="m9.5 9.5 5 5m0-5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const TrashIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 7h16M9 7V5h6v2m-7 0v12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7M10 11v6M14 11v6"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+function getConfirmCopy(state: VenueConfirmState) {
+  const name = state.venue.name;
+
+  switch (state.action) {
+    case "delete":
+      return {
+        title: "ARE YOU SURE?",
+        message: `Delete "${name}"? This action cannot be undone.`,
+        primaryButtonLabel: "DELETE VENUE",
+        variant: "warning" as const,
+      };
+    case "duplicate":
+      return {
+        title: "ARE YOU SURE?",
+        message: `Duplicate "${name}"? A copy of this venue will be created.`,
+        primaryButtonLabel: "DUPLICATE VENUE",
+        variant: "warning" as const,
+      };
+    case "activate":
+      return {
+        title: "ARE YOU SURE?",
+        message: `Activate "${name}"? It will become available again.`,
+        primaryButtonLabel: "ACTIVATE VENUE",
+        variant: "warning" as const,
+      };
+    case "deactivate":
+    default:
+      return {
+        title: "ARE YOU SURE?",
+        message: `Deactivate "${name}"? It will be marked as inactive.`,
+        primaryButtonLabel: "DEACTIVATE VENUE",
+        variant: "warning" as const,
+      };
+  }
 }
 
 export default function VenuesPage() {
   const router = useRouter();
   const [openActionId, setOpenActionId] = useState<number | null>(null);
-  const activeCount = initialVenues.filter((venue) => venue.status === "Active").length;
-  const inactiveCount = initialVenues.filter((venue) => venue.status === "Inactive").length;
+  const [confirmState, setConfirmState] = useState<VenueConfirmState | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [venueTypeId, setVenueTypeId] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const debouncedSearch = useDebouncedValue(search, 400);
+
+  const { data: venueTypesData } = useGetVenueTypesQuery();
+  const { data: overviewData } = useGetVenuePageOverviewQuery();
+  const [deleteVenue, { isLoading: isDeletingVenue }] = useDeleteVenueMutation();
+  const [duplicateVenue, { isLoading: isDuplicatingVenue }] = useDuplicateVenueMutation();
+  const [updateVenue, { isLoading: isUpdatingVenue }] = useUpdateVenueMutation();
+  const [fetchVenueDetails, { isFetching: isFetchingVenueDetails }] = useLazyGetVenueDetailsQuery();
+  const { data, isLoading, isFetching, isError } = useGetVenuesQuery({
+    per_page: pageSize,
+    status: status === "all" ? "" : status,
+    search: debouncedSearch.trim(),
+    venue_type_id: venueTypeId === "all" ? undefined : venueTypeId,
+    cursor,
+  });
+
+  const isConfirmSubmitting =
+    isDeletingVenue || isDuplicatingVenue || isUpdatingVenue || isFetchingVenueDetails;
+  const confirmCopy = confirmState ? getConfirmCopy(confirmState) : null;
+
+  const venues = data?.data?.items ?? [];
+  const pagination = data?.data?.pagination;
+  const venueTypes = venueTypesData?.data ?? [];
+  const overview = overviewData?.data;
+
+  const overviewItems = useMemo<GridCardItem[]>(
+    () => [
+      {
+        id: "total",
+        label: "Total venues",
+        value: overview?.total_venue ?? 0,
+      },
+      {
+        id: "active",
+        label: "Active",
+        value: overview?.active_venue ?? 0,
+        indicatorColor: "#24b26b",
+      },
+      {
+        id: "inactive",
+        label: "Inactive",
+        value: overview?.inactive_venue ?? 0,
+        indicatorColor: "#ff3a3a",
+      }
+    ],
+    [overview?.active_venue, overview?.inactive_venue, overview?.total_venue],
+  );
+
+  const venueTypeOptions = useMemo(
+    () => [
+      { value: "all", label: "Venue Type" },
+      ...venueTypes.map((type) => ({
+        value: String(type.id),
+        label: type.name,
+      })),
+    ],
+    [venueTypes],
+  );
+
+  function openConfirm(action: VenueConfirmAction, venue: Venue) {
+    setOpenActionId(null);
+    setConfirmState({ action, venue });
+  }
+
+  function closeConfirm() {
+    if (isConfirmSubmitting) return;
+    setConfirmState(null);
+  }
+
+  async function handleConfirmPrimary() {
+    if (!confirmState) return;
+
+    const { action, venue } = confirmState;
+
+    try {
+      if (action === "delete") {
+        await deleteVenue(venue.id).unwrap();
+      } else if (action === "duplicate") {
+        await duplicateVenue(venue.id).unwrap();
+      } else if (action === "activate" || action === "deactivate") {
+        const details = await fetchVenueDetails(venue.id).unwrap();
+        const formValues = mapVenueToFormValues(details.data);
+        const payload = buildVenuePayload(
+          formValues,
+          action === "activate" ? "active" : "inactive",
+        );
+        await updateVenue({ venueId: venue.id, body: payload }).unwrap();
+      }
+      setConfirmState(null);
+    } catch {
+      // Toast handled by venuesApi mutation
+    }
+  }
+
+  const venueActions = useMemo<ActionMenuItem<Venue>[]>(
+    () => [
+      // {
+      //   key: "view",
+      //   label: "View Venue",
+      //   icon: EyeIcon,
+      //   variant: "link",
+      //   onClick: (venue) => {
+      //     router.push(`/venues/create?mode=edit&id=${venue.id}`);
+      //   },
+      // },
+      {
+        key: "edit",
+        label: "Edit",
+        icon: PencilIcon,
+        onClick: (venue) => {
+          router.push(`/venues/create?mode=edit&id=${venue.id}`);
+        },
+      },
+      {
+        key: "duplicate",
+        label: "Duplicate",
+        icon: CopyIcon,
+        disabled: isConfirmSubmitting,
+        onClick: (venue) => {
+          openConfirm("duplicate", venue);
+        },
+      },
+      {
+        key: "deactivate",
+        label: "Deactivate venue",
+        icon: CircleXIcon,
+        disabled: isConfirmSubmitting,
+        hidden: (venue) => venue.status !== "active",
+        onClick: (venue) => {
+          openConfirm("deactivate", venue);
+        },
+      },
+      {
+        key: "activate",
+        label: "Activate venue",
+        icon: CircleXIcon,
+        disabled: isConfirmSubmitting,
+        hidden: (venue) => venue.status === "active",
+        onClick: (venue) => {
+          openConfirm("activate", venue);
+        },
+      },
+      {
+        key: "delete",
+        label: "Delete",
+        icon: TrashIcon,
+        disabled: isConfirmSubmitting,
+        onClick: (venue) => {
+          openConfirm("delete", venue);
+        },
+      },
+    ],
+    [isConfirmSubmitting, router],
+  );
+
+  const columns = useMemo<DataTableColumn<Venue>[]>(
+    () => [
+      {
+        id: "name",
+        header: "Venue",
+        accessorKey: "name",
+        cell: ({ row }) => {
+          const imageUrl = getVenueImageUrl(row);
+          return (
+            <div className="flex items-center gap-3 pr-3">
+              <div
+                className="h-[52px] w-[80px] border border-black/80 bg-cover bg-center bg-[#dfe9dc]"
+                style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined}
+                role="img"
+                aria-label={row.name}
+              />
+              <span className="text-[14px] font-medium leading-[18px] text-black">{row.name}</span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "location",
+        header: "Location",
+        cell: ({ row }) => formatVenueLocation(row),
+      },
+      {
+        id: "type",
+        header: "Venue Type",
+        cell: ({ row }) => row.venue_type?.name || "—",
+      },
+      {
+        id: "capacity",
+        header: "Capacity",
+        cell: ({ row }) => (
+          <span className="whitespace-pre-line text-[13px] leading-[18px] text-black">
+            {formatVenueCapacity(row)}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const isActive = row.status === "active";
+          return (
+            <span
+              className={`text-[12px] font-bold uppercase tracking-[0.12em] ${
+                isActive ? "text-[#24b26b]" : "text-[#ff3a3a]"
+              }`}
+            >
+              <span
+                className="mr-2 inline-block h-[7px] w-[7px] rounded-full align-middle"
+                style={{ backgroundColor: isActive ? "#24b26b" : "#ff3a3a" }}
+              />
+              {isActive ? "Active" : "Inactive"}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Action",
+        align: "right",
+        headerClassName: "text-right",
+        cell: ({ row }) => (
+          <ActionMenu
+            row={row}
+            actions={venueActions}
+            open={openActionId === row.id}
+            onOpenChange={(nextOpen) => setOpenActionId(nextOpen ? row.id : null)}
+            ariaLabel={`Open actions for ${row.name}`}
+          />
+        ),
+      },
+    ],
+    [openActionId, venueActions],
+  );
+
+  function resetCursorAndPage() {
+    setCursor(undefined);
+    setPage(1);
+  }
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage > page && pagination?.next_cursor) {
+      setCursor(pagination.next_cursor);
+      setPage(nextPage);
+      return;
+    }
+
+    if (nextPage < page && pagination?.prev_cursor) {
+      setCursor(pagination.prev_cursor);
+      setPage(nextPage);
+    }
+  }
+
+  const canGoNext = Boolean(pagination?.next_cursor) || Boolean(pagination?.has_more);
+  const canGoPrev = Boolean(pagination?.prev_cursor) || page > 1;
+  const paginationTotal = canGoNext ? page * pageSize + 1 : (page - 1) * pageSize + venues.length;
 
   return (
-    <DashboardShell
-      header={<DashboardHeader />}
-      sidebar={<DashboardSidebar />}
-    >
+    <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       <div className="min-h-full bg-[#fff] p-5 md:p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-[26px] leading-[32px] font-bold uppercase tracking-[-0.05em] text-black md:text-[32px]">
+            <h1 className="text-[26px] font-bold uppercase leading-[32px] tracking-[-0.05em] text-black md:text-[32px]">
               VENUES
             </h1>
             <p className="mt-1 text-[14px] font-normal leading-[20px] text-black/60">
@@ -142,94 +430,83 @@ export default function VenuesPage() {
         </div>
 
         <div className="space-y-7 py-5">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="flex min-h-[82px] flex-col justify-center border border-black/100 p-[18px]">
-              <p className="text-[14px] font-bold uppercase tracking-[0.5px] text-[#AAAAAC]">TOTAL VENUES</p>
-              <span className="mt-[6px] text-[22px] font-bold leading-[24px] tracking-[-0.05em] text-black">{initialVenues.length}</span>
-            </div>
+          <GridCard items={overviewItems} columns={3} />
 
-            <div className="flex min-h-[82px] flex-col justify-center border border-black/100 p-[18px]">
-              <p className="flex items-center gap-2 text-[14px] font-bold uppercase tracking-[0.5px] text-[#AAAAAC]">
-                <span className="h-[7px] w-[7px] rounded-full bg-[#24b26b]" /> ACTIVE
-              </p>
-              <span className="mt-[6px] text-[22px] font-bold leading-[24px] tracking-[-0.05em] text-black">{activeCount}</span>
-            </div>
-
-            <div className="flex min-h-[82px] flex-col justify-center border border-black/100 p-[18px]">
-              <p className="flex items-center gap-2 text-[14px] font-bold uppercase tracking-[0.5px] text-[#AAAAAC]">
-                <span className="h-[7px] w-[7px] rounded-full bg-[#ff3a3a]" /> INACTIVE
-              </p>
-              <span className="mt-[6px] text-[22px] font-bold leading-[24px] tracking-[-0.05em] text-black">{inactiveCount}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="relative w-full">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-black/60">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
-                  <path d="M17.5 17.5L13.875 13.875" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <input
-                type="text"
-                value=""
-                name="search"
-                placeholder="SEARCH"
-                className="h-[45px] w-full border border-black/100 bg-transparent pl-10 pr-3 text-[12px] font-medium uppercase tracking-[0.14em] text-black placeholder:text-black/60 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              <SelectField
-                name="status"
-                aria-label="Status"
-                defaultValue="all"
-                options={[
+          <DataTable
+            columns={columns}
+            data={venues}
+            getRowId={(row) => row.id}
+            search={{
+              value: search,
+              onChange: (value) => {
+                setSearch(value);
+                resetCursorAndPage();
+              },
+              placeholder: "SEARCH",
+            }}
+            filters={[
+              {
+                key: "status",
+                label: "Status",
+                type: "select",
+                value: status,
+                options: [
                   { value: "all", label: "All Status" },
                   { value: "active", label: "Active" },
                   { value: "inactive", label: "Inactive" },
-                ]}
-                className="!h-[45px] w-full min-w-[150px] rounded-none text-[14px] font-medium uppercase tracking-[0.12em] sm:w-[180px]"
-              />
-
-              <SelectField
-                name="venueType"
-                aria-label="Venue Type"
-                defaultValue="all"
-                options={[
-                  { value: "all", label: "Venue Type" },
-                  { value: "stadium", label: "Stadium" },
-                  { value: "ground", label: "Ground" },
-                  { value: "clubhouse", label: "Clubhouse" },
-                ]}
-                className="!h-[45px] w-full min-w-[150px] rounded-none text-[14px] font-medium uppercase tracking-[0.12em] sm:w-[180px]"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-hidden border border-black/100 bg-[#fff]">
-            <div className="grid grid-cols-[1.2fr_1.1fr_1fr_1.1fr_0.8fr_52px] items-center border-b border-black/30 px-4 py-3 text-[12px] font-bold uppercase tracking-[0.12em] text-black/60">
-              <span>Venue</span>
-              <span>Location</span>
-              <span>Venue Type</span>
-              <span>Capacity</span>
-              <span>Status</span>
-              <span className="text-right">Action</span>
-            </div>
-
-            {initialVenues.map((venue) => (
-              <VenueListCard
-                key={venue.id}
-                venue={venue}
-                isOpen={openActionId === venue.id}
-                onToggle={() => setOpenActionId(openActionId === venue.id ? null : venue.id)}
-                onEdit={() => router.push(`/venues/create?mode=edit&id=${venue.id}`)}
-              />
-            ))}
-          </div>
+                ],
+              },
+              {
+                key: "venueType",
+                label: "Venue Type",
+                type: "select",
+                value: venueTypeId,
+                options: venueTypeOptions,
+              },
+            ]}
+            onFilterChange={(key, value) => {
+              if (key === "status") setStatus(value);
+              if (key === "venueType") setVenueTypeId(value);
+              resetCursorAndPage();
+            }}
+            pagination={{
+              page,
+              pageSize,
+              total: paginationTotal,
+            }}
+            onPageChange={(nextPage) => {
+              if (nextPage > page && !canGoNext) return;
+              if (nextPage < page && !canGoPrev) return;
+              handlePageChange(nextPage);
+            }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              resetCursorAndPage();
+            }}
+            isLoading={isLoading || isFetching}
+            isError={isError}
+            errorMessage="Unable to load venues."
+            emptyMessage="No venues found."
+          />
         </div>
       </div>
+
+      <YourlistAlert
+        isOpen={Boolean(confirmState)}
+        onClose={closeConfirm}
+        title={confirmCopy?.title ?? "ARE YOU SURE?"}
+        message={confirmCopy?.message}
+        icon={<WarningAlertIcon />}
+        variant={confirmCopy?.variant ?? "warning"}
+        showFooter
+        secondaryButtonLabel="CANCEL"
+        onSecondaryClick={closeConfirm}
+        primaryButtonLabel={confirmCopy?.primaryButtonLabel}
+        onPrimaryClick={() => {
+          void handleConfirmPrimary();
+        }}
+        isSubmitting={isConfirmSubmitting}
+      />
     </DashboardShell>
   );
 }

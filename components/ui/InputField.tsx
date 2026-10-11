@@ -8,6 +8,7 @@ type SharedProps = {
   prefixClassName?: string;
   suffixClassName?: string;
   containerClassName?: string;
+  wrapperClassName?: string;
   density?: "default" | "compact";
   as?: "input" | "textarea";
 };
@@ -30,6 +31,7 @@ export function InputField(props: InputFieldProps) {
     suffixClassName = "mr-6",
     className = "",
     containerClassName = "",
+    wrapperClassName = "",
     density = "default",
     ...rest
   } = props;
@@ -37,11 +39,11 @@ export function InputField(props: InputFieldProps) {
   const isTextarea = as === "textarea";
 
   return (
-    <div className="mb-0">
+    <div className={`mb-0 ${wrapperClassName}`.trim()}>
       {label ? (
         <label
           htmlFor={inputId}
-          className={`mb-[6px] block text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black ${labelClassName}`.trim()}
+          className={`mb-[6px] block shrink-0 text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black ${labelClassName}`.trim()}
         >
           {label}
         </label>

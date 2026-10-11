@@ -12,8 +12,8 @@ import IconCard, {
   CHECK_CIRCLE_ICON,
 } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import { resolvePostLoginUrl, setAuthSession } from "@/lib/api/authStorage";
+import { appToast } from "@/lib/ui/toast";
 
 const initialCode = ["", "", "", "", "", ""];
 
@@ -21,7 +21,6 @@ export default function LoginPage() {
   const [login, { isLoading }] = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [formError, setFormError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [modalState, setModalState] = useState<
     "reset" | "verify" | "create" | "success" | null
@@ -51,11 +50,10 @@ export default function LoginPage() {
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError("");
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      setFormError("Email and password are required.");
+      appToast.warning("Email and password are required.");
       return;
     }
 
@@ -65,17 +63,17 @@ export default function LoginPage() {
       const user = result.data?.user;
 
       if (!token || !user) {
-        setFormError("Login succeeded but no access token was returned.");
+        appToast.error("Login succeeded but no access token was returned.");
         return;
       }
 
       setAuthSession(token, user);
 
       const nextPath = new URLSearchParams(window.location.search).get("next");
-      // Host-only cookies on app.localhost; then land on dashboard (or ?next=).
+      // Backend error toast is handled in authApi via withQueryToast.
       window.location.assign(resolvePostLoginUrl(user, nextPath, window.location.host));
-    } catch (error) {
-      setFormError(getApiErrorMessage(error as never, "Invalid email or password."));
+    } catch {
+      // Backend error toast already shown by withQueryToast.
     }
   }
 
@@ -136,12 +134,6 @@ export default function LoginPage() {
               Forgot Password?
             </button>
           </div>
-
-          {formError ? (
-            <p role="alert" className="text-[13px] leading-[18px] text-[#d32f2f]">
-              {formError}
-            </p>
-          ) : null}
 
           <button
             type="submit"
