@@ -27,47 +27,38 @@ export function DataTableToolbar({
   if (!hasSearch && !hasFilters && !toolbarExtra) return null;
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
       {hasSearch ? (
-        <div className="relative min-w-0 w-full md:flex-1">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-black/60">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path
-                d="M9.16667 15.8333C12.8486 15.8333 15.8333 12.8486 15.8333 9.16667C15.8333 5.48477 12.8486 2.5 9.16667 2.5C5.48477 2.5 2.5 5.48477 2.5 9.16667C2.5 12.8486 5.48477 15.8333 9.16667 15.8333Z"
-                stroke="black"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17.5 17.5L13.875 13.875"
-                stroke="black"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+        <label className="flex h-[34px] min-w-0 flex-1 items-center gap-2 border-b border-black/55 px-2 text-black/60 focus-within:border-black">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.8" />
+            <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
           <input
             type="search"
             value={search?.value ?? ""}
             onChange={(event) => search?.onChange(event.target.value)}
-            placeholder={search?.placeholder ?? "SEARCH"}
+            placeholder={search?.placeholder ?? "Search"}
             aria-label={search?.placeholder ?? "Search"}
-            className="h-[45px] w-full border border-black/100 bg-transparent pl-10 pr-3 text-[12px] font-medium uppercase tracking-[0.14em] text-black placeholder:text-black/60 focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-[14px] uppercase text-black placeholder:text-[#888] focus:outline-none"
           />
-        </div>
+        </label>
       ) : null}
 
       {(hasFilters || toolbarExtra) && (
-        <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           {filters.map((filter) => (
             <SelectField
               key={filter.key}
               name={filter.key}
               aria-label={filter.label ?? filter.key}
               value={filter.value ?? "all"}
+              options={filter.options ?? []}
               onChange={(event) => onFilterChange?.(filter.key, event.target.value)}
-              options={filter.options}
-              className={`!h-[45px] w-full min-w-[150px] rounded-none text-[14px] font-medium uppercase tracking-[0.12em] sm:w-[180px] ${filter.className ?? ""}`.trim()}
+              density="compact"
+              wrapperClassName="!gap-0 w-full sm:w-auto"
+              containerClassName="!h-[40px] min-w-[120px]"
+              className={`!h-[40px] !rounded-none !border-black !px-2 !pr-9 w-full min-w-[120px] text-[14px] font-bold uppercase sm:w-auto ${filter.className ?? ""}`.trim()}
             />
           ))}
           {toolbarExtra}

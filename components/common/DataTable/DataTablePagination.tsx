@@ -24,19 +24,19 @@ export function DataTablePagination({
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-col gap-3 border-t border-black/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-[12px] uppercase tracking-[0.08em] text-black/55">
+    <div className="flex flex-col gap-3 border-t border-black/20 px-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-[14px] text-black/70">
         Showing {from}-{to} of {total}
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
         {onPageSizeChange ? (
-          <label className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-black/60">
+          <label className="flex items-center gap-2 text-[14px] font-bold uppercase text-black">
             Rows
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-8 border border-black/40 bg-white px-2 text-[12px] text-black outline-none"
+              className="h-[40px] min-w-[72px] border border-black bg-white px-2 text-[14px] font-bold uppercase text-black outline-none"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -52,18 +52,18 @@ export function DataTablePagination({
             type="button"
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
-            className="h-8 min-w-[72px] border border-black/40 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-black"
+            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
           >
             Prev
           </button>
-          <span className="min-w-[72px] text-center text-[12px] font-medium text-black">
+          <span className="min-w-[72px] text-center text-[14px] font-bold uppercase text-black">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
-            className="h-8 min-w-[72px] border border-black/40 px-3 text-[11px] font-bold uppercase tracking-[0.08em] text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-black"
+            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
           >
             Next
           </button>

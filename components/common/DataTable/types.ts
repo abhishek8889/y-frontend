@@ -41,6 +41,14 @@ export type DataTablePaginationState = {
   total: number;
 };
 
+export type DataTableEmptyState = {
+  title: string;
+  subtitle?: string;
+  showButton?: boolean;
+  buttonLabel?: string;
+  onButtonClick?: () => void;
+};
+
 export type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
   data: T[];
@@ -70,7 +78,13 @@ export type DataTableProps<T> = {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  /** Simple empty text fallback when `emptyState` is not provided. */
   emptyMessage?: string;
+  /**
+   * Rich empty state (title / subtitle / optional CTA).
+   * Used when the table has no rows and is not loading/erroring.
+   */
+  emptyState?: DataTableEmptyState;
   loadingMessage?: string;
 
   className?: string;

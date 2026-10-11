@@ -123,6 +123,18 @@ export type VenueListResponse = {
   };
 };
 
+export type VenueForEvent = {
+  id: number;
+  name: string;
+  maximum_capacity: number | null;
+};
+
+export type VenueListForEventsResponse = {
+  success: boolean;
+  message: string;
+  data: VenueForEvent[];
+};
+
 export type VenueTypesResponse = {
   success: boolean;
   message: string;
@@ -273,6 +285,16 @@ export const venuesApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { error: true });
       },
     }),
+    getVenuesForEvents: build.query<VenueListForEventsResponse, void>({
+      query: () => ({
+        url: "organisation/venue/venue-list-for-events",
+        method: "GET",
+      }),
+      providesTags: ["Venues"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
+    }),
     getVenueDetails: build.query<VenueDetailsResponse, number | string>({
       query: (venueId) => ({
         url: `organisation/venue/details/${venueId}`,
@@ -383,6 +405,24 @@ export const venuesApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { success: true, error: true });
       },
     }),
+    manageVenueStatus: build.mutation<
+      VenueMutationResponse,
+      { venue_id: number | string; status: "active" | "inactive" }
+    >({
+      query: (body) => ({
+        url: "organisation/venue/manage-status",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        "Venues",
+        "venuePageOverview",
+        { type: "Venues", id: String(arg.venue_id) },
+      ],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { success: true, error: true });
+      },
+    }),
     deleteVenue: build.mutation<
       { success: boolean; message: string; data: { venue_id: number } },
       number | string
@@ -417,6 +457,8 @@ export const {
   useGetVenueTypesQuery,
   useGetVenuePageOverviewQuery,
   useGetVenuesQuery,
+  useLazyGetVenuesQuery,
+  useGetVenuesForEventsQuery,
   useGetVenueDetailsQuery,
   useLazyGetVenueDetailsQuery,
   useGetVenueFacilitiesQuery,
@@ -427,6 +469,7 @@ export const {
   useDeleteCustomSuitableForOptionMutation,
   useCreateVenueMutation,
   useUpdateVenueMutation,
+  useManageVenueStatusMutation,
   useDeleteVenueMutation,
   useDuplicateVenueMutation,
 } = venuesApi;

@@ -3,6 +3,7 @@ import type { SerializedError } from "@reduxjs/toolkit";
 
 type ApiErrorBody = {
   message?: string;
+  error?: string;
   data?: Record<string, string[]>;
 };
 
@@ -13,6 +14,13 @@ function isFetchBaseQueryError(error: unknown): error is FetchBaseQueryError {
 function getErrorBody(error: FetchBaseQueryError): ApiErrorBody | null {
   if (typeof error.data !== "object" || error.data === null) return null;
   return error.data as ApiErrorBody;
+}
+
+function pickMessage(...candidates: unknown[]) {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+  }
+  return null;
 }
 
 export function getApiErrorMessage(
@@ -30,12 +38,15 @@ export function getApiErrorMessage(
       if (firstMessage) return firstMessage;
     }
 
-    if (typeof body?.message === "string" && body.message.trim()) {
-      return body.message;
-    }
+    const fromBody = pickMessage(body?.message, body?.error);
+    if (fromBody) return fromBody;
 
     if (typeof error.data === "string" && error.data.trim()) {
       return error.data;
+    }
+
+    if ("error" in error && typeof error.error === "string" && error.error.trim()) {
+      return error.error;
     }
   }
 

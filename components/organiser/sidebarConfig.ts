@@ -10,6 +10,7 @@ import {
   VENUES_ICON,
   type IconName,
 } from "@/components/ui/IconCard";
+import { getOrganisationModuleLabel } from "@/lib/organisation/moduleLabels";
 
 export type OrganisationSidebarItem = {
   key: string;
@@ -23,71 +24,71 @@ export type OrganisationSidebarItem = {
 
 /**
  * Organisation sidebar order, labels, routes, icons, and permission gates.
- * `key` matches the about-me permissions object module name.
- * `label` can differ from the backend module name.
+ * `key` matches the about-me / permissions-list module name.
+ * Labels come from `lib/organisation/moduleLabels` for shared i18n later.
  */
 export const organisationSidebarConfig: OrganisationSidebarItem[] = [
   {
     key: "dashboard",
-    label: "Dashboard",
+    label: getOrganisationModuleLabel("dashboard"),
     path: "/dashboard",
     icon: DASHBOARD_ICON,
   },
   {
     key: "venues",
-    label: "Venues",
+    label: getOrganisationModuleLabel("venues"),
     path: "/venues",
     icon: VENUES_ICON,
     requiredPermission: "venues.read",
   },
   {
     key: "events",
-    label: "Events",
+    label: getOrganisationModuleLabel("events"),
     path: "/events",
     icon: EVENTS_ICON,
     requiredPermission: "events.read",
   },
   {
-    key: "customers",
-    label: "Customers",
+    key: "org_customers",
+    label: getOrganisationModuleLabel("org_customers"),
     path: "/customers",
     icon: CUSTOMERS_ICON,
-    requiredPermission: "customers.read",
+    requiredPermission: "org_customers.read",
   },
   {
-    key: "clubsite",
-    label: "Clubsite",
+    key: "org_clubsites",
+    label: getOrganisationModuleLabel("org_clubsites"),
     path: "/clubsite",
     icon: CLUBSITE_ICON,
-    requiredPermission: "clubsite.read",
+    requiredPermission: "org_clubsites.read",
   },
   {
-    key: "roles",
-    label: "Roles & Permission",
+    key: "org_roles",
+    label: getOrganisationModuleLabel("org_roles"),
     path: "/roles",
     icon: ROLES_PERMISSION_ICON,
-    requiredPermission: "roles.read",
+    requiredPermission: "org_roles.read",
   },
   {
-    key: "staff",
-    label: "Staff Member",
+    key: "org_staff_members",
+    label: getOrganisationModuleLabel("org_staff_members"),
     path: "/staff",
     icon: STAFF_MEMBER_ICON,
-    requiredPermission: "staff.read",
+    requiredPermission: "org_staff_members.read",
   },
   {
-    key: "finance",
-    label: "Finance",
+    key: "org_finance",
+    label: getOrganisationModuleLabel("org_finance"),
     path: "/finance",
     icon: FINANCE_ICON,
-    requiredPermission: "finance.read",
+    requiredPermission: "org_finance.read",
     hasChevron: true,
   },
   {
-    key: "settings",
-    label: "Settings",
+    key: "org_settings",
+    label: getOrganisationModuleLabel("org_settings"),
     path: "/settings",
     icon: SETTINGS_ICON,
-    requiredPermission: "settings.read",
+    requiredPermission: "org_settings.read",
   },
 ];

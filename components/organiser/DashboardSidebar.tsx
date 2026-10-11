@@ -41,7 +41,7 @@ export function DashboardSidebar({ items }: DashboardSidebarProps) {
     <aside className="h-[calc(100vh-45px)] w-[260px] border-r border-[#000000] bg-[#fff]">
       <nav className="flex h-full flex-col gap-2.5 p-6">
         {visibleItems.map((item) => {
-          const isFinance = item.key === "finance";
+          const isFinance = item.key === "org_finance";
           const isActive =
             !isFinance &&
             (pathname === item.path || pathname.startsWith(`${item.path}/`));

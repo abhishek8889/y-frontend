@@ -1,3 +1,5 @@
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import type { SerializedError } from "@reduxjs/toolkit";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import { appToast } from "@/lib/ui/toast";
 
@@ -23,10 +25,32 @@ type QueryResult = {
   data?: unknown;
 };
 
+/** RTK Query rejects `queryFulfilled` with `{ error, meta, isUnhandledError }`, not the API body. */
+type QueryFulfilledRejection = {
+  error: FetchBaseQueryError | SerializedError;
+  isUnhandledError?: boolean;
+  meta?: unknown;
+};
+
 function getBackendSuccessMessage(data: unknown) {
   if (typeof data !== "object" || data === null) return null;
   const message = (data as { message?: unknown }).message;
   return typeof message === "string" && message.trim() ? message : null;
+}
+
+function getRejectedApiError(caught: unknown): FetchBaseQueryError | SerializedError | undefined {
+  if (typeof caught !== "object" || caught === null) return undefined;
+
+  if ("error" in caught && typeof (caught as QueryFulfilledRejection).error === "object") {
+    return (caught as QueryFulfilledRejection).error;
+  }
+
+  return caught as FetchBaseQueryError | SerializedError;
+}
+
+/** Defer toasts so they never setState on Toaster during another component's mount. */
+function showToast(show: () => void) {
+  queueMicrotask(show);
 }
 
 /**
@@ -53,13 +77,13 @@ export async function withQueryToast(
 
     if (success === true) {
       const backendMessage = getBackendSuccessMessage(result.data);
-      if (backendMessage) appToast.success(backendMessage);
+      if (backendMessage) showToast(() => appToast.success(backendMessage));
     } else if (typeof success === "string" && success.trim()) {
-      appToast.success(success);
+      showToast(() => appToast.success(success));
     }
 
     if (warning?.trim()) {
-      appToast.warning(warning);
+      showToast(() => appToast.warning(warning));
     }
 
     return result;
@@ -67,9 +91,10 @@ export async function withQueryToast(
     if (error === false) throw caught;
 
     if (typeof error === "string" && error.trim()) {
-      appToast.error(error);
+      showToast(() => appToast.error(error));
     } else {
-      appToast.error(getApiErrorMessage(caught as never));
+      const message = getApiErrorMessage(getRejectedApiError(caught));
+      showToast(() => appToast.error(message));
     }
 
     throw caught;

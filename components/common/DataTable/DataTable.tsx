@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DataTableEmpty } from "./DataTableEmpty";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 import type { DataTableProps } from "./types";
@@ -24,10 +25,13 @@ export function DataTable<T>({
   isError = false,
   errorMessage = "Unable to load data.",
   emptyMessage = "No data available.",
+  emptyState,
   loadingMessage = "Loading...",
   className = "",
   bodyHeightClassName = "lg:h-[min(480px,calc(100vh-420px))]",
 }: DataTableProps<T>) {
+  const isEmpty = !isError && !isLoading && data.length === 0;
+
   function handleSort(columnId: string, sortable?: boolean) {
     if (!sortable || !onSortingChange) return;
 
@@ -58,27 +62,27 @@ export function DataTable<T>({
         toolbarExtra={toolbarExtra}
       />
 
-      <div className="overflow-hidden border border-black/100 bg-white">
+      <div className="bg-white">
         <div className={scrollAreaClass}>
-          <table className="min-w-full border-collapse">
+          <table className="w-full min-w-full border-collapse text-left">
             <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-black/30 bg-white">
+              <tr className="border-b border-black/20 text-[14px] font-bold uppercase text-black">
                 {columns.map((column) => {
                   const isSorted = sorting?.id === column.id;
                   return (
                     <th
                       key={column.id}
                       scope="col"
-                      className={`bg-white px-4 py-3 text-[12px] font-bold uppercase tracking-[0.12em] text-black/60 ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
+                      className={`bg-white px-3 py-4 text-[14px] font-bold uppercase text-black ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button
                           type="button"
                           onClick={() => handleSort(column.id, column.sortable)}
-                          className="inline-flex items-center gap-1 uppercase tracking-[0.12em] transition hover:text-black"
+                          className="inline-flex items-center gap-1 uppercase transition hover:opacity-70"
                         >
                           {column.header}
-                          <span aria-hidden="true" className="text-[10px] text-black/40">
+                          <span aria-hidden="true" className="text-[10px] text-black/50">
                             {isSorted ? (sorting?.direction === "asc" ? "↑" : "↓") : "↕"}
                           </span>
                         </button>
@@ -91,12 +95,12 @@ export function DataTable<T>({
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-black/20">
               {isError ? (
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-10 text-center text-[13px] text-[#d32f2f]"
+                    className="px-3 py-10 text-center text-[12px] text-[#d32f2f]"
                   >
                     {errorMessage}
                   </td>
@@ -107,20 +111,23 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-10 text-center text-[13px] text-black/50"
+                    className="px-3 py-10 text-center text-[12px] text-black/55"
                   >
                     {loadingMessage}
                   </td>
                 </tr>
               ) : null}
 
-              {!isError && !isLoading && data.length === 0 ? (
+              {isEmpty ? (
                 <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-10 text-center text-[13px] text-black/50"
-                  >
-                    {emptyMessage}
+                  <td colSpan={columns.length} className="px-3">
+                    <DataTableEmpty
+                      title={emptyState?.title ?? emptyMessage}
+                      subtitle={emptyState?.subtitle}
+                      showButton={emptyState?.showButton}
+                      buttonLabel={emptyState?.buttonLabel}
+                      onButtonClick={emptyState?.onButtonClick}
+                    />
                   </td>
                 </tr>
               ) : null}
@@ -130,7 +137,7 @@ export function DataTable<T>({
                   const rowKey = getRowId?.(row, rowIndex) ?? rowIndex;
 
                   return (
-                    <tr key={rowKey} className="border-b border-black/20 last:border-b-0">
+                    <tr key={rowKey} className="text-[16px] text-black">
                       {columns.map((column) => {
                         const value = getNestedValue(row, column.accessorKey);
                         const content = column.cell
@@ -140,7 +147,7 @@ export function DataTable<T>({
                         return (
                           <td
                             key={column.id}
-                            className={`px-4 py-3 text-[14px] leading-[20px] text-black ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
+                            className={`px-2.5 py-4 text-[16px] leading-[20px] text-black ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
                           >
                             {content}
                           </td>
@@ -153,7 +160,7 @@ export function DataTable<T>({
           </table>
         </div>
 
-        {pagination && onPageChange ? (
+        {pagination && onPageChange && !isEmpty ? (
           <DataTablePagination
             page={pagination.page}
             pageSize={pagination.pageSize}

@@ -8,14 +8,14 @@ import {
   useGetVenuePageOverviewQuery,
   useGetVenueTypesQuery,
   useGetVenuesQuery,
-  useLazyGetVenueDetailsQuery,
-  useUpdateVenueMutation,
+  useManageVenueStatusMutation,
   type Venue,
 } from "@/apis/organisation/venuesApi";
 import {
   ActionMenu,
   DataTable,
   GridCard,
+  StatusBadge,
   WarningAlertIcon,
   YourlistAlert,
   type ActionMenuItem,
@@ -25,7 +25,6 @@ import {
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
-import { buildVenuePayload, mapVenueToFormValues } from "@/components/organiser/venues/venueFormHelpers";
 import { Button } from "@/components/ui/Button";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 
@@ -157,8 +156,7 @@ export default function VenuesPage() {
   const { data: overviewData } = useGetVenuePageOverviewQuery();
   const [deleteVenue, { isLoading: isDeletingVenue }] = useDeleteVenueMutation();
   const [duplicateVenue, { isLoading: isDuplicatingVenue }] = useDuplicateVenueMutation();
-  const [updateVenue, { isLoading: isUpdatingVenue }] = useUpdateVenueMutation();
-  const [fetchVenueDetails, { isFetching: isFetchingVenueDetails }] = useLazyGetVenueDetailsQuery();
+  const [manageVenueStatus, { isLoading: isManagingStatus }] = useManageVenueStatusMutation();
   const { data, isLoading, isFetching, isError } = useGetVenuesQuery({
     per_page: pageSize,
     status: status === "all" ? "" : status,
@@ -167,8 +165,7 @@ export default function VenuesPage() {
     cursor,
   });
 
-  const isConfirmSubmitting =
-    isDeletingVenue || isDuplicatingVenue || isUpdatingVenue || isFetchingVenueDetails;
+  const isConfirmSubmitting = isDeletingVenue || isDuplicatingVenue || isManagingStatus;
   const confirmCopy = confirmState ? getConfirmCopy(confirmState) : null;
 
   const venues = data?.data?.items ?? [];
@@ -231,13 +228,10 @@ export default function VenuesPage() {
       } else if (action === "duplicate") {
         await duplicateVenue(venue.id).unwrap();
       } else if (action === "activate" || action === "deactivate") {
-        const details = await fetchVenueDetails(venue.id).unwrap();
-        const formValues = mapVenueToFormValues(details.data);
-        const payload = buildVenuePayload(
-          formValues,
-          action === "activate" ? "active" : "inactive",
-        );
-        await updateVenue({ venueId: venue.id, body: payload }).unwrap();
+        await manageVenueStatus({
+          venue_id: venue.id,
+          status: action === "activate" ? "active" : "inactive",
+        }).unwrap();
       }
       setConfirmState(null);
     } catch {
@@ -349,22 +343,12 @@ export default function VenuesPage() {
       {
         id: "status",
         header: "Status",
-        cell: ({ row }) => {
-          const isActive = row.status === "active";
-          return (
-            <span
-              className={`text-[12px] font-bold uppercase tracking-[0.12em] ${
-                isActive ? "text-[#24b26b]" : "text-[#ff3a3a]"
-              }`}
-            >
-              <span
-                className="mr-2 inline-block h-[7px] w-[7px] rounded-full align-middle"
-                style={{ backgroundColor: isActive ? "#24b26b" : "#ff3a3a" }}
-              />
-              {isActive ? "Active" : "Inactive"}
-            </span>
-          );
-        },
+        cell: ({ row }) => (
+          <StatusBadge
+            status={row.status}
+            className="text-[12px] tracking-[0.12em]"
+          />
+        ),
       },
       {
         id: "actions",
@@ -406,6 +390,8 @@ export default function VenuesPage() {
   const canGoNext = Boolean(pagination?.next_cursor) || Boolean(pagination?.has_more);
   const canGoPrev = Boolean(pagination?.prev_cursor) || page > 1;
   const paginationTotal = canGoNext ? page * pageSize + 1 : (page - 1) * pageSize + venues.length;
+  const hasListFilters =
+    Boolean(debouncedSearch.trim()) || status !== "all" || venueTypeId !== "all";
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
@@ -486,7 +472,15 @@ export default function VenuesPage() {
             isLoading={isLoading || isFetching}
             isError={isError}
             errorMessage="Unable to load venues."
-            emptyMessage="No venues found."
+            emptyState={{
+              title: hasListFilters ? "NO VENUES FOUND" : "NO VENUES YET",
+              subtitle: hasListFilters
+                ? "Try adjusting your search or filters."
+                : "Create a venue to add your event and sell tickets.",
+              showButton: !hasListFilters,
+              buttonLabel: "+ CREATE VENUE",
+              onButtonClick: () => router.push("/venues/create"),
+            }}
           />
         </div>
       </div>

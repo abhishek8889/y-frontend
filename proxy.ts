@@ -41,7 +41,13 @@ export function proxy(request: NextRequest) {
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/events") ||
         pathname.startsWith("/venues") ||
-        pathname.startsWith("/customers")
+        pathname.startsWith("/customers") ||
+        pathname.startsWith("/clubsite") ||
+        pathname.startsWith("/roles") ||
+        pathname.startsWith("/staff") ||
+        pathname.startsWith("/finance") ||
+        pathname.startsWith("/settings") ||
+        pathname.startsWith("/whitelabels")
       ) {
         return redirectTo(request, buildSurfaceUrl("organiser", pathname, hostHeader));
       }

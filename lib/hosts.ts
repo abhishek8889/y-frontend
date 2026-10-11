@@ -24,7 +24,19 @@ export const authPaths = ["/login", "/signup", "/reset-password", "/account-unde
 
 export const surfacePaths = {
   public: ["/", "/event", ...authPaths],
-  organiser: ["/dashboard", "/events", "/venues", "/customers", ...authPaths],
+  organiser: [
+    "/dashboard",
+    "/events",
+    "/venues",
+    "/customers",
+    "/clubsite",
+    "/roles",
+    "/staff",
+    "/finance",
+    "/settings",
+    "/whitelabels",
+    ...authPaths,
+  ],
   superadmin: ["/admin", ...authPaths],
 } as const;
 

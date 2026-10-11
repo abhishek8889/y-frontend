@@ -1,10 +1,59 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  normalizeEventTickets,
+  useCreateEventTicketMutation,
+  useCreateEventTicketOfferMutation,
+  useDeleteEventTicketMutation,
+  useDeleteEventTicketOfferMutation,
+  useGetEventTicketsQuery,
+  useUpdateEventTicketMutation,
+  useUpdateEventTicketOfferMutation,
+  type EventTicket,
+  type EventTicketStatus,
+} from "@/apis/events/eventsApi";
+import {
+  ActionMenu,
+  StatusBadge,
+  WarningAlertIcon,
+  YourlistAlert,
+  type ActionMenuItem,
+} from "@/components/common";
+import {
+  localDateTimeInZoneToUtcSql,
+  utcSqlToLocalDateTimeInZone,
+} from "@/components/organiser/events/eventFormHelpers";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { SelectField } from "@/components/ui/SelectField";
+import { appToast } from "@/lib/ui/toast";
+
+const PencilIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M13 6.5 17.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const TrashIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 7h16M9 7V5h6v2m-7 0v12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7M10 11v6M14 11v6"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 type TicketOffer = {
   id: string;
@@ -13,8 +62,11 @@ type TicketOffer = {
   quantityCap: number;
   maxTicketsPerOrder: number;
   validPeriod: string;
+  saleStartsAt: string;
+  saleEndsAt: string;
   access: string;
   status: string;
+  sortOrder: number;
 };
 
 type TicketType = {
@@ -31,55 +83,106 @@ type TicketType = {
   offers: TicketOffer[];
 };
 
-type TicketDialog = { type: "ticket" } | { type: "offer"; ticketId: string };
+type TicketDialog =
+  | { type: "ticket"; ticket?: TicketType }
+  | { type: "offer"; ticketId: string; offer?: TicketOffer };
 
-const ticketDescription =
-  "Simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's";
+type DeleteConfirmState =
+  | { type: "ticket"; ticket: TicketType }
+  | { type: "offer"; offer: TicketOffer };
 
-const initialTicketTypes: TicketType[] = [
-  {
-    id: "general-admission",
-    name: "General Admission",
-    description: ticketDescription,
-    price: 25,
-    quantityCap: 150,
-    sold: 120,
-    currency: "Dollar",
-    badgeLabel: "Most Popular",
-    entitlement: "",
-    status: "Active",
-    offers: [
-      { id: "early-bird-one", name: "Early Bird", price: 20, quantityCap: 50, maxTicketsPerOrder: 6, validPeriod: "01 Sep 2026 - 10 Sep 2026", access: "Public", status: "Active" },
-      { id: "early-bird-two", name: "Early Bird", price: 20, quantityCap: 50, maxTicketsPerOrder: 6, validPeriod: "01 Sep 2026 - 10 Sep 2026", access: "Public", status: "Active" },
-    ],
-  },
-  {
-    id: "vip",
-    name: "VIP",
-    description: ticketDescription,
-    price: 75,
-    quantityCap: 50,
-    sold: 12,
-    currency: "Dollar",
-    badgeLabel: "Limited",
-    entitlement: "",
-    status: "Active",
-    offers: [],
-  },
-  {
-    id: "complimentary",
-    name: "Complimentary",
-    description: ticketDescription,
-    price: 0,
-    quantityCap: 25,
-    sold: 0,
-    currency: "Dollar",
-    badgeLabel: "",
-    entitlement: "",
-    status: "Active",
-    offers: [],
-  },
+const currencyOptions = [
+  { value: "USD", label: "USD" },
+  { value: "GBP", label: "GBP" },
+  { value: "EUR", label: "EUR" },
 ];
+
+const statusOptions = [
+  { value: "active", label: "Active" },
+  { value: "draft", label: "Draft" },
+  { value: "inactive", label: "Inactive" },
+  { value: "sold_out", label: "Sold out" },
+];
+
+function toApiCurrency(value: string) {
+  const normalized = value.trim().toUpperCase();
+  if (normalized === "DOLLAR" || normalized === "USD" || normalized === "$") return "USD";
+  if (normalized === "POUND" || normalized === "GBP" || normalized === "£") return "GBP";
+  if (normalized === "EURO" || normalized === "EUR" || normalized === "€") return "EUR";
+  return normalized || "USD";
+}
+
+function toApiStatus(value: string): EventTicketStatus {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "_");
+  if (normalized === "draft") return "draft";
+  if (normalized === "inactive") return "inactive";
+  if (normalized === "sold_out" || normalized === "soldout") return "sold_out";
+  return "active";
+}
+
+function currencySymbol(currency: string) {
+  const code = toApiCurrency(currency);
+  if (code === "GBP") return "£";
+  if (code === "EUR") return "€";
+  return "$";
+}
+
+function formatUtcInEventZone(utcValue: string | null | undefined, timeZone: string) {
+  if (!utcValue?.trim()) return "";
+  const local = utcSqlToLocalDateTimeInZone(utcValue, timeZone);
+  return local ? local.replace("T", " ") : utcValue.trim();
+}
+
+function formatOfferPeriod(
+  from: string | null | undefined,
+  to: string | null | undefined,
+  timeZone: string,
+) {
+  const start = formatUtcInEventZone(from, timeZone);
+  const end = formatUtcInEventZone(to, timeZone);
+  if (start && end) return `${start} - ${end}`;
+  if (start) return start;
+  if (end) return end;
+  return "Not set";
+}
+
+function toApiAccess(value: string) {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "_");
+  if (normalized === "members_only" || normalized === "members") return "members_only";
+  return "public";
+}
+
+function mapApiTicket(ticket: EventTicket, timeZone: string): TicketType {
+  return {
+    id: String(ticket.id),
+    name: ticket.name,
+    description: ticket.description ?? "",
+    price: Number(ticket.base_price ?? ticket.price ?? 0),
+    quantityCap: Number(ticket.quantity_cap ?? ticket.quantity ?? 0),
+    sold: Number(ticket.sold ?? 0),
+    currency: toApiCurrency(ticket.currency ?? "USD"),
+    badgeLabel: ticket.badge_label ?? "",
+    entitlement: ticket.entitlement ?? "",
+    status: toApiStatus(ticket.status ?? "active"),
+    offers: (ticket.offers ?? []).map((offer, index) => ({
+      id: String(offer.id),
+      name: offer.name,
+      price: Number(offer.price ?? 0),
+      quantityCap: Number(offer.quantity_cap ?? 0),
+      maxTicketsPerOrder: Number(offer.max_per_order ?? offer.max_tickets_per_order ?? 6),
+      validPeriod: formatOfferPeriod(
+        offer.sale_starts_at ?? offer.valid_from,
+        offer.sale_ends_at ?? offer.valid_to,
+        timeZone,
+      ),
+      saleStartsAt: offer.sale_starts_at ?? offer.valid_from ?? "",
+      saleEndsAt: offer.sale_ends_at ?? offer.valid_to ?? "",
+      access: offer.access ?? "public",
+      status: offer.status ?? "active",
+      sortOrder: Number(offer.sort_order ?? index),
+    })),
+  };
+}
 
 function TicketDialogFrame({
   title,
@@ -90,9 +193,11 @@ function TicketDialogFrame({
   title: string;
   subtitle: string;
   onClose: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2"
       role="presentation"
@@ -104,7 +209,7 @@ function TicketDialogFrame({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ticket-dialog-title"
-        className="flex max-h-[calc(100dvh-16px)] h-[min(716px,calc(100dvh-16px))] w-full max-w-[640px] flex-col  bg-white shadow-xl"
+        className="flex max-h-[calc(100dvh-16px)] h-[min(716px,calc(100dvh-16px))] w-full max-w-[640px] flex-col bg-white shadow-xl"
       >
         <header className="flex shrink-0 items-center justify-between border-b border-black/70 p-5">
           <div className="flex min-w-0 items-center gap-[10px]">
@@ -127,30 +232,38 @@ function TicketDialogFrame({
         </header>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
-function CreateTicketDialog({
+function TicketFormDialog({
+  ticket,
+  isSubmitting,
   onClose,
-  onCreate,
+  onSubmit,
 }: {
+  ticket?: TicketType;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onCreate: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const isEdit = Boolean(ticket);
+
   return (
     <TicketDialogFrame
-      title="Create ticket"
-      subtitle="Create ticket for event"
+      title={isEdit ? "Edit ticket" : "Create ticket"}
+      subtitle={isEdit ? "Update ticket for event" : "Create ticket for event"}
       onClose={onClose}
     >
-      <form onSubmit={onCreate} className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto py-[14px] px-5">
+      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto px-5 py-[14px]">
           <InputField
             label="Ticket name"
             labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="ticketName"
             required
+            defaultValue={ticket?.name}
             placeholder="e.g. Adult Standing 2025/26"
             density="compact"
             containerClassName="mb-[20px]"
@@ -161,10 +274,11 @@ function CreateTicketDialog({
             as="textarea"
             name="ticketDescription"
             rows={4}
+            defaultValue={ticket?.description}
             placeholder="Type here..."
             containerClassName="mt-1 !h-[86px] !min-h-0 !rounded-[3px] mb-[20px] focus-within:!ring-0"
           />
-          <div className="grid grid-cols-2 gap-2 mb-[20px]">
+          <div className="mb-[20px] grid grid-cols-2 gap-2">
             <InputField
               name="ticketPrice"
               type="number"
@@ -172,7 +286,7 @@ function CreateTicketDialog({
               label="Base price"
               labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
               step="0.01"
-              defaultValue="0"
+              defaultValue={String(ticket?.price ?? 0)}
               density="compact"
               prefix="$"
               className="!pl-0"
@@ -183,41 +297,34 @@ function CreateTicketDialog({
               labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
               type="number"
               min="1"
-              defaultValue="500"
+              defaultValue={String(ticket?.quantityCap ?? 500)}
               required
               density="compact"
             />
           </div>
           <SelectField
             name="ticketCurrency"
-            defaultValue="Dollar"
+            defaultValue={toApiCurrency(ticket?.currency ?? "USD")}
             label="Currency"
             wrapperClassName="mb-[20px]"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"   
-            options={[
-              { value: "Dollar", label: "Dollar" },
-              { value: "Pound", label: "Pound" },
-              { value: "Euro", label: "Euro" },
-            ]}
-            density="compact"            
-          />
-          <RadioGroup
-            name="badgeLabel"
-            legend="Badge label"
             labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
-            optionClassName="!text-[14px]"
-            defaultValue="Most Popular"
-            className="mb-[20px]"
-            variant="pills"
-            options={[
-              { value: "Most Popular", label: "Most Popular" },
-              { value: "Limited", label: "Limited" },
-            ]}
+            options={currencyOptions}
+            density="compact"
+          />
+          <InputField
+            label="Badge label"
+            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            name="badgeLabel"
+            defaultValue={ticket?.badgeLabel ?? ""}
+            placeholder="e.g. Most Popular"
+            density="compact"
+            containerClassName="mb-[20px]"
           />
           <InputField
             label="Entitlement"
             labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="entitlement"
+            defaultValue={ticket?.entitlement}
             placeholder="Add entitlement"
             density="compact"
             containerClassName="mb-[20px]"
@@ -226,13 +333,9 @@ function CreateTicketDialog({
             label="Status"
             labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="ticketStatus"
-            defaultValue="Active"
+            defaultValue={toApiStatus(ticket?.status ?? "active")}
             wrapperClassName="mb-[50px]"
-            options={[
-              { value: "Active", label: "Active" },
-              { value: "Draft", label: "Draft" },
-              { value: "Inactive", label: "Inactive" },
-            ]}
+            options={statusOptions}
             density="compact"
           />
         </div>
@@ -240,15 +343,17 @@ function CreateTicketDialog({
           <Button
             type="button"
             onClick={onClose}
-            className="h-[40px] rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black cursor-pointer hover:bg-black/5"
+            disabled={isSubmitting}
+            className="h-[40px] cursor-pointer rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black hover:bg-black/5 disabled:opacity-50"
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="h-[40px] rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white cursor-pointer hover:bg-black/80"
+            disabled={isSubmitting}
+            className="h-[40px] cursor-pointer rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white hover:bg-black/80 disabled:opacity-50"
           >
-            Create product
+            {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Create ticket"}
           </Button>
         </footer>
       </form>
@@ -258,16 +363,34 @@ function CreateTicketDialog({
 
 function CreateOfferDialog({
   ticket,
+  offer,
+  timeZone,
+  isSubmitting,
   onClose,
-  onCreate,
+  onSubmit,
 }: {
   ticket: TicketType;
+  offer?: TicketOffer;
+  timeZone: string;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onCreate: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const isEditing = Boolean(offer);
+  const saleStartDefault = offer?.saleStartsAt
+    ? utcSqlToLocalDateTimeInZone(offer.saleStartsAt, timeZone)
+    : "";
+  const saleEndDefault = offer?.saleEndsAt
+    ? utcSqlToLocalDateTimeInZone(offer.saleEndsAt, timeZone)
+    : "";
+
   return (
-    <TicketDialogFrame title="Create new offer" subtitle="Create new offer" onClose={onClose}>
-      <form onSubmit={onCreate} className="flex min-h-0 flex-1 flex-col">
+    <TicketDialogFrame
+      title={isEditing ? "Edit offer" : "Create new offer"}
+      subtitle={isEditing ? "Update offer details" : "Create new offer"}
+      onClose={onClose}
+    >
+      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto px-5 py-[14px]">
           <div className="bg-[#ECECEC] py-4 px-5">
             <h4 className="text-[14px] font-bold uppercase leading-[15px] text-black">{ticket.name}</h4>
@@ -280,6 +403,7 @@ function CreateOfferDialog({
             labelClassName="!text-[14px] !leading-[20px]"
             required
             placeholder="Early Birds"
+            defaultValue={offer?.name ?? ""}
             density="compact"
             containerClassName="mb-[20px]"
           />
@@ -291,7 +415,7 @@ function CreateOfferDialog({
               type="number"
               min="0"
               step="0.01"
-              defaultValue="0"
+              defaultValue={String(offer?.price ?? 0)}
               density="compact"
               prefix="$"
               prefixClassName="ml-2 mr-0 text-[14px] text-[#777777]"
@@ -304,7 +428,7 @@ function CreateOfferDialog({
               labelClassName="!text-[14px] !leading-[20px]"
               type="number"
               min="1"
-              defaultValue="500"
+              defaultValue={String(offer?.quantityCap ?? 500)}
               required
               density="compact"
               containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
@@ -317,6 +441,8 @@ function CreateOfferDialog({
               label="Sale start"
               labelClassName="!text-[14px] !leading-[20px]"
               type="datetime-local"
+              required
+              defaultValue={saleStartDefault}
               density="compact"
               containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
               className="!px-1.5 !text-[12px]"
@@ -326,6 +452,8 @@ function CreateOfferDialog({
               label="Sale end"
               labelClassName="!text-[14px] !leading-[20px]"
               type="datetime-local"
+              required
+              defaultValue={saleEndDefault}
               density="compact"
               containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
               className="!px-1.5 !text-[12px]"
@@ -337,7 +465,7 @@ function CreateOfferDialog({
             labelClassName="!text-[14px] !leading-[20px]"
             type="number"
             min="1"
-            defaultValue="6"
+            defaultValue={String(offer?.maxTicketsPerOrder ?? 6)}
             density="compact"
             containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
             className="!px-2 !text-[14px]"
@@ -347,15 +475,18 @@ function CreateOfferDialog({
             legend="Access"
             labelClassName="!text-[14px] !leading-[20px]"
             optionClassName="!text-[14px]"
-            defaultValue="Public"
-            options={[{ value: "Public", label: "Public" }, { value: "Members only", label: "Members only" }]}
+            defaultValue={toApiAccess(offer?.access ?? "public")}
+            options={[
+              { value: "public", label: "Public" },
+              { value: "members_only", label: "Members only" },
+            ]}
           />
           <SelectField
             name="offerStatus"
             label="Status"
             labelClassName="!text-[14px] !leading-[20px]"
-            defaultValue="Active"
-            options={[{ value: "Active", label: "Active" }, { value: "Draft", label: "Draft" }, { value: "Inactive", label: "Inactive" }]}
+            defaultValue={toApiStatus(offer?.status ?? "active")}
+            options={statusOptions}
             density="compact"
             wrapperClassName="mb-[50px]"
             containerClassName="mt-1 !h-10"
@@ -366,15 +497,23 @@ function CreateOfferDialog({
           <Button
             type="button"
             onClick={onClose}
-            className="h-[40px] rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black cursor-pointer hover:bg-black/5"
+            disabled={isSubmitting}
+            className="h-[40px] rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black cursor-pointer hover:bg-black/5 disabled:opacity-50"
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            className="h-[40px] rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white cursor-pointer hover:bg-black/80"
+            disabled={isSubmitting}
+            className="h-[40px] rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white cursor-pointer hover:bg-black/80 disabled:opacity-50"
           >
-            Create offer
+            {isSubmitting
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save changes"
+                : "Create offer"}
           </Button>
         </footer>
       </form>
@@ -382,83 +521,307 @@ function CreateOfferDialog({
   );
 }
 
-export default function TicketsTab({ eventTitle }: { eventTitle: string }) {
-  const [tickets, setTickets] = useState(initialTicketTypes);
-  const [expandedTicketIds, setExpandedTicketIds] = useState<string[]>(["general-admission"]);
+export default function TicketsTab({
+  eventId,
+  eventTitle,
+  eventTimezone,
+}: {
+  eventId: number | string;
+  eventTitle: string;
+  eventTimezone?: string | null;
+}) {
+  const numericEventId = Number(eventId);
+  const { data, isLoading, isError } = useGetEventTicketsQuery(eventId);
+  const [createTicketMutation, { isLoading: isCreatingTicket }] = useCreateEventTicketMutation();
+  const [updateTicketMutation, { isLoading: isUpdatingTicket }] = useUpdateEventTicketMutation();
+  const [deleteTicketMutation, { isLoading: isDeletingTicket }] = useDeleteEventTicketMutation();
+  const [createOfferMutation, { isLoading: isCreatingOffer }] = useCreateEventTicketOfferMutation();
+  const [updateOfferMutation, { isLoading: isUpdatingOffer }] = useUpdateEventTicketOfferMutation();
+  const [deleteOfferMutation, { isLoading: isDeletingOfferMutation }] =
+    useDeleteEventTicketOfferMutation();
+
+  const timeZone =
+    eventTimezone?.trim() || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  const tickets = useMemo(
+    () => normalizeEventTickets(data?.data).map((ticket) => mapApiTicket(ticket, timeZone)),
+    [data?.data, timeZone],
+  );
+  /** null = use default (first ticket expanded); avoids setState-during-mount from syncing tickets */
+  const [expandedTicketIds, setExpandedTicketIds] = useState<string[] | null>(null);
   const [dialog, setDialog] = useState<TicketDialog | null>(null);
-  const [menuTicketId, setMenuTicketId] = useState<string | null>(null);
-  const dialogTicket = dialog?.type === "offer" ? tickets.find((ticket) => ticket.id === dialog.ticketId) : null;
+  const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(null);
+  const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
+  const [isDeletingOffer, setIsDeletingOffer] = useState(false);
+
+  useEffect(() => {
+    setExpandedTicketIds(null);
+    setDialog(null);
+    setOpenActionId(null);
+    setDeleteConfirm(null);
+    setDeletingTicketId(null);
+    setIsDeletingOffer(false);
+  }, [eventId]);
+
+  const resolvedExpandedTicketIds =
+    expandedTicketIds ?? (tickets[0] ? [tickets[0].id] : []);
+  const dialogTicket =
+    dialog?.type === "offer" ? tickets.find((ticket) => ticket.id === dialog.ticketId) : null;
+  const editingTicket = dialog?.type === "ticket" ? dialog.ticket : undefined;
+  const editingOffer = dialog?.type === "offer" ? dialog.offer : undefined;
+  const isSavingTicket = isCreatingTicket || isUpdatingTicket;
+  const isSavingOffer = isCreatingOffer || isUpdatingOffer;
 
   function toggleTicket(ticketId: string) {
-    setExpandedTicketIds((current) =>
-      current.includes(ticketId) ? current.filter((id) => id !== ticketId) : [...current, ticketId],
-    );
+    setExpandedTicketIds((current) => {
+      const base = current ?? (tickets[0] ? [tickets[0].id] : []);
+      return base.includes(ticketId) ? base.filter((id) => id !== ticketId) : [...base, ticketId];
+    });
   }
 
-  function createTicket(event: FormEvent<HTMLFormElement>) {
+  async function saveTicket(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!Number.isFinite(numericEventId)) {
+      appToast.error("Missing event id.");
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("ticketName") ?? "").trim();
     const quantityCap = Number(formData.get("quantityCap"));
-    if (!name || quantityCap < 1) return;
+    if (!name || quantityCap < 1) {
+      appToast.error("Ticket name and quantity cap are required.");
+      return;
+    }
 
-    const ticket: TicketType = {
-      id: crypto.randomUUID(),
+    const payload = {
+      event_id: numericEventId,
       name,
-      description: String(formData.get("ticketDescription") ?? "").trim(),
-      price: Number(formData.get("ticketPrice")) || 0,
-      quantityCap,
-      sold: 0,
-      currency: String(formData.get("ticketCurrency") ?? "Dollar"),
-      badgeLabel: String(formData.get("badgeLabel") ?? ""),
-      entitlement: String(formData.get("entitlement") ?? "").trim(),
-      status: String(formData.get("ticketStatus") ?? "Active"),
-      offers: [],
+      description: String(formData.get("ticketDescription") ?? "").trim() || null,
+      base_price: Number(formData.get("ticketPrice")) || 0,
+      currency: toApiCurrency(String(formData.get("ticketCurrency") ?? "USD")),
+      quantity_cap: quantityCap,
+      badge_label: String(formData.get("badgeLabel") ?? "").trim() || null,
+      entitlement: String(formData.get("entitlement") ?? "").trim() || null,
+      sort_order: editingTicket ? tickets.findIndex((ticket) => ticket.id === editingTicket.id) : tickets.length,
+      status: toApiStatus(String(formData.get("ticketStatus") ?? "active")),
     };
 
-    setTickets((current) => [...current, ticket]);
-    setExpandedTicketIds((current) => [...current, ticket.id]);
-    setDialog(null);
+    try {
+      if (editingTicket) {
+        await updateTicketMutation({ ticketId: editingTicket.id, body: payload }).unwrap();
+      } else {
+        const result = await createTicketMutation(payload).unwrap();
+        const createdId = String(result.data.id);
+        setExpandedTicketIds((current) => {
+          const base = current ?? (tickets[0] ? [tickets[0].id] : []);
+          return base.includes(createdId) ? base : [...base, createdId];
+        });
+      }
+      setDialog(null);
+    } catch {
+      // toast handled by mutation
+    }
   }
 
-  function createOffer(event: FormEvent<HTMLFormElement>, ticketId: string) {
+  function openDeleteConfirm(state: DeleteConfirmState) {
+    setOpenActionId(null);
+    setDeleteConfirm(state);
+  }
+
+  function closeDeleteConfirm() {
+    if (isDeletingTicket || isDeletingOffer || isDeletingOfferMutation) return;
+    setDeleteConfirm(null);
+  }
+
+  async function confirmDelete() {
+    if (!deleteConfirm) return;
+
+    if (deleteConfirm.type === "ticket") {
+      setDeletingTicketId(deleteConfirm.ticket.id);
+      try {
+        await deleteTicketMutation({
+          ticketId: deleteConfirm.ticket.id,
+          eventId,
+        }).unwrap();
+        setDeleteConfirm(null);
+      } catch {
+        // toast handled by mutation
+      } finally {
+        setDeletingTicketId(null);
+      }
+      return;
+    }
+
+    setIsDeletingOffer(true);
+    try {
+      await deleteOfferMutation({
+        offerId: deleteConfirm.offer.id,
+        eventId,
+      }).unwrap();
+      setDeleteConfirm(null);
+    } catch {
+      // toast handled by mutation
+    } finally {
+      setIsDeletingOffer(false);
+    }
+  }
+
+  const deleteConfirmCopy =
+    deleteConfirm?.type === "ticket"
+      ? {
+          message: `Delete "${deleteConfirm.ticket.name}"? This action cannot be undone.`,
+          primaryButtonLabel: "DELETE TICKET",
+        }
+      : deleteConfirm?.type === "offer"
+        ? {
+            message: `Delete "${deleteConfirm.offer.name}"? This action cannot be undone.`,
+            primaryButtonLabel: "DELETE OFFER",
+          }
+        : null;
+
+  const isDeleteSubmitting =
+    Boolean(isDeletingTicket && deletingTicketId) ||
+    isDeletingOffer ||
+    isDeletingOfferMutation;
+
+  function getTicketActions(ticket: TicketType): ActionMenuItem<TicketType>[] {
+    return [
+      {
+        key: "edit",
+        label: "Edit",
+        icon: PencilIcon,
+        onClick: (row) => setDialog({ type: "ticket", ticket: row }),
+      },
+      {
+        key: "delete",
+        label: "Delete",
+        icon: TrashIcon,
+        disabled: isDeletingTicket && deletingTicketId === ticket.id,
+        onClick: (row) => openDeleteConfirm({ type: "ticket", ticket: row }),
+      },
+    ];
+  }
+
+  function getOfferActions(ticketId: string): ActionMenuItem<TicketOffer>[] {
+    return [
+      {
+        key: "edit",
+        label: "Edit",
+        icon: PencilIcon,
+        onClick: (offer) => {
+          setOpenActionId(null);
+          setDialog({ type: "offer", ticketId, offer });
+        },
+      },
+      {
+        key: "delete",
+        label: "Delete",
+        icon: TrashIcon,
+        onClick: (offer) => openDeleteConfirm({ type: "offer", offer }),
+      },
+    ];
+  }
+
+  async function saveOffer(event: FormEvent<HTMLFormElement>, ticketId: string) {
     event.preventDefault();
+    event.stopPropagation();
+
+    const ticketNumericId = Number(ticketId);
+    if (!Number.isFinite(ticketNumericId)) {
+      appToast.error("Missing ticket id.");
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const name = String(formData.get("offerName") ?? "").trim();
     const quantityCap = Number(formData.get("offerQuantityCap"));
-    if (!name || quantityCap < 1) return;
+    const saleStartLocal = String(formData.get("validFrom") ?? "").trim();
+    const saleEndLocal = String(formData.get("validTo") ?? "").trim();
 
-    const validFrom = String(formData.get("validFrom") ?? "");
-    const validTo = String(formData.get("validTo") ?? "");
-    const offer: TicketOffer = {
-      id: crypto.randomUUID(),
+    if (!name || quantityCap < 1) {
+      appToast.error("Offer name and quantity cap are required.");
+      return;
+    }
+    if (!saleStartLocal || !saleEndLocal) {
+      appToast.error("Sale start and sale end are required.");
+      return;
+    }
+
+    let saleStartsAt = "";
+    let saleEndsAt = "";
+    try {
+      saleStartsAt = localDateTimeInZoneToUtcSql(saleStartLocal, timeZone);
+      saleEndsAt = localDateTimeInZoneToUtcSql(saleEndLocal, timeZone);
+    } catch {
+      appToast.error("Invalid sale start or sale end datetime.");
+      return;
+    }
+
+    const ticket = tickets.find((item) => item.id === ticketId);
+    const payload = {
+      ticket_id: ticketNumericId,
       name,
       price: Number(formData.get("offerPrice")) || 0,
-      quantityCap,
-      maxTicketsPerOrder: Number(formData.get("maxTicketsPerOrder")) || 6,
-      validPeriod: validFrom && validTo ? `${validFrom.replace("T", " ")} - ${validTo.replace("T", " ")}` : "Not set",
-      access: String(formData.get("offerAccess") ?? "Public"),
-      status: String(formData.get("offerStatus") ?? "Active"),
+      quantity_cap: quantityCap,
+      sale_starts_at: saleStartsAt,
+      sale_ends_at: saleEndsAt,
+      max_per_order: Number(formData.get("maxTicketsPerOrder")) || 6,
+      access: toApiAccess(String(formData.get("offerAccess") ?? "public")),
+      status: toApiStatus(String(formData.get("offerStatus") ?? "active")),
+      sort_order: editingOffer?.sortOrder ?? ticket?.offers.length ?? 0,
     };
 
-    setTickets((current) => current.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, offers: [...ticket.offers, offer] } : ticket,
-    ));
-    setDialog(null);
+    try {
+      if (editingOffer) {
+        await updateOfferMutation({
+          offerId: editingOffer.id,
+          eventId,
+          body: payload,
+        }).unwrap();
+      } else {
+        await createOfferMutation({ eventId, body: payload }).unwrap();
+        setExpandedTicketIds((current) => {
+          const base = current ?? (tickets[0] ? [tickets[0].id] : []);
+          return base.includes(ticketId) ? base : [...base, ticketId];
+        });
+      }
+      setDialog(null);
+    } catch {
+      // toast handled by mutation
+    }
   }
 
   return (
     <div className="pt-4">
       <div className="mb-[27px] flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-[26px] font-black uppercase leading-[24px] tracking-[-0.03em] text-black">Tickets</h3>
-        <Button type="button" onClick={() => setDialog({ type: "ticket" })} className="cursor-pointer inline-flex h-[40px] items-center justify-center rounded-[4px] border border-black bg-black px-3 text-[14px] leading-[20px] font-bold uppercase text-white hover:bg-white hover:text-black">
+        <Button
+          type="button"
+          onClick={() => setDialog({ type: "ticket" })}
+          className="inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-3 text-[14px] font-bold uppercase leading-[20px] text-white hover:bg-white hover:text-black"
+        >
           + Create ticket
         </Button>
       </div>
 
+      {isLoading ? (
+        <p className="border border-dashed border-black/30 px-4 py-10 text-center text-[13px] text-black/55">
+          Loading tickets...
+        </p>
+      ) : null}
+
+      {isError ? (
+        <p className="border border-dashed border-[#d32f2f]/40 px-4 py-10 text-center text-[13px] text-[#d32f2f]">
+          Unable to load tickets for this event.
+        </p>
+      ) : null}
+
       <div className="space-y-5">
-        {tickets.map((ticket) => {
-          const isExpanded = expandedTicketIds.includes(ticket.id);
+        {!isLoading && !isError
+          ? tickets.map((ticket) => {
+          const isExpanded = resolvedExpandedTicketIds.includes(ticket.id);
           const remaining = Math.max(0, ticket.quantityCap - ticket.sold);
 
           return (
@@ -466,20 +829,16 @@ export default function TicketsTab({ eventTitle }: { eventTitle: string }) {
               <div className="flex items-start justify-between gap-3">
                 <h4 className="text-[18px] leading-[20px] font-bold uppercase text-black">{ticket.name}</h4>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 text-[16px]  leading-[20px] font-bold uppercase text-[#1DB954]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#1DB954]" />{ticket.status}
-                  </span>
-                  <div className="relative">
-                    <button type="button" aria-label={`More actions for ${ticket.name}`} aria-expanded={menuTicketId === ticket.id} onClick={() => setMenuTicketId(menuTicketId === ticket.id ? null : ticket.id)} className="flex h-6 w-5 items-center justify-center text-[18px] leading-none text-black/70 hover:text-black">⋮</button>
-                    {menuTicketId === ticket.id ? (
-                      <button type="button" onClick={() => {
-                        setTickets((current) => current.filter((item) => item.id !== ticket.id));
-                        setMenuTicketId(null);
-                      }} className="absolute right-0 top-7 z-10 whitespace-nowrap border border-black/20 bg-white px-3 py-2 text-[11px] font-bold uppercase text-black shadow-sm hover:bg-black hover:text-white">
-                        Delete ticket
-                      </button>
-                    ) : null}
-                  </div>
+                  <StatusBadge status={ticket.status} className="text-[16px] leading-[20px]" />
+                  <ActionMenu
+                    row={ticket}
+                    actions={getTicketActions(ticket)}
+                    open={openActionId === `ticket-${ticket.id}`}
+                    onOpenChange={(nextOpen) =>
+                      setOpenActionId(nextOpen ? `ticket-${ticket.id}` : null)
+                    }
+                    ariaLabel={`Open actions for ${ticket.name}`}
+                  />
                   <button type="button" aria-label={`${isExpanded ? "Collapse" : "Expand"} ${ticket.name}`} aria-expanded={isExpanded} onClick={() => toggleTicket(ticket.id)} className="flex h-6 w-5 items-center justify-center text-black/70 hover:text-black">
                     <svg className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true"><path d="m1 6.5 5-5 5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </button>
@@ -491,7 +850,7 @@ export default function TicketsTab({ eventTitle }: { eventTitle: string }) {
                   <p className="mt-4 mb-[22px] max-w-[1000px] text-[14px] leading-[20px] text-[#6F6E69]">{ticket.description}</p>
                   <dl className="grid grid-cols-2 border border-black/70 md:grid-cols-4">
                     {[
-                      { label: "Price", value: `${ticket.currency === "Pound" ? "£" : ticket.currency === "Euro" ? "€" : "$"}${ticket.price.toFixed(2)}` },
+                      { label: "Price", value: `${currencySymbol(ticket.currency)}${ticket.price.toFixed(2)}` },
                       { label: "Quantity cap", value: String(ticket.quantityCap) },
                       { label: "Sold", value: String(ticket.sold) },
                       { label: "Remaining", value: String(remaining) },
@@ -530,29 +889,26 @@ export default function TicketsTab({ eventTitle }: { eventTitle: string }) {
                           <th className="border-y border-black/35 py-[18px] px-3 text-center">Action</th>
                         </tr></thead>
                         <tbody>{ticket.offers.map((offer) => (
-                          <tr key={offer.id} className="text-[16px] leading-[20px] text-black">
-                            <td className="border-b border-black/50 py-[18px] px-3">{offer.name}</td>
-                            <td className="border-b border-black/50 py-[18px] px-3">${offer.price.toFixed(2)}</td>
-                            <td className="border-b border-black/50 py-[18px] px-3">{offer.quantityCap}</td>
-                            <td className="border-b border-black/50 py-[18px] px-3">{offer.validPeriod}</td>
-                            <td className="border-b border-black/50 py-[18px] px-3">{offer.access}</td>
-                            <td className="border-b border-black/50 py-[18px] px-3">
-                              <span className="inline-flex items-center gap-1.5 font-bold uppercase text-[#1DB954]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#1DB954]" />{offer.status}</span>
+                          <tr key={offer.id} className="border-b border-black/50 text-[16px] leading-[20px] text-black last:border-b-0">
+                            <td className="py-[18px] px-3">{offer.name}</td>
+                            <td className="py-[18px] px-3">${offer.price.toFixed(2)}</td>
+                            <td className="py-[18px] px-3">{offer.quantityCap}</td>
+                            <td className="py-[18px] px-3">{offer.validPeriod}</td>
+                            <td className="py-[18px] px-3">{offer.access}</td>
+                            <td className="py-[18px] px-3">
+                              <StatusBadge status={offer.status} />
                             </td>
-                            <td className="border-b border-black/50 px-2.5 py-3 text-center">
-                              <button 
-                                type="button" 
-                                // aria-label={`Delete ${offer.name} offer`} 
-                                // onClick={() => setTickets((current) => current.map((item) => item.id === ticket.id ? { ...item, offers: item.offers.filter((itemOffer) => itemOffer.id !== offer.id) } : item))} 
-                                className="cursor-pointer inline-flex h-6 w-6 items-center justify-center rounded-full text-[16px] text-black/65 hover:bg-black/10">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <rect width="24" height="24" rx="12" fill="#F8F8F7"/>
-                                  <path d="M12.0026 12.6693C12.3708 12.6693 12.6693 12.3708 12.6693 12.0026C12.6693 11.6344 12.3708 11.3359 12.0026 11.3359C11.6344 11.3359 11.3359 11.6344 11.3359 12.0026C11.3359 12.3708 11.6344 12.6693 12.0026 12.6693Z" stroke="black" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12.0026 7.9974C12.3708 7.9974 12.6693 7.69892 12.6693 7.33073C12.6693 6.96254 12.3708 6.66406 12.0026 6.66406C11.6344 6.66406 11.3359 6.96254 11.3359 7.33073C11.3359 7.69892 11.6344 7.9974 12.0026 7.9974Z" stroke="black" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M12.0026 17.3333C12.3708 17.3333 12.6693 17.0349 12.6693 16.6667C12.6693 16.2985 12.3708 16 12.0026 16C11.6344 16 11.3359 16.2985 11.3359 16.6667C11.3359 17.0349 11.6344 17.3333 12.0026 17.3333Z" stroke="black" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                              </button>
+                            <td className="px-2.5 py-3 text-center">
+                              <ActionMenu
+                                row={offer}
+                                actions={getOfferActions(ticket.id)}
+                                open={openActionId === `offer-${offer.id}`}
+                                onOpenChange={(nextOpen) =>
+                                  setOpenActionId(nextOpen ? `offer-${offer.id}` : null)
+                                }
+                                ariaLabel={`Open actions for ${offer.name}`}
+                                className="justify-center"
+                              />
                             </td>
                           </tr>
                         ))}</tbody>
@@ -563,12 +919,56 @@ export default function TicketsTab({ eventTitle }: { eventTitle: string }) {
               ) : <p className="mt-[16px] truncate text-[14px] leading-[20px] text-[#6F6E69]">{ticket.description}</p>}
             </article>
           );
-        })}
-        {tickets.length === 0 ? <p className="border border-dashed border-black/30 px-4 py-10 text-center text-[13px] text-black/55">No tickets created for {eventTitle} yet.</p> : null}
+        })
+          : null}
+        {!isLoading && !isError && tickets.length === 0 ? (
+          <p className="border border-dashed border-black/30 px-4 py-10 text-center text-[13px] text-black/55">
+            No tickets created for {eventTitle} yet.
+          </p>
+        ) : null}
       </div>
 
-      {dialog?.type === "ticket" ? <CreateTicketDialog onClose={() => setDialog(null)} onCreate={createTicket} /> : null}
-      {dialog?.type === "offer" && dialogTicket ? <CreateOfferDialog ticket={dialogTicket} onClose={() => setDialog(null)} onCreate={(event) => createOffer(event, dialog.ticketId)} /> : null}
+      {dialog?.type === "ticket" ? (
+        <TicketFormDialog
+          key={editingTicket?.id ?? "create-ticket"}
+          ticket={editingTicket}
+          isSubmitting={isSavingTicket}
+          onClose={() => setDialog(null)}
+          onSubmit={(event) => {
+            void saveTicket(event);
+          }}
+        />
+      ) : null}
+      {dialog?.type === "offer" && dialogTicket ? (
+        <CreateOfferDialog
+          key={editingOffer ? `offer-edit-${editingOffer.id}` : `offer-create-${dialog.ticketId}`}
+          ticket={dialogTicket}
+          offer={editingOffer}
+          timeZone={timeZone}
+          isSubmitting={isSavingOffer}
+          onClose={() => setDialog(null)}
+          onSubmit={(event) => {
+            void saveOffer(event, dialog.ticketId);
+          }}
+        />
+      ) : null}
+
+      <YourlistAlert
+        isOpen={Boolean(deleteConfirm)}
+        onClose={closeDeleteConfirm}
+        title="ARE YOU SURE?"
+        message={deleteConfirmCopy?.message}
+        icon={<WarningAlertIcon />}
+        variant="warning"
+        showFooter
+        secondaryButtonLabel="CANCEL"
+        onSecondaryClick={closeDeleteConfirm}
+        primaryButtonLabel={deleteConfirmCopy?.primaryButtonLabel}
+        onPrimaryClick={() => {
+          void confirmDelete();
+        }}
+        isSubmitting={isDeleteSubmitting}
+      />
     </div>
   );
 }

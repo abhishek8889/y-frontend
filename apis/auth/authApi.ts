@@ -18,9 +18,19 @@ export type LoginResponse = {
   };
 };
 
+export type AboutMeOrganisation = {
+  id?: number;
+  name?: string | null;
+  logo?: string | null;
+  profile_image?: string | null;
+};
+
 export type AboutMeUser = AuthUser & {
   organisation_approve_status?: boolean;
   permissions?: Record<string, string[]>;
+  /** Flat organisation name when API does not nest `organisation`. */
+  organisation_name?: string | null;
+  organisation?: AboutMeOrganisation | null;
 };
 
 export type AboutMeResponse = {

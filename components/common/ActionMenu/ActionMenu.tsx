@@ -9,6 +9,9 @@ type MenuPosition = {
   left: number;
 };
 
+const VIEWPORT_PADDING = 8;
+const TRIGGER_GAP = 6;
+
 function itemClassName(variant: ActionMenuItem["variant"], disabled?: boolean) {
   const base =
     "flex w-full items-center gap-2.5 rounded-[3px] border border-transparent px-2.5 py-2 text-left text-[14px] leading-[18px] transition";
@@ -22,6 +25,40 @@ function itemClassName(variant: ActionMenuItem["variant"], disabled?: boolean) {
   }
 
   return `${base} text-black hover:border-black`;
+}
+
+function computeMenuPosition(
+  trigger: DOMRect,
+  menuWidth: number,
+  menuHeight: number,
+  align: "left" | "right",
+): MenuPosition {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let left = align === "right" ? trigger.right - menuWidth : trigger.left;
+  left = Math.min(
+    Math.max(VIEWPORT_PADDING, left),
+    Math.max(VIEWPORT_PADDING, viewportWidth - menuWidth - VIEWPORT_PADDING),
+  );
+
+  const spaceBelow = viewportHeight - trigger.bottom - TRIGGER_GAP - VIEWPORT_PADDING;
+  const spaceAbove = trigger.top - TRIGGER_GAP - VIEWPORT_PADDING;
+  const fitsBelow = menuHeight <= spaceBelow;
+  const fitsAbove = menuHeight <= spaceAbove;
+
+  // Prefer below; flip above when there isn't enough room underneath.
+  const openAbove = !fitsBelow && (fitsAbove || spaceAbove > spaceBelow);
+
+  let top = openAbove ? trigger.top - menuHeight - TRIGGER_GAP : trigger.bottom + TRIGGER_GAP;
+
+  // Keep the full menu inside the viewport when neither side fits perfectly.
+  top = Math.min(
+    Math.max(VIEWPORT_PADDING, top),
+    Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
+  );
+
+  return { top, left };
 }
 
 export function ActionMenu<T>({
@@ -55,22 +92,15 @@ export function ActionMenu<T>({
   function updatePosition() {
     const trigger = triggerRef.current;
     const menu = menuRef.current;
-    if (!trigger) return;
+    if (!trigger || !menu) return;
 
-    const rect = trigger.getBoundingClientRect();
-    const menuWidth = menu?.offsetWidth ?? 196;
-    const menuHeight = menu?.offsetHeight ?? 0;
-    const gap = 6;
-
-    let left = align === "right" ? rect.right - menuWidth : rect.left;
-    left = Math.min(Math.max(8, left), window.innerWidth - menuWidth - 8);
-
-    let top = rect.bottom + gap;
-    if (top + menuHeight > window.innerHeight - 8 && rect.top > menuHeight + gap) {
-      top = rect.top - menuHeight - gap;
-    }
-
-    setPosition({ top, left });
+    const next = computeMenuPosition(
+      trigger.getBoundingClientRect(),
+      menu.offsetWidth,
+      menu.offsetHeight,
+      align,
+    );
+    setPosition(next);
   }
 
   useEffect(() => {
@@ -85,6 +115,15 @@ export function ActionMenu<T>({
 
     updatePosition();
 
+    const menu = menuRef.current;
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" && menu
+        ? new ResizeObserver(() => {
+            updatePosition();
+          })
+        : null;
+    if (menu && resizeObserver) resizeObserver.observe(menu);
+
     function handleReposition() {
       updatePosition();
     }
@@ -93,6 +132,7 @@ export function ActionMenu<T>({
     window.addEventListener("scroll", handleReposition, true);
 
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", handleReposition);
       window.removeEventListener("scroll", handleReposition, true);
     };
@@ -128,8 +168,10 @@ export function ActionMenu<T>({
     setOpen(false);
   }
 
+  // Render while open even before position is known so we can measure real menu size,
+  // then flip above/below based on available viewport space.
   const menu =
-    mounted && open && position ? (
+    mounted && open ? (
       createPortal(
         <div
           ref={menuRef}
@@ -137,7 +179,12 @@ export function ActionMenu<T>({
           role="menu"
           aria-label="Actions"
           className="fixed z-[100] min-w-[180px] rounded-[4px] border border-black bg-white p-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-          style={{ top: position.top, left: position.left }}
+          style={{
+            top: position?.top ?? 0,
+            left: position?.left ?? 0,
+            visibility: position ? "visible" : "hidden",
+            pointerEvents: position ? "auto" : "none",
+          }}
         >
           {visibleActions.map((action) => (
             <button

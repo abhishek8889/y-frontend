@@ -1,10 +1,13 @@
 export {
   DataTable,
+  DataTableEmpty,
   DataTableToolbar,
   DataTablePagination,
 } from "./DataTable";
 export type {
   DataTableColumn,
+  DataTableEmptyState,
+  DataTableEmptyProps,
   DataTableFilter,
   DataTableFilterOption,
   DataTablePaginationState,
@@ -24,3 +27,5 @@ export type { ActionMenuItem, ActionMenuItemVariant, ActionMenuProps } from "./A
 
 export { YourlistAlert, SuccessCheckIcon, WarningAlertIcon } from "./YourlistAlert";
 export type { YourlistAlertProps, YourlistAlertVariant } from "./YourlistAlert";
+
+export { StatusBadge } from "./StatusBadge";
