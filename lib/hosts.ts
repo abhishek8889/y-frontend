@@ -23,9 +23,21 @@ export function getHostSurface(hostHeader: string): AppSurface {
 export const authPaths = ["/login", "/signup", "/reset-password", "/account-under-review", "/unauthorized"];
 
 export const surfacePaths = {
-  public: ["/", "/event", "/events", "/about", ...authPaths],
-  organiser: ["/dashboard", "/events", "/venues", "/customers", ...authPaths],
-  superadmin: ["/admin", "/platform-login", ...authPaths],
+  public: ["/", "/event", ...authPaths],
+  organiser: [
+    "/dashboard",
+    "/events",
+    "/venues",
+    "/customers",
+    "/clubsite",
+    "/roles",
+    "/staff",
+    "/finance",
+    "/settings",
+    "/whitelabels",
+    ...authPaths,
+  ],
+  superadmin: ["/admin", ...authPaths],
 } as const;
 
 export function isAuthPath(pathname: string) {

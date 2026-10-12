@@ -1,15 +1,70 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  extractRolePermissionIds,
+  normalizePermissionsList,
+  useCreateRoleMutation,
+  useGetPermissionsListQuery,
+  useGetRoleListQuery,
+  useGetRoleWithPermissionsQuery,
+  useUpdateRoleMutation,
+  type OrganisationRole,
+} from "@/apis/organisation/rolesApi";
+import {
+  ActionMenu,
+  DataTableEmpty,
+  StatusBadge,
+  type ActionMenuItem,
+} from "@/components/common";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 import { InputField } from "@/components/ui/InputField";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { appToast } from "@/lib/ui/toast";
+
+const PencilIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+    <path d="M13 6.5 17.5 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const CopyIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="8" y="8" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <path
+      d="M6 15V6.5A1.5 1.5 0 0 1 7.5 5H16"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const CircleXIcon = (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+    <path
+      d="m9.5 9.5 5 5m0-5-5 5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 
 type RoleStatus = "Active" | "Inactive";
 
 type Role = {
   id: number;
+  slug: string;
   name: string;
   description: string;
   staffMembers: number;
@@ -20,136 +75,203 @@ type Role = {
   updated: string;
 };
 
-const permissionGroups = [
-  {
-    id: "events",
-    name: "Events",
-    description: "Manage events, ticketing and event settings.",
-    actions: ["View Events", "Create Events", "Update Events", "Delete Events"],
-  },
-  {
-    id: "venues",
-    name: "Venues",
-    description: "Manage venues, facilities and venue settings.",
-    actions: ["View Venues", "Create Venues", "Update Venues", "Delete Venues"],
-  },
-  {
-    id: "customers",
-    name: "Customers",
-    description: "Manage customers data and management.",
-    actions: ["View Customers", "Update Customers"],
-  },
-  {
-    id: "check-in",
-    name: "Check-In",
-    description: "Allow access to ticket scanning and attendance management.",
-    actions: ["View Check-In", "Scan Tickets", "Manage Attendance"],
-  },
-  {
-    id: "finance",
-    name: "Finance",
-    description: "View reports and manage payouts.",
-    actions: ["View Finance", "Manage Payouts", "Manage Refunds"],
-  },
-  {
-    id: "settings",
-    name: "Settings",
-    description: "Manage organisation settings, staff and permissions.",
-    actions: ["View Settings", "Manage Staff", "Manage Permissions"],
-  },
-] as const;
+const ROLES_PAGE_SIZE = 10;
 
-const allPermissionIds = permissionGroups.flatMap((group) =>
-  group.actions.map((action) => `${group.id}:${action}`),
-);
-const eventPermissionIds = permissionGroups[0].actions.map((action) => `events:${action}`);
+function formatRoleDate(value: string | null | undefined) {
+  if (!value?.trim()) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
 
-const initialRoles: Role[] = [
-  {
-    id: 1,
-    name: "Organisation admin",
-    description: "Full access to all features and settings.",
-    staffMembers: 2,
-    permissions: 10,
-    permissionIds: [
-      ...permissionGroups[0].actions.map((action) => `events:${action}`),
-      ...permissionGroups[1].actions.map((action) => `venues:${action}`),
-      "finance:View Finance",
-      "finance:Manage Payouts",
-    ],
-    status: "Active",
-    created: "01 Sep 2026",
-    updated: "01 Sep 2026",
-  },
-  {
-    id: 2,
-    name: "Event manager",
-    description: "Can manage events, ticketing and event related content.",
-    staffMembers: 4,
-    permissions: 13,
-    permissionIds: [
-      ...permissionGroups[0].actions.map((action) => `events:${action}`),
-      "venues:View Venues",
-      ...permissionGroups[2].actions.map((action) => `customers:${action}`),
-      ...permissionGroups[3].actions.map((action) => `check-in:${action}`),
-      ...permissionGroups[4].actions.map((action) => `finance:${action}`),
-    ],
-    status: "Active",
-    created: "01 Sep 2026",
-    updated: "01 Sep 2026",
-  },
-  {
-    id: 3,
-    name: "Venue manager",
-    description: "Can manage venues and venue related content.",
-    staffMembers: 3,
-    permissions: 8,
-    permissionIds: [
-      ...permissionGroups[0].actions.map((action) => `events:${action}`),
-      ...permissionGroups[1].actions.map((action) => `venues:${action}`),
-    ],
-    status: "Active",
-    created: "01 Sep 2026",
-    updated: "01 Sep 2026",
-  },
-];
+function toRoleStatus(status: string | null | undefined): RoleStatus {
+  const normalized = String(status ?? "")
+    .trim()
+    .toLowerCase();
+  return normalized === "inactive" ? "Inactive" : "Active";
+}
+
+function countPermissions(role: OrganisationRole) {
+  if (typeof role.permissions_count === "number") return role.permissions_count;
+  if (typeof role.permissions === "number") return role.permissions;
+  if (Array.isArray(role.permissions)) return role.permissions.length;
+  if (Array.isArray(role.permission_ids)) return role.permission_ids.length;
+  return 0;
+}
+
+function mapPermissionIds(role: OrganisationRole) {
+  if (Array.isArray(role.permission_ids)) return role.permission_ids.map(String);
+  if (Array.isArray(role.permissions)) return role.permissions.map(String);
+  return [];
+}
+
+function mapApiRole(role: OrganisationRole): Role {
+  return {
+    id: Number(role.id),
+    slug: String(role.slug ?? role.id),
+    name: role.name ?? "",
+    description: role.description ?? "",
+    staffMembers: Number(role.staff_members ?? role.staff_count ?? 0),
+    permissions: countPermissions(role),
+    permissionIds: mapPermissionIds(role),
+    status: toRoleStatus(role.status),
+    created: formatRoleDate(role.created_at ?? role.created),
+    updated: formatRoleDate(role.updated_at ?? role.updated),
+  };
+}
+
+function toNumericPermissionIds(
+  selectedIds: string[],
+  permissionById: Map<string, { value: string | number; key: string }>,
+) {
+  const ids: number[] = [];
+  for (const selectedId of selectedIds) {
+    const value = permissionById.get(selectedId)?.value ?? selectedId;
+    const numeric = typeof value === "number" ? value : Number(value);
+    if (Number.isFinite(numeric)) ids.push(numeric);
+  }
+  return ids;
+}
 
 export default function RolesPage() {
-  const [roles, setRoles] = useState(initialRoles);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [month, setMonth] = useState("2026-06");
+  const [month, setMonth] = useState("");
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [page, setPage] = useState(1);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
+  const [detailsHydratedId, setDetailsHydratedId] = useState<number | null>(null);
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(eventPermissionIds);
-  const [expandedPermissionGroups, setExpandedPermissionGroups] = useState<string[]>(["events"]);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [expandedPermissionGroups, setExpandedPermissionGroups] = useState<string[]>([]);
   const [openActionsId, setOpenActionsId] = useState<number | null>(null);
 
-  const filteredRoles = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return roles.filter((role) =>
-      (!query || `${role.name} ${role.description}`.toLowerCase().includes(query))
-      && (statusFilter === "all" || role.status.toLowerCase() === statusFilter),
+  const debouncedSearch = useDebouncedValue(search, 400);
+
+  useEffect(() => {
+    setCursor(undefined);
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data, isLoading, isFetching, isError } = useGetRoleListQuery({
+    search: debouncedSearch.trim(),
+    per_page: ROLES_PAGE_SIZE,
+    cursor,
+  });
+  const {
+    data: permissionsData,
+    isLoading: isPermissionsLoading,
+    isError: isPermissionsError,
+  } = useGetPermissionsListQuery(undefined, { skip: !roleDialogOpen });
+  const {
+    data: roleDetailsData,
+    isLoading: isRoleDetailsLoading,
+    isError: isRoleDetailsError,
+    isFetching: isRoleDetailsFetching,
+  } = useGetRoleWithPermissionsQuery(editingRoleId as number, {
+    skip: !roleDialogOpen || editingRoleId == null,
+  });
+  const [createRole, { isLoading: isCreatingRole }] = useCreateRoleMutation();
+  const [updateRole, { isLoading: isUpdatingRole }] = useUpdateRoleMutation();
+
+  const permissionGroups = useMemo(
+    () => normalizePermissionsList(permissionsData?.data),
+    [permissionsData?.data],
+  );
+
+  const permissionById = useMemo(() => {
+    const map = new Map<string, { value: string | number; key: string }>();
+    for (const group of permissionGroups) {
+      for (const permission of group.permissions) {
+        map.set(permission.id, { value: permission.value, key: permission.key });
+      }
+    }
+    return map;
+  }, [permissionGroups]);
+
+  const [roles, setRoles] = useState<Role[]>([]);
+  const pagination = data?.data?.pagination;
+
+  useEffect(() => {
+    setRoles((data?.data?.items ?? []).map(mapApiRole));
+  }, [data?.data?.items]);
+
+  useEffect(() => {
+    if (!roleDialogOpen || !permissionGroups.length) return;
+    setExpandedPermissionGroups((current) =>
+      current.length ? current : [permissionGroups[0].module],
     );
-  }, [roles, search, statusFilter]);
+    setSelectedPermissions((current) => {
+      if (!current.length) return current;
+      const resolved = new Set<string>();
+      for (const group of permissionGroups) {
+        for (const permission of group.permissions) {
+          if (
+            current.includes(permission.id) ||
+            current.includes(permission.key) ||
+            current.includes(String(permission.value))
+          ) {
+            resolved.add(permission.id);
+          }
+        }
+      }
+      return resolved.size ? Array.from(resolved) : current;
+    });
+  }, [permissionGroups, roleDialogOpen]);
+
+  useEffect(() => {
+    if (!roleDialogOpen || editingRoleId == null) {
+      setDetailsHydratedId(null);
+      return;
+    }
+
+    const detail = roleDetailsData?.data;
+    if (!detail || detailsHydratedId === editingRoleId) return;
+    if (detail.id != null && Number(detail.id) !== editingRoleId) return;
+
+    setRoleName(detail.name ?? "");
+    setDescription(detail.description ?? "");
+    setSelectedPermissions(extractRolePermissionIds(detail));
+    setDetailsHydratedId(editingRoleId);
+  }, [roleDialogOpen, editingRoleId, roleDetailsData?.data, detailsHydratedId]);
+
+  const filteredRoles = useMemo(() => {
+    return roles.filter(
+      (role) => statusFilter === "all" || role.status.toLowerCase() === statusFilter,
+    );
+  }, [roles, statusFilter]);
+
+  const canGoNext = Boolean(pagination?.next_cursor) || Boolean(pagination?.has_more);
+  const canGoPrev = Boolean(pagination?.prev_cursor) || page > 1;
+  const isSavingRole = isCreatingRole || isUpdatingRole;
+  const isEditDialogLoading =
+    editingRoleId != null &&
+    (isRoleDetailsLoading || isRoleDetailsFetching) &&
+    detailsHydratedId !== editingRoleId;
 
   function openCreateDialog() {
     setEditingRoleId(null);
+    setDetailsHydratedId(null);
     setRoleName("");
     setDescription("");
-    setSelectedPermissions([...eventPermissionIds]);
-    setExpandedPermissionGroups(["events"]);
+    setSelectedPermissions([]);
+    setExpandedPermissionGroups([]);
     setRoleDialogOpen(true);
   }
 
   function openEditDialog(role: Role) {
     setEditingRoleId(role.id);
-    setRoleName(role.name);
-    setDescription(role.description);
-    setSelectedPermissions(role.permissionIds);
-    setExpandedPermissionGroups(["events"]);
+    setDetailsHydratedId(null);
+    setRoleName("");
+    setDescription("");
+    setSelectedPermissions([]);
+    setExpandedPermissionGroups([]);
     setOpenActionsId(null);
     setRoleDialogOpen(true);
   }
@@ -181,62 +303,135 @@ export default function RolesPage() {
     }
   }
 
-  function saveRole(event: FormEvent<HTMLFormElement>) {
+  async function saveRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = roleName.trim();
     const roleDescription = description.trim();
-    if (!name) return;
-    const permissionIds = selectedPermissions.filter((permissionId) => allPermissionIds.includes(permissionId));
-
-    if (editingRoleId !== null) {
-      setRoles((current) => current.map((role) =>
-        role.id === editingRoleId
-          ? { ...role, name, description: roleDescription, permissionIds, permissions: permissionIds.length, updated: "06 Oct 2026" }
-          : role,
-      ));
-    } else {
-      setRoles((current) => [
-        ...current,
-        {
-          id: Math.max(0, ...current.map((role) => role.id)) + 1,
-          name,
-          description: roleDescription,
-          staffMembers: 0,
-          permissions: permissionIds.length,
-          permissionIds,
-          status: "Active",
-          created: "06 Oct 2026",
-          updated: "06 Oct 2026",
-        },
-      ]);
+    if (!name) {
+      appToast.error("Role name is required.");
+      return;
     }
-    setEditingRoleId(null);
-    setRoleDialogOpen(false);
+    if (!selectedPermissions.length) {
+      appToast.error("Select at least one permission.");
+      return;
+    }
+
+    const permissionIds = toNumericPermissionIds(selectedPermissions, permissionById);
+
+    if (!permissionIds.length) {
+      appToast.error("Select at least one permission.");
+      return;
+    }
+
+    try {
+      if (editingRoleId !== null) {
+        await updateRole({
+          roleId: editingRoleId,
+          body: {
+            name,
+            description: roleDescription || null,
+            permission_ids: permissionIds,
+          },
+        }).unwrap();
+      } else {
+        await createRole({
+          name,
+          description: roleDescription || null,
+          permissions: permissionIds,
+        }).unwrap();
+      }
+      setRoleDialogOpen(false);
+      setEditingRoleId(null);
+      setDetailsHydratedId(null);
+      setCursor(undefined);
+      setPage(1);
+    } catch {
+      // toast handled by mutation
+    }
   }
 
   function duplicateRole(role: Role) {
-    setRoles((current) => [
-      ...current,
-      {
-        ...role,
-        id: Math.max(0, ...current.map((item) => item.id)) + 1,
-        name: `${role.name} copy`,
-        staffMembers: 0,
-        created: "06 Oct 2026",
-        updated: "06 Oct 2026",
-      },
-    ]);
+    const today = formatRoleDate(new Date().toISOString());
+    setRoles((current) => {
+      const nextId = Math.max(0, ...current.map((item) => item.id)) + 1;
+      return [
+        ...current,
+        {
+          ...role,
+          id: nextId,
+          slug: `${role.slug}-copy-${nextId}`,
+          name: `${role.name} copy`,
+          staffMembers: 0,
+          created: today,
+          updated: today,
+        },
+      ];
+    });
     setOpenActionsId(null);
   }
 
   function toggleRoleStatus(roleId: number) {
-    setRoles((current) => current.map((role) =>
-      role.id === roleId
-        ? { ...role, status: role.status === "Active" ? "Inactive" : "Active", updated: "06 Oct 2026" }
-        : role,
-    ));
+    const today = formatRoleDate(new Date().toISOString());
+    setRoles((current) =>
+      current.map((role) =>
+        role.id === roleId
+          ? {
+              ...role,
+              status: role.status === "Active" ? "Inactive" : "Active",
+              updated: today,
+            }
+          : role,
+      ),
+    );
     setOpenActionsId(null);
   }
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage > page && pagination?.next_cursor) {
+      setCursor(pagination.next_cursor);
+      setPage(nextPage);
+      return;
+    }
+
+    if (nextPage < page && pagination?.prev_cursor) {
+      setCursor(pagination.prev_cursor);
+      setPage(nextPage);
+    }
+  }
+
+  const roleActions = useMemo<ActionMenuItem<Role>[]>(
+    () => [
+      {
+        key: "edit",
+        label: "Edit role",
+        icon: PencilIcon,
+        onClick: (role) => openEditDialog(role),
+      },
+      {
+        key: "duplicate",
+        label: "Duplicate role",
+        icon: CopyIcon,
+        onClick: (role) => duplicateRole(role),
+      },
+      {
+        key: "toggle-status",
+        label: "Deactivate role",
+        icon: CircleXIcon,
+        hidden: (role) => role.status !== "Active",
+        onClick: (role) => toggleRoleStatus(role.id),
+      },
+      {
+        key: "activate",
+        label: "Activate role",
+        icon: CircleXIcon,
+        hidden: (role) => role.status === "Active",
+        onClick: (role) => toggleRoleStatus(role.id),
+      },
+    ],
+    [],
+  );
+
+  const isTableLoading = isLoading || isFetching;
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
@@ -300,7 +495,7 @@ export default function RolesPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[1040px] border-collapse text-left">
               <thead>
-                <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
+                <tr className="border-b border-black/20 text-[14px] font-bold uppercase text-black">
                   <th className="py-4 px-3">Role name</th>
                   <th className="py-4 px-3">Description</th>
                   <th className="py-4 px-3">Staff member</th>
@@ -311,54 +506,99 @@ export default function RolesPage() {
                   <th className="py-4 px-3 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredRoles.map((role) => (
-                  <tr key={role.id} className="border-b border-black text-[16px] text-black">
-                    <td className="whitespace-nowrap px-2.5 py-4">{role.name}</td>
-                    <td className="max-w-[310px] px-2.5 py-3.5">{role.description}</td>
-                    <td className="px-2.5 py-4">{role.staffMembers}</td>
-                    <td className="px-2.5 py-4">{role.permissions}</td>
-                    <td className="whitespace-nowrap px-2.5 py-4">
-                      <span className={role.status === "Active" ? "font-bold text-[#2dbb5a]" : "font-bold text-[#999]"}>
-                        <span aria-hidden="true">● </span>{role.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-2.5 py-4">{role.created}</td>
-                    <td className="whitespace-nowrap px-2.5 py-4">{role.updated}</td>
-                    <td className="px-2.5 py-3.5 text-center">
-                      <div className="relative inline-flex">
-                        <button
-                          type="button"
-                          aria-label={`Actions for ${role.name}`}
-                          aria-expanded={openActionsId === role.id}
-                          onClick={() => setOpenActionsId((current) => current === role.id ? null : role.id)}
-                          className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.035] text-[18px] leading-none text-black/75 hover:bg-black/10"
-                        >
-                          ⋮
-                        </button>
-                        {openActionsId === role.id ? (
-                          <div className="absolute right-0 top-8 z-10 min-w-[150px] border border-black/50 bg-white p-1 text-left shadow-md">
-                            <button type="button" onClick={() => openEditDialog(role)} className="block w-full px-2.5 py-2 text-left text-[11px] hover:bg-black/5">Edit role</button>
-                            <button type="button" onClick={() => duplicateRole(role)} className="block w-full px-2.5 py-2 text-left text-[11px] hover:bg-black/5">Duplicate role</button>
-                            <button type="button" onClick={() => toggleRoleStatus(role.id)} className="block w-full px-2.5 py-2 text-left text-[11px] hover:bg-black/5">
-                              {role.status === "Active" ? "Deactivate role" : "Activate role"}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
+              <tbody className="divide-y divide-black/20">
+                {isError ? (
+                  <tr>
+                    <td colSpan={8} className="px-3 py-10 text-center text-[12px] text-[#d32f2f]">
+                      Unable to load roles.
                     </td>
                   </tr>
-                ))}
-                {filteredRoles.length === 0 ? (
+                ) : null}
+
+                {!isError && isTableLoading && roles.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-3 py-10 text-center text-[12px] text-black/55">
-                      No roles match your search or status filter.
+                      Loading roles...
+                    </td>
+                  </tr>
+                ) : null}
+
+                {!isError
+                  ? filteredRoles.map((role) => (
+                      <tr key={role.id} className="text-[16px] text-black">
+                        <td className="whitespace-nowrap px-2.5 py-4">{role.name}</td>
+                        <td className="max-w-[310px] px-2.5 py-3.5">{role.description || "—"}</td>
+                        <td className="px-2.5 py-4">{role.staffMembers}</td>
+                        <td className="px-2.5 py-4">{role.permissions}</td>
+                        <td className="whitespace-nowrap px-2.5 py-4">
+                          <StatusBadge status={role.status} className="text-[16px]" />
+                        </td>
+                        <td className="whitespace-nowrap px-2.5 py-4">{role.created}</td>
+                        <td className="whitespace-nowrap px-2.5 py-4">{role.updated}</td>
+                        <td className="px-2.5 py-3.5 text-center">
+                          <ActionMenu
+                            row={role}
+                            actions={roleActions}
+                            open={openActionsId === role.id}
+                            onOpenChange={(nextOpen) =>
+                              setOpenActionsId(nextOpen ? role.id : null)
+                            }
+                            ariaLabel={`Actions for ${role.name}`}
+                            className="justify-center"
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+
+                {!isError && !isTableLoading && filteredRoles.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-3">
+                      <DataTableEmpty
+                        title={
+                          debouncedSearch.trim() || statusFilter !== "all"
+                            ? "No roles found"
+                            : "No roles yet"
+                        }
+                        subtitle={
+                          debouncedSearch.trim() || statusFilter !== "all"
+                            ? "Try adjusting your search or filters."
+                            : "Create a role to control what staff members can access and do."
+                        }
+                        showButton={!debouncedSearch.trim() && statusFilter === "all"}
+                        buttonLabel="+ Create role"
+                        onButtonClick={openCreateDialog}
+                      />
                     </td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
           </div>
+
+          {!isError && roles.length > 0 ? (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-black/20 pt-4">
+              <p className="text-[14px] text-black/70">Page {page}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!canGoPrev || isTableLoading}
+                  onClick={() => handlePageChange(page - 1)}
+                  className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  disabled={!canGoNext || isTableLoading}
+                  onClick={() => handlePageChange(page + 1)}
+                  className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         {roleDialogOpen ? (
@@ -366,6 +606,7 @@ export default function RolesPage() {
             role="presentation"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-3 py-3 sm:px-4"
             onMouseDown={(event) => {
+              if (isSavingRole) return;
               if (event.target === event.currentTarget) setRoleDialogOpen(false);
             }}
           >
@@ -389,14 +630,24 @@ export default function RolesPage() {
                 <button
                   type="button"
                   onClick={() => setRoleDialogOpen(false)}
+                  disabled={isSavingRole}
                   aria-label="Close role dialog"
-                  className=" cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center text-[17px] leading-none text-black hover:bg-black/5"
+                  className=" cursor-pointer flex h-7 w-7 shrink-0 items-center justify-center text-[17px] leading-none text-black hover:bg-black/5 disabled:opacity-50"
                 >
                   ×
                 </button>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4">
+                {isEditDialogLoading ? (
+                  <p className="px-1 py-6 text-[13px] text-black/55">Loading role details...</p>
+                ) : null}
+                {editingRoleId != null && isRoleDetailsError ? (
+                  <p className="px-1 py-6 text-[13px] text-[#d32f2f]">Unable to load role details.</p>
+                ) : null}
+
+                {!isEditDialogLoading && !(editingRoleId != null && isRoleDetailsError) ? (
+                  <>
                 <InputField
                   label="Role name *"
                   labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
@@ -424,78 +675,121 @@ export default function RolesPage() {
 
                 <h3 className="mt-3.5 text-[14px] font-bold uppercase">Permissions</h3>
                 <div className="mt-2.5 space-y-2.5">
-                  {permissionGroups.map((group) => {
-                    const groupPermissionIds = group.actions.map((action) => `${group.id}:${action}`);
-                    const groupExpanded = expandedPermissionGroups.includes(group.id);
-                    const groupChecked = groupPermissionIds.every((id) => selectedPermissions.includes(id));
+                  {isPermissionsLoading ? (
+                    <p className="px-1 py-4 text-[13px] text-black/55">Loading permissions...</p>
+                  ) : null}
+                  {isPermissionsError ? (
+                    <p className="px-1 py-4 text-[13px] text-[#d32f2f]">Unable to load permissions.</p>
+                  ) : null}
+                  {!isPermissionsLoading && !isPermissionsError && permissionGroups.length === 0 ? (
+                    <p className="px-1 py-4 text-[13px] text-black/55">No permissions available.</p>
+                  ) : null}
+                  {!isPermissionsLoading && !isPermissionsError
+                    ? permissionGroups.map((group) => {
+                        const groupPermissionIds = group.permissions.map((permission) => permission.id);
+                        const groupExpanded = expandedPermissionGroups.includes(group.module);
+                        const groupChecked =
+                          groupPermissionIds.length > 0 &&
+                          groupPermissionIds.every((id) => selectedPermissions.includes(id));
 
-                    return (
-                      <section key={group.id} className="overflow-hidden rounded-[4px] border border-black/60">
-                        <div className="flex min-h-[48px] items-center gap-2 px-2.5 py-2">
-                          <input
-                            type="checkbox"
-                            checked={groupChecked}
-                            onChange={() => togglePermissionGroupSelection(group.id, groupPermissionIds)}
-                            aria-label={`Select all ${group.name} permissions`}
-                            className="h-[13px] w-[13px] shrink-0 accent-black"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => togglePermissionGroup(group.id)}
-                            aria-expanded={groupExpanded}
-                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                        return (
+                          <section
+                            key={group.module}
+                            className="overflow-hidden rounded-[4px] border border-black/60"
                           >
-                            <span className="min-w-0">
-                              <span className="block text-[16px] font-bold leading-5 text-[#111827]">{group.name}</span>
-                              <span className="mt-0.5 block text-[14px] leading-4 text-[#6B7280]">{group.description}</span>
-                            </span>
-                            <svg
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              aria-hidden="true"
-                              className={`h-3 w-3 shrink-0 transition-transform ${groupExpanded ? "rotate-180" : ""}`}
-                            >
-                              <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                        </div>
-                        {groupExpanded ? (
-                          <div className="flex flex-wrap gap-x-4 gap-y-2 px-2.5 pb-2.5 pl-3 pt-[8px]">
-                            {group.actions.map((action) => {
-                              const permissionId = `${group.id}:${action}`;
-                              return (
-                                <label key={permissionId} className="inline-flex items-center gap-1.5 text-[14px] leading-5 text-[#111827]">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedPermissions.includes(permissionId)}
-                                    onChange={() => togglePermission(permissionId)}
-                                    className="h-[13px] w-[13px] accent-black"
+                            <div className="flex min-h-[48px] items-center gap-2 px-2.5 py-2">
+                              <input
+                                type="checkbox"
+                                checked={groupChecked}
+                                onChange={() =>
+                                  togglePermissionGroupSelection(group.module, groupPermissionIds)
+                                }
+                                aria-label={`Select all ${group.label} permissions`}
+                                className="h-[13px] w-[13px] shrink-0 accent-black"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => togglePermissionGroup(group.module)}
+                                aria-expanded={groupExpanded}
+                                className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block text-[16px] font-bold leading-5 text-[#111827]">
+                                    {group.label}
+                                  </span>
+                                  {group.description ? (
+                                    <span className="mt-0.5 block text-[14px] leading-4 text-[#6B7280]">
+                                      {group.description}
+                                    </span>
+                                  ) : null}
+                                </span>
+                                <svg
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  aria-hidden="true"
+                                  className={`h-3 w-3 shrink-0 transition-transform ${groupExpanded ? "rotate-180" : ""}`}
+                                >
+                                  <path
+                                    d="m5 7.5 5 5 5-5"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
                                   />
-                                  {action}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </section>
-                    );
-                  })}
+                                </svg>
+                              </button>
+                            </div>
+                            {groupExpanded ? (
+                              <div className="flex flex-wrap gap-x-4 gap-y-2 px-2.5 pb-2.5 pl-3 pt-[8px]">
+                                {group.permissions.map((permission) => (
+                                  <label
+                                    key={permission.id}
+                                    className="inline-flex items-center gap-1.5 text-[14px] leading-5 text-[#111827]"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedPermissions.includes(permission.id)}
+                                      onChange={() => togglePermission(permission.id)}
+                                      className="h-[13px] w-[13px] accent-black"
+                                    />
+                                    {permission.label}
+                                  </label>
+                                ))}
+                              </div>
+                            ) : null}
+                          </section>
+                        );
+                      })
+                    : null}
                 </div>
+                  </>
+                ) : null}
               </div>
 
               <div className="flex shrink-0 gap-2 border-t border-black/50 px-3.5 py-3">
                 <button
                   type="button"
                   onClick={() => setRoleDialogOpen(false)}
-                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black/65 text-[14px] uppercase hover:bg-black/5"
+                  disabled={isSavingRole}
+                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black/65 text-[14px] uppercase hover:bg-black/5 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black bg-black text-[14px] uppercase text-white hover:bg-white hover:text-black"
+                  disabled={
+                    isSavingRole ||
+                    isPermissionsLoading ||
+                    isEditDialogLoading ||
+                    (editingRoleId != null && isRoleDetailsError)
+                  }
+                  className="cursor-pointer h-10 flex-1 rounded-[3px] border border-black bg-black text-[14px] uppercase text-white hover:bg-white hover:text-black disabled:opacity-50"
                 >
-                  {editingRoleId === null ? "Create" : "Save changes"}
+                  {isSavingRole
+                    ? "Saving..."
+                    : editingRoleId === null
+                      ? "Create"
+                      : "Save changes"}
                 </button>
               </div>
             </form>

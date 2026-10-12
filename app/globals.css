@@ -3,6 +3,39 @@
 :root {
   --black: #000000;
   --white: #ffffff;
+  --status-draft: #ff6d00;
+  --status-active: #1a7f37;
+  --status-inactive: #949494;
+  --status-soldout: #dc2626;
+}
+
+/* Shared entity status colors (Draft / Active / Inactive / Sold out) */
+.text-status-draft {
+  color: var(--status-draft);
+}
+.bg-status-draft {
+  background-color: var(--status-draft);
+}
+
+.text-status-active {
+  color: var(--status-active);
+}
+.bg-status-active {
+  background-color: var(--status-active);
+}
+
+.text-status-inactive {
+  color: var(--status-inactive);
+}
+.bg-status-inactive {
+  background-color: var(--status-inactive);
+}
+
+.text-status-soldout {
+  color: var(--status-soldout);
+}
+.bg-status-soldout {
+  background-color: var(--status-soldout);
 }
 
 html,

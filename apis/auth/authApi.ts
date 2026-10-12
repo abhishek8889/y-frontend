@@ -1,3 +1,4 @@
+import { withQueryToast } from "@/lib/api/queryToast";
 import { baseApi } from "@/lib/store/baseApi";
 import type { AuthUser } from "@/lib/auth/session";
 
@@ -61,9 +62,19 @@ export type LoginResponse = {
   };
 };
 
+export type AboutMeOrganisation = {
+  id?: number;
+  name?: string | null;
+  logo?: string | null;
+  profile_image?: string | null;
+};
+
 export type AboutMeUser = AuthUser & {
   organisation_approve_status?: boolean;
   permissions?: Record<string, string[]>;
+  /** Flat organisation name when API does not nest `organisation`. */
+  organisation_name?: string | null;
+  organisation?: AboutMeOrganisation | null;
 };
 
 export type AboutMeResponse = {
@@ -106,14 +117,26 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          error: true, // backend message
+          // error: "This is not working like this", // custom
+        });
+      },
     }),
     getAboutMe: build.query<AboutMeResponse, void>({
       query: () => "about-me",
       providesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
     }),
     getProfile: build.query<ProfileResponse, void>({
       query: () => "get-profile",
       providesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
     }),
   }),
 });

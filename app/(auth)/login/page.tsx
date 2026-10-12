@@ -12,8 +12,9 @@ import IconCard, {
   CHECK_CIRCLE_ICON,
 } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
-import { getApiErrorMessage } from "@/lib/api/errors";
 import { resolvePostLoginUrl, setAuthSession } from "@/lib/api/authStorage";
+import { appToast } from "@/lib/ui/toast";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 const initialCode = ["", "", "", "", "", ""];
 
@@ -85,7 +86,7 @@ export default function LoginPage() {
       setAuthSession(token, user);
 
       const nextPath = new URLSearchParams(window.location.search).get("next");
-      // Host-only cookies on app.localhost; then land on dashboard (or ?next=).
+      // Backend error toast is handled in authApi via withQueryToast.
       window.location.assign(resolvePostLoginUrl(user, nextPath, window.location.host));
     } catch (error) {
       const message = getApiErrorMessage(

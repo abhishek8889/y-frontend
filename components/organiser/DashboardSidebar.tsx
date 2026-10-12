@@ -1,72 +1,56 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useGetAboutMeQuery } from "@/apis/auth/authApi";
 import { clearAuthSession } from "@/lib/api/authStorage";
+import { filterSidebarByPermissions } from "@/lib/auth/permissions";
 import { baseApi } from "@/lib/store/baseApi";
 import { useAppDispatch } from "@/lib/store/hooks";
-import { useState } from "react";
-import IconCard, {
-  CHEVRON_DOWN_ICON,
-  CLUBSITE_ICON,
-  CUSTOMERS_ICON,
-  DASHBOARD_ICON,
-  EVENTS_ICON,
-  FINANCE_ICON,
-  LOGOUT_ICON,
-  ROLES_PERMISSION_ICON,
-  SETTINGS_ICON,
-  STAFF_MEMBER_ICON,
-  VENUES_ICON,
-  type IconName,
-} from "@/components/ui/IconCard";
-
-type SidebarItem = {
-  label: string;
-  href: string;
-  hasChevron?: boolean;
-  icon: IconName;
-};
+import IconCard, { LOGOUT_ICON } from "@/components/ui/IconCard";
+import {
+  organisationSidebarConfig,
+  type OrganisationSidebarItem,
+} from "@/components/organiser/sidebarConfig";
 
 type DashboardSidebarProps = {
-  items?: SidebarItem[];
+  /** Optional override; when omitted, items are filtered from organisationSidebarConfig. */
+  items?: OrganisationSidebarItem[];
 };
 
-const defaultItems: SidebarItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: DASHBOARD_ICON },
-  { label: "Venues", href: "/venues", icon: VENUES_ICON },
-  { label: "Events", href: "/events", icon: EVENTS_ICON },
-  { label: "Customers", href: "/customers", icon: CUSTOMERS_ICON },
-  { label: "Clubsite", href: "/clubsite", icon: CLUBSITE_ICON },
-  { label: "Roles & Permission", href: "/roles", icon: ROLES_PERMISSION_ICON },
-  { label: "Staff Member", href: "/staff", icon: STAFF_MEMBER_ICON },
-  { label: "Finance", href: "/finance", icon: FINANCE_ICON },
-  { label: "Settings", href: "/settings", icon: SETTINGS_ICON },
-];
-
-export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps) {
+export function DashboardSidebar({ items }: DashboardSidebarProps) {
   const pathname = usePathname();
   const dispatch = useAppDispatch();
+  const { data } = useGetAboutMeQuery();
+  const permissions = data?.data?.user?.permissions;
+  const [financeExpanded, setFinanceExpanded] = useState(pathname.startsWith("/finance"));
+
+  const visibleItems = useMemo(() => {
+    const source = items ?? organisationSidebarConfig;
+    return filterSidebarByPermissions(source, permissions);
+  }, [items, permissions]);
 
   function handleLogout() {
     clearAuthSession();
     dispatch(baseApi.util.resetApiState());
     window.location.assign("/login");
   }
-  const [financeExpanded, setFinanceExpanded] = useState(pathname.startsWith("/finance"));
 
   return (
     <aside className="h-[calc(100vh-45px)] w-[260px] border-r border-[#000000] bg-[#fff]">
       <nav className="flex h-full flex-col gap-2.5 p-6">
-        {items.map((item) => {
-          const isFinance = item.label === "Finance";
-          const isActive = pathname === item.href && !isFinance;
+        {visibleItems.map((item) => {
+          const isFinance = item.key === "org_finance";
+          const isActive =
+            !isFinance &&
+            (pathname === item.path || pathname.startsWith(`${item.path}/`));
 
           return (
-            <div key={item.label}>
-              <div className="flex items-center relative">
+            <div key={item.key}>
+              <div className="relative flex items-center">
                 <Link
-                  href={item.href}
+                  href={item.path}
                   className={[
                     "flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[4px] px-3 py-3 text-left text-base font-normal leading-5 tracking-[0.02em] transition",
                     isActive ? "bg-black text-white" : "text-black/70 hover:text-black",
@@ -89,13 +73,19 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
                     aria-expanded={financeExpanded}
                     onClick={() => setFinanceExpanded((expanded) => !expanded)}
                     className={[
-                      "cursor-pointer absolute right-0 flex h-10 w-8 shrink-0 items-center justify-center transition",
+                      "absolute right-0 flex h-10 w-8 shrink-0 cursor-pointer items-center justify-center transition",
                       isActive ? "text-white" : "text-black/70 hover:text-black",
                     ].join(" ")}
                   >
                     <svg width="16px" height="16px" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect width="48" height="48" fill="white" fillOpacity="0.01"/>
-                      <path d="M37 18L25 30L13 18" stroke="#000000" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                      <rect width="48" height="48" fill="white" fillOpacity="0.01" />
+                      <path
+                        d="M37 18L25 30L13 18"
+                        stroke="#000000"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </button>
                 ) : null}
@@ -104,7 +94,11 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
                 <div className="mt-1 flex flex-col gap-0.5">
                   {[
                     { label: "Overview", href: "/finance", active: pathname === "/finance" },
-                    { label: "Transaction", href: "/finance/transactions", active: pathname === "/finance/transactions" },
+                    {
+                      label: "Transaction",
+                      href: "/finance/transactions",
+                      active: pathname === "/finance/transactions",
+                    },
                     { label: "Payouts", href: "/finance/payouts", active: pathname === "/finance/payouts" },
                     { label: "Refunds", href: "/finance/refunds", active: pathname === "/finance/refunds" },
                   ].map((child) => (
@@ -113,7 +107,7 @@ export function DashboardSidebar({ items = defaultItems }: DashboardSidebarProps
                       href={child.href}
                       aria-current={child.active ? "page" : undefined}
                       className={[
-                        "pl-7 rounded-[3px] px-3 py-1.5 text-[13px] leading-5 transition",
+                        "rounded-[3px] px-3 py-1.5 pl-7 text-[13px] leading-5 transition",
                         child.active ? "bg-black text-white" : "text-black/75 hover:bg-black/5 hover:text-black",
                       ].join(" ")}
                     >

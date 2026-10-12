@@ -3,6 +3,7 @@ import type { SerializedError } from "@reduxjs/toolkit";
 
 type ApiErrorBody = {
   message?: string;
+  error?: string;
   data?: Record<string, string[]>;
 };
 
@@ -15,8 +16,11 @@ function getErrorBody(error: FetchBaseQueryError): ApiErrorBody | null {
   return error.data as ApiErrorBody;
 }
 
-function isHtmlResponse(value: string) {
-  return /<(?:!doctype\s+html|html|head|body)\b/i.test(value);
+function pickMessage(...candidates: unknown[]) {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+  }
+  return null;
 }
 
 export function getApiErrorMessage(
@@ -25,44 +29,47 @@ export function getApiErrorMessage(
 ) {
   if (!error) return fallback;
 
-  if (isFetchBaseQueryError(error)) {
-    if ("error" in error && typeof error.error === "string" && error.error.trim()) {
-      if (isHtmlResponse(error.error)) {
-        return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-      }
-      return error.error;
-    }
+  // if (isFetchBaseQueryError(error)) {
+  //   if ("error" in error && typeof error.error === "string" && error.error.trim()) {
+  //     if (isHtmlResponse(error.error)) {
+  //       return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+  //     }
+  //     return error.error;
+  //   }
 
-    const body = getErrorBody(error);
+  //   const body = getErrorBody(error);
 
-    if (
-      (typeof body?.message === "string" && isHtmlResponse(body.message)) ||
-      (typeof error.data === "string" && isHtmlResponse(error.data))
-    ) {
-      return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-    }
+  //   if (
+  //     (typeof body?.message === "string" && isHtmlResponse(body.message)) ||
+  //     (typeof error.data === "string" && isHtmlResponse(error.data))
+  //   ) {
+  //     return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+  //   }
 
-    if (body?.message === "Validation errors" && body.data) {
-      const firstKey = Object.keys(body.data)[0];
-      const firstMessage = firstKey ? body.data[firstKey]?.[0] : undefined;
-      if (firstMessage) return firstMessage;
-    }
+  //   if (body?.message === "Validation errors" && body.data) {
+  //     const firstKey = Object.keys(body.data)[0];
+  //     const firstMessage = firstKey ? body.data[firstKey]?.[0] : undefined;
+  //     if (firstMessage) return firstMessage;
+  //   }
 
-    if (typeof body?.message === "string" && body.message.trim()) {
-      return body.message;
-    }
+  //   const fromBody = pickMessage(body?.message, body?.error);
+  //   if (fromBody) return fromBody;
 
-    if (typeof error.data === "string" && error.data.trim()) {
-      return error.data;
-    }
-  }
+  //   if (typeof error.data === "string" && error.data.trim()) {
+  //     return error.data;
+  //   }
 
-  if ("message" in error && typeof error.message === "string" && error.message.trim()) {
-    if (isHtmlResponse(error.message)) {
-      return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-    }
-    return error.message;
-  }
+  //   if ("error" in error && typeof error.error === "string" && error.error.trim()) {
+  //     return error.error;
+  //   }
+  // }
+
+  // if ("message" in error && typeof error.message === "string" && error.message.trim()) {
+  //   if (isHtmlResponse(error.message)) {
+  //     return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
+  //   }
+  //   return error.message;
+  // }
 
   return fallback;
 }

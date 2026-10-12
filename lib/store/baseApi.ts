@@ -31,6 +31,15 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+function isApiFailureBody(data: unknown): data is { success: false; message?: string } {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "success" in data &&
+    (data as { success?: unknown }).success === false
+  );
+}
+
 const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -62,12 +71,37 @@ const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuery
     }
   }
 
+  // Backend often returns HTTP 2xx with `{ success: false, message }` for business errors.
+  // Treat those as RTK Query errors so withQueryToast / unwrap() surface the message.
+  if (!result.error && isApiFailureBody(result.data)) {
+    return {
+      error: {
+        status: "CUSTOM_ERROR",
+        data: result.data,
+        error:
+          typeof result.data.message === "string" && result.data.message.trim()
+            ? result.data.message
+            : "Request failed",
+      },
+    };
+  }
+
   return result;
 };
 
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithAuth,
-  tagTypes: ["Auth", "Events", "Venues", "Customers"],
+  tagTypes: [
+    "Auth",
+    "Events",
+    "EventCategories",
+    "EventTickets",
+    "Venues",
+    "venuePageOverview",
+    "Customers",
+    "Roles",
+    "RolePermissions",
+  ],
   endpoints: () => ({}),
 });
