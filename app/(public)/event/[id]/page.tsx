@@ -3,35 +3,118 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { useGetPublicEventTicketsQuery } from "@/apis/events/eventsApi";
 import eventCover from "@/assets/event-cover.jpg";
 import homeHeroImage from "@/assets/home-hero.jpg";
 import yourlistLogo from "@/assets/yourlist-logo.png";
 import signupImage from "@/assets/signup-image.png";
 import { SelectField } from "@/components/ui/SelectField";
+import { getApiErrorMessage } from "@/lib/api/errors";
 import { PaymentForm } from "./PaymentForm";
 
 const galleryImages = [homeHeroImage, eventCover, signupImage];
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
+type TicketOption = {
+  value: string;
+  ticketId: string;
+  offerId?: string;
+  label: string;
+  name: string;
+  price: number;
+  currency: string;
+};
+
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function isOfferOnSale(startsAt: string | null, endsAt: string | null) {
+  const now = Date.now();
+  const start = startsAt === null ? null : Date.parse(startsAt);
+  const end = endsAt === null ? null : Date.parse(endsAt);
+
+  return (
+    (start === null || (Number.isFinite(start) && start <= now)) &&
+    (end === null || (Number.isFinite(end) && end > now))
+  );
+}
+
 export default function PublicEventPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const {
+    data: ticketsResponse,
+    error: ticketsError,
+    isLoading: areTicketsLoading,
+  } = useGetPublicEventTicketsQuery(id);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [ticketType, setTicketType] = useState<"" | "general" | "vip">("");
+  const [selectedTicketValue, setSelectedTicketValue] = useState("");
   const [bookingMessage, setBookingMessage] = useState("");
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState("");
-  const ticketAmount = ticketType === "vip" ? 18000 : 6500;
+  const ticketOptions = useMemo(() => {
+    const options: TicketOption[] = [];
+
+    for (const ticket of ticketsResponse?.data ?? []) {
+      if (ticket.status?.toLowerCase() !== "active") continue;
+
+      const ticketPrice = Number(ticket.base_price);
+      if (Number.isFinite(ticketPrice) && ticketPrice >= 0) {
+        options.push({
+          value: ticket.unique_id,
+          ticketId: ticket.unique_id,
+          label: `${ticket.name} - ${formatCurrency(ticketPrice, ticket.currency)}`,
+          name: ticket.name,
+          price: ticketPrice,
+          currency: ticket.currency,
+        });
+      }
+
+      for (const offer of ticket.offers ?? []) {
+        const offerPrice = Number(offer.price);
+        if (
+          offer.status?.toLowerCase() !== "active" ||
+          offer.access?.toLowerCase() !== "public" ||
+          offer.remaining_quantity <= 0 ||
+          !isOfferOnSale(offer.sale_starts_at, offer.sale_ends_at) ||
+          !Number.isFinite(offerPrice) ||
+          offerPrice < 0
+        ) {
+          continue;
+        }
+
+        options.push({
+          value: `${ticket.unique_id}:${offer.unique_id}`,
+          ticketId: ticket.unique_id,
+          offerId: offer.unique_id,
+          label: `${ticket.name} - ${offer.name} - ${formatCurrency(offerPrice, ticket.currency)}`,
+          name: `${ticket.name} - ${offer.name}`,
+          price: offerPrice,
+          currency: ticket.currency,
+        });
+      }
+    }
+
+    return options;
+  }, [ticketsResponse]);
+  const selectedTicket = ticketOptions.find(
+    ({ value }) => value === selectedTicketValue,
+  );
 
   async function handleBookTicket() {
-    if (!ticketType) return;
+    if (!selectedTicket) return;
 
     if (isPaymentOpen) {
       setIsPaymentOpen(false);
@@ -53,7 +136,11 @@ export default function PublicEventPage() {
       const response = await fetch("/api/payments/create-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: id, ticketType }),
+        body: JSON.stringify({
+          eventId: id,
+          ticketId: selectedTicket.ticketId,
+          offerId: selectedTicket.offerId,
+        }),
       });
       const result: { clientSecret?: unknown; error?: unknown } = await response.json();
 
@@ -71,7 +158,9 @@ export default function PublicEventPage() {
 
   function handlePaymentSuccess(paymentIntentId: string) {
     const params = new URLSearchParams({
-      ticket: ticketType,
+      ticket: selectedTicket?.name ?? "Ticket",
+      amount: String(selectedTicket?.price ?? 0),
+      currency: selectedTicket?.currency ?? "GBP",
       reference: paymentIntentId,
     });
     router.push(`/payment/success?${params.toString()}`);
@@ -140,40 +229,55 @@ export default function PublicEventPage() {
         <section className="flex min-h-[660px] flex-col px-6 py-10 sm:px-10 lg:min-h-[calc(100svh-78px)] lg:px-[min(8vw,112px)] lg:py-12">
           <div className="mx-auto w-full max-w-[540px]">
             <div className="text-center">
-              <h1 className="text-[23px] font-bold uppercase leading-[28px]">The Closing Party</h1>
-              <p className="mt-2 text-[12px] uppercase text-black/60">Organised by</p>
+              <h1 className="text-[24px] font-bold uppercase leading-[28px]">The Closing Party</h1>
+              <p className="my-[10px] text-[14px] uppercase text-black">Organised by</p>
               <div className="mt-1 flex items-center justify-center gap-2 text-[13px] font-bold uppercase">
-                <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full border border-black text-[10px]">H</span>
+                <span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full border border-black text-[14px]">H</span>
                 Hednesford Town
               </div>
             </div>
 
-            <div className="mt-7 flex justify-between gap-4 border-t border-black/50 pt-3 text-[12px]">
+            <div className="mt-7 flex justify-between gap-4 border-t border-black/50 pt-3 text-[14px]">
               <p><strong>Date:</strong> Saturday, 18 January 2026</p>
               <p className="shrink-0"><strong>Time:</strong> 7:30 PM IST</p>
             </div>
-            <p className="mt-3 text-[12px]"><strong>Price:</strong> £65–£180</p>
+            <p className="mt-3 text-[14px]">
+              <strong>Price:</strong>{" "}
+              {selectedTicket
+                ? formatCurrency(selectedTicket.price, selectedTicket.currency)
+                : "See ticket options below"}
+            </p>
 
             <SelectField
               id="event-ticket-type"
               name="ticketType"
               aria-label="Ticket type"
-              value={ticketType}
+              value={selectedTicketValue}
               onChange={(event) => {
-                setTicketType(event.target.value as "" | "general" | "vip");
+                setSelectedTicketValue(event.target.value);
                 setIsPaymentOpen(false);
                 setPaymentClientSecret(null);
                 setPaymentError("");
                 setBookingMessage("");
               }}
-              options={[
-                { value: "general", label: "General admission - £65" },
-                { value: "vip", label: "VIP - £180" },
-              ]}
+              options={ticketOptions}
               placeholder="Select ticket type"
               containerClassName="mt-4"
-              className="!h-[42px] !rounded-[3px] !border-black/60 !px-3 !text-[13px]"
+              className="!h-[42px] !rounded-[3px] !border-black !px-3 !text-[13px]"
             />
+            {areTicketsLoading ? (
+              <p role="status" className="mt-2 text-[13px] text-black/60">
+                Loading ticket types...
+              </p>
+            ) : ticketsError ? (
+              <p role="alert" className="mt-2 text-[13px] text-[#b42318]">
+                {getApiErrorMessage(ticketsError, "Unable to load ticket types.")}
+              </p>
+            ) : ticketOptions.length === 0 ? (
+              <p role="status" className="mt-2 text-[13px] text-black/60">
+                No tickets are currently available.
+              </p>
+            ) : null}
             {isPaymentOpen ? (
               <div className="mt-2">
                 {isCreatingPayment ? (
@@ -192,8 +296,9 @@ export default function PublicEventPage() {
                     <PaymentForm
                       clientSecret={paymentClientSecret}
                       eventTitle="The Closing Party"
-                      ticketType={ticketType === "vip" ? "vip" : "general"}
-                      amount={ticketAmount}
+                      ticketName={selectedTicket?.name ?? "Ticket"}
+                      amount={selectedTicket?.price ?? 0}
+                      currency={selectedTicket?.currency ?? "GBP"}
                       onSuccess={handlePaymentSuccess}
                     />
                   </Elements>
@@ -202,7 +307,7 @@ export default function PublicEventPage() {
             ) : null}
             <button
               type="button"
-              disabled={!ticketType}
+              disabled={!selectedTicket || areTicketsLoading}
               onClick={handleBookTicket}
               className="mt-4 h-[44px] w-full rounded-[3px] bg-black text-[12px] font-medium uppercase text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/35"
             >

@@ -14,8 +14,9 @@ import { InputField } from "@/components/ui/InputField";
 type PaymentFormProps = {
   clientSecret: string;
   eventTitle: string;
-  ticketType: "general" | "vip";
+  ticketName: string;
   amount: number;
+  currency: string;
   onSuccess: (paymentIntentId: string) => void;
 };
 
@@ -34,8 +35,9 @@ const stripeFieldOptions = {
 export function PaymentForm({
   clientSecret,
   eventTitle,
-  ticketType,
+  ticketName,
   amount,
+  currency,
   onSuccess,
 }: PaymentFormProps) {
   const stripe = useStripe();
@@ -45,9 +47,9 @@ export function PaymentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formattedAmount = new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency: "GBP",
+    currency,
     maximumFractionDigits: 2,
-  }).format(amount / 100);
+  }).format(amount);
 
   async function handleCardPayment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,10 +159,10 @@ export function PaymentForm({
           </label>
         </div>
 
-        <div className="pt-1 text-[13px] leading-5 text-black">
+        <div className="pt-1 text-[14px] leading-5 text-black">
           <p className="font-bold">Total Amount: {formattedAmount}</p>
           <p>1 Ticket</p>
-          <p>{eventTitle} · {ticketType === "vip" ? "VIP" : "General admission"}</p>
+          <p>{eventTitle} · {ticketName}</p>
         </div>
 
         {errorMessage ? <p role="alert" className="text-[13px] leading-5 text-[#d92d20]">{errorMessage}</p> : null}

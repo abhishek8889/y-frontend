@@ -2,9 +2,9 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import type { SerializedError } from "@reduxjs/toolkit";
 
 type ApiErrorBody = {
-  message?: string;
-  error?: string;
-  data?: Record<string, string[]>;
+  message?: unknown;
+  error?: unknown;
+  data?: unknown;
 };
 
 function isFetchBaseQueryError(error: unknown): error is FetchBaseQueryError {
@@ -23,53 +23,64 @@ function pickMessage(...candidates: unknown[]) {
   return null;
 }
 
+function isHtmlResponse(value: string) {
+  return /^\s*<!doctype html|^\s*<html[\s>]/i.test(value);
+}
+
+function getValidationMessage(data: unknown) {
+  if (typeof data !== "object" || data === null) return null;
+
+  for (const messages of Object.values(data)) {
+    if (Array.isArray(messages)) {
+      const message = pickMessage(...messages);
+      if (message) return message;
+    } else if (typeof messages === "string" && messages.trim()) {
+      return messages;
+    }
+  }
+
+  return null;
+}
+
 export function getApiErrorMessage(
   error: FetchBaseQueryError | SerializedError | undefined,
   fallback = "Something went wrong. Please try again.",
 ) {
   if (!error) return fallback;
 
-  // if (isFetchBaseQueryError(error)) {
-  //   if ("error" in error && typeof error.error === "string" && error.error.trim()) {
-  //     if (isHtmlResponse(error.error)) {
-  //       return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-  //     }
-  //     return error.error;
-  //   }
+  if (isFetchBaseQueryError(error)) {
+    const body = getErrorBody(error);
+    const bodyMessage = pickMessage(body?.message, body?.error);
+    const rawData = typeof error.data === "string" ? error.data : null;
+    const transportError =
+      "error" in error && typeof error.error === "string"
+        ? error.error
+        : null;
 
-  //   const body = getErrorBody(error);
+    if (
+      (bodyMessage && isHtmlResponse(bodyMessage)) ||
+      (rawData && isHtmlResponse(rawData)) ||
+      (transportError && isHtmlResponse(transportError))
+    ) {
+      return "The server returned a web page instead of an API response. Check the API base URL and verification endpoint.";
+    }
 
-  //   if (
-  //     (typeof body?.message === "string" && isHtmlResponse(body.message)) ||
-  //     (typeof error.data === "string" && isHtmlResponse(error.data))
-  //   ) {
-  //     return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-  //   }
+    if (body?.message === "Validation errors") {
+      const validationMessage = getValidationMessage(body.data);
+      if (validationMessage) return validationMessage;
+    }
 
-  //   if (body?.message === "Validation errors" && body.data) {
-  //     const firstKey = Object.keys(body.data)[0];
-  //     const firstMessage = firstKey ? body.data[firstKey]?.[0] : undefined;
-  //     if (firstMessage) return firstMessage;
-  //   }
+    if (bodyMessage) return bodyMessage;
+    if (rawData?.trim()) return rawData;
+    if (transportError?.trim()) return transportError;
+  }
 
-  //   const fromBody = pickMessage(body?.message, body?.error);
-  //   if (fromBody) return fromBody;
-
-  //   if (typeof error.data === "string" && error.data.trim()) {
-  //     return error.data;
-  //   }
-
-  //   if ("error" in error && typeof error.error === "string" && error.error.trim()) {
-  //     return error.error;
-  //   }
-  // }
-
-  // if ("message" in error && typeof error.message === "string" && error.message.trim()) {
-  //   if (isHtmlResponse(error.message)) {
-  //     return "The server returned a web page instead of an API response. Check NEXT_PUBLIC_API_BASE_URL and the registration endpoint.";
-  //   }
-  //   return error.message;
-  // }
+  if ("message" in error && typeof error.message === "string" && error.message.trim()) {
+    if (isHtmlResponse(error.message)) {
+      return "The server returned a web page instead of an API response. Check the API base URL and verification endpoint.";
+    }
+    return error.message;
+  }
 
   return fallback;
 }

@@ -152,7 +152,7 @@ export function EventFilterButton({
       onClick={onClick}
       aria-label="Filter events"
       aria-expanded={open}
-      className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center border transition ${
+      className={`cursor-pointer flex h-[38px] w-[38px] shrink-0 items-center justify-center border transition ${
         open || active
           ? "border-black bg-black text-white"
           : "border-black/35 bg-white text-black hover:border-black"

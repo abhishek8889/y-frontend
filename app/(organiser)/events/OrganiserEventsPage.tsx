@@ -93,7 +93,7 @@ export function OrganiserEventsPage() {
                     key={event.id}
                     onClick={() => setActiveEventId(event.id)}
                     aria-pressed={isActive}
-                    className={`block w-full border p-3 text-left transition ${
+                    className={`cursor-pointer block w-full border p-3 text-left transition ${
                       isActive ? "border-black bg-black/[0.025]" : "border-transparent hover:border-black/35"
                     }`}
                   >

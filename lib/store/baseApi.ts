@@ -61,7 +61,9 @@ const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuery
     requestUrl === "organisation/login" ||
     requestUrl.startsWith("organisation/login?") ||
     requestUrl === "organiser/register" ||
-    requestUrl.startsWith("organiser/register?");
+    requestUrl.startsWith("organiser/register?") ||
+    requestUrl === "organiser/verify-email" ||
+    requestUrl.startsWith("organiser/verify-email?");
 
   if (result.error?.status === 401 && !isAuthRequest) {
     clearAuthSession();

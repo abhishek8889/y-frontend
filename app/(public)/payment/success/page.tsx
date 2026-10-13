@@ -10,18 +10,43 @@ type SuccessPageProps = {
   }>;
 };
 
-function formatAmount(amount: number) {
+function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency: "GBP",
+    currency,
     maximumFractionDigits: 2,
-  }).format(amount / 100);
+  }).format(amount);
 }
 
 export default async function PaymentSuccessPage({ searchParams }: SuccessPageProps) {
   const query = await searchParams;
-  const ticketType = query.ticket === "vip" ? "VIP" : "General admission";
-  const ticketAmount = query.ticket === "vip" ? 18000 : 6500;
+  const rawTicket = typeof query.ticket === "string" ? query.ticket : "";
+  const rawAmount = typeof query.amount === "string" ? Number(query.amount) : NaN;
+  const isLegacyTicket = rawTicket === "vip" || rawTicket === "general";
+  const ticketType = rawTicket
+    ? isLegacyTicket
+      ? rawTicket === "vip"
+        ? "VIP"
+        : "General admission"
+      : rawTicket
+    : "Ticket";
+  const ticketAmount = Number.isFinite(rawAmount) && rawAmount >= 0
+    ? rawAmount
+    : rawTicket === "vip"
+      ? 180
+      : rawTicket === "general"
+        ? 65
+        : 0;
+  const requestedCurrency =
+    typeof query.currency === "string" && /^[A-Za-z]{3}$/.test(query.currency)
+      ? query.currency.toUpperCase()
+      : "GBP";
+  let currency = requestedCurrency;
+  try {
+    new Intl.NumberFormat("en-GB", { style: "currency", currency });
+  } catch {
+    currency = "GBP";
+  }
   const reference = typeof query.reference === "string" ? query.reference : "";
   const ticketId = /^pi_[a-zA-Z0-9]+$/.test(reference) ? reference : "Confirmed";
 
@@ -75,8 +100,8 @@ export default async function PaymentSuccessPage({ searchParams }: SuccessPagePr
           <section aria-labelledby="price-summary-title" className="mt-3 border border-black/55 px-5 py-4 sm:px-7">
             <h3 id="price-summary-title" className="text-[13px] font-bold uppercase leading-5">Price summary</h3>
             <dl className="mt-2 space-y-1 text-[12px] leading-[18px]">
-              <div><dt className="inline font-bold">Tickets (1 × {formatAmount(ticketAmount)}): </dt><dd className="inline">{formatAmount(ticketAmount)}</dd></div>
-              <div><dt className="inline font-bold">Total amount: </dt><dd className="inline font-bold">{formatAmount(ticketAmount)}</dd></div>
+              <div><dt className="inline font-bold">Tickets (1 × {formatAmount(ticketAmount, currency)}): </dt><dd className="inline">{formatAmount(ticketAmount, currency)}</dd></div>
+              <div><dt className="inline font-bold">Total amount: </dt><dd className="inline font-bold">{formatAmount(ticketAmount, currency)}</dd></div>
             </dl>
           </section>
 

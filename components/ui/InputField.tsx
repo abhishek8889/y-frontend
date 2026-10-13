@@ -42,7 +42,7 @@ export function InputField(props: InputFieldProps) {
   const isTextarea = as === "textarea";
 
   return (
-    <div className={`mb-0 ${wrapperClassName}`.trim()}>
+    <div className={wrapperClassName}>
       {label ? (
         <label
           htmlFor={inputId}

@@ -414,6 +414,7 @@ export default function SignupPage() {
               value={values.email}
               onChange={(event) => updateValue("email", event.target.value)}
               required
+              wrapperClassName="mb-[22px]"
             />
 
             <SelectField
@@ -592,6 +593,7 @@ export default function SignupPage() {
               inputMode="tel"
               placeholder="Enter organisation phone"
               error={fieldErrors.org_phone}
+              className="pl-[0]"
               prefix={
                 <select
                   aria-label="Organisation phone country calling code"
@@ -604,7 +606,7 @@ export default function SignupPage() {
                     )?.name;
                     if (countryName) updateValue("org_country", countryName);
                   }}
-                  className="h-full border-0 bg-transparent text-[14px] outline-none"
+                  className="pr-[30px] h-full border-0 bg-transparent text-[14px] outline-none"
                 >
                   {countries.map((country) => (
                     <option key={country.code} value={country.code}>

@@ -202,6 +202,29 @@ export type EventTicketsResponse = {
   data: EventTicket[] | { items: EventTicket[] };
 };
 
+export type PublicEventOffer = EventTicketOffer & {
+  unique_id: string;
+  price: number | string;
+  remaining_quantity: number;
+  max_per_order: number;
+  access: string;
+  sale_starts_at: string | null;
+  sale_ends_at: string | null;
+};
+
+export type PublicEventTicket = EventTicket & {
+  unique_id: string;
+  base_price: number | string;
+  currency: string;
+  offers: PublicEventOffer[];
+};
+
+export type PublicEventTicketsResponse = {
+  success: boolean;
+  message: string;
+  data: PublicEventTicket[];
+};
+
 export function normalizeEventTickets(data: EventTicketsResponse["data"] | undefined): EventTicket[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -325,6 +348,15 @@ export const eventsApi = baseApi.injectEndpoints({
       async onQueryStarted(_, { queryFulfilled }) {
         await withQueryToast(queryFulfilled, { error: true });
       },
+    }),
+    getPublicEventTickets: build.query<PublicEventTicketsResponse, string>({
+      query: (eventId) => ({
+        url: `public/events/tickets/${encodeURIComponent(eventId)}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, eventId) => [
+        { type: "EventTickets", id: `public-${eventId}` },
+      ],
     }),
     createEventTicket: build.mutation<EventTicketMutationResponse, EventTicketPayload>({
       query: (body) => ({
@@ -455,6 +487,7 @@ export const {
   useCreateEventMutation,
   useUpdateEventMutation,
   useGetEventTicketsQuery,
+  useGetPublicEventTicketsQuery,
   useCreateEventTicketMutation,
   useUpdateEventTicketMutation,
   useDeleteEventTicketMutation,
