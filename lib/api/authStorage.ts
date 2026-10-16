@@ -1,10 +1,11 @@
 import Cookies from "js-cookie";
 import { AUTH_USER_KEY } from "@/lib/auth/constants";
-import { getPrimaryRole, type AuthUserLike } from "@/lib/auth/roles";
+import { getPrimaryScope, type AuthUserLike } from "@/lib/auth/roles";
+import { AuthScope } from "@/lib/auth/scopes";
 import type { AuthUser } from "@/lib/auth/session";
 import { authCookieOptions, clearAuthCookieOptions } from "@/lib/api/cookieOptions";
 import { clearAuthToken, setAuthToken } from "@/lib/api/token";
-import { buildSurfaceUrl, getSurfaceForRole } from "@/lib/hosts";
+import { buildSurfaceUrl, getSurfaceForScope } from "@/lib/hosts";
 
 export type { AuthUser };
 export { AUTH_USER_KEY };
@@ -33,15 +34,15 @@ export function clearAuthSession() {
 }
 
 export function getPostLoginPath(user: AuthUserLike) {
-  const role = getPrimaryRole(user);
-  if (role === "superadmin") return "/admin";
-  if (role === "owner") return "/dashboard";
+  const scope = getPrimaryScope(user);
+  if (scope === AuthScope.Platform) return "/admin";
+  if (scope === AuthScope.Organisation) return "/dashboard";
   return "/";
 }
 
 export function getPostLoginUrl(user: AuthUserLike, currentHostHeader?: string) {
-  const role = getPrimaryRole(user);
-  const surface = getSurfaceForRole(role);
+  const scope = getPrimaryScope(user);
+  const surface = getSurfaceForScope(scope);
   const path = getPostLoginPath(user);
   const host =
     currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
@@ -57,8 +58,8 @@ export function resolvePostLoginUrl(
   if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
     const host =
       currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
-    const role = getPrimaryRole(user);
-    const surface = getSurfaceForRole(role);
+    const scope = getPrimaryScope(user);
+    const surface = getSurfaceForScope(scope);
     return buildSurfaceUrl(surface, nextPath, host);
   }
 

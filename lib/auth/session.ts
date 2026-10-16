@@ -1,4 +1,5 @@
 import type { AuthUserLike } from "@/lib/auth/roles";
+import type { AuthScope } from "@/lib/auth/scopes";
 
 export type AuthUser = {
   id: number;
@@ -7,7 +8,7 @@ export type AuthUser = {
   email: string;
   profile_image: string | null;
   status: string;
-  scope: string;
+  scope: AuthScope | string;
   roles: string[];
   organisation_id: number | null;
 } & AuthUserLike;

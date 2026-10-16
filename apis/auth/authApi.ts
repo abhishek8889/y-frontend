@@ -1,6 +1,7 @@
 import { withQueryToast } from "@/lib/api/queryToast";
 import { baseApi } from "@/lib/store/baseApi";
 import type { AuthUser } from "@/lib/auth/session";
+import type { PermissionMap } from "@/lib/auth/permissions";
 
 export type LoginRequest = {
   email: string;
@@ -18,6 +19,26 @@ export type LoginResponse = {
   };
 };
 
+export type SendPublicLoginOtpRequest = {
+  email: string;
+  phone: string;
+  first_name?: string;
+  last_name?: string;
+};
+
+export type SendPublicLoginOtpResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    email: string;
+  };
+};
+
+export type VerifyPublicLoginOtpRequest = {
+  email: string;
+  otp: string;
+};
+
 export type AboutMeOrganisation = {
   id?: number;
   name?: string | null;
@@ -27,7 +48,7 @@ export type AboutMeOrganisation = {
 
 export type AboutMeUser = AuthUser & {
   organisation_approve_status?: boolean;
-  permissions?: Record<string, string[]>;
+  permissions?: PermissionMap;
   /** Flat organisation name when API does not nest `organisation`. */
   organisation_name?: string | null;
   organisation?: AboutMeOrganisation | null;
@@ -54,8 +75,47 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ["Auth"],
       async onQueryStarted(_, { queryFulfilled }) {
         await withQueryToast(queryFulfilled, {
-          error: true, // backend message
-          // error: "This is not working like this", // custom
+          error: true,
+        });
+      },
+    }),
+    platformLogin: build.mutation<LoginResponse, LoginRequest>({
+      query: (body) => ({
+        url: "platform/login",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          error: true,
+        });
+      },
+    }),
+    sendPublicLoginOtp: build.mutation<SendPublicLoginOtpResponse, SendPublicLoginOtpRequest>({
+      query: (body) => ({
+        url: "public/send-login-otp",
+        method: "POST",
+        body,
+      }),
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          success: true,
+          error: true,
+        });
+      },
+    }),
+    verifyPublicLoginOtp: build.mutation<LoginResponse, VerifyPublicLoginOtpRequest>({
+      query: (body) => ({
+        url: "public/verify-login-otp",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          success: true,
+          error: true,
         });
       },
     }),
@@ -78,6 +138,9 @@ export const authApi = baseApi.injectEndpoints({
 
 export const {
   useLoginMutation,
+  usePlatformLoginMutation,
+  useSendPublicLoginOtpMutation,
+  useVerifyPublicLoginOtpMutation,
   useGetAboutMeQuery,
   useGetProfileQuery,
   useLazyGetProfileQuery,

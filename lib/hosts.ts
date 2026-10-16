@@ -1,3 +1,6 @@
+import { AuthScope } from "@/lib/auth/scopes";
+import { getPrimaryScope, type AuthUserLike } from "@/lib/auth/roles";
+
 export type AppSurface = "public" | "organiser" | "superadmin";
 
 const PUBLIC_HOST = process.env.NEXT_PUBLIC_PUBLIC_HOST ?? "localhost";
@@ -20,10 +23,25 @@ export function getHostSurface(hostHeader: string): AppSurface {
   return "public";
 }
 
-export const authPaths = ["/login", "/signup", "/reset-password", "/account-under-review", "/unauthorized"];
+export const authPaths = [
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/account-under-review",
+  "/unauthorized",
+];
 
 export const surfacePaths = {
-  public: ["/", "/event", ...authPaths],
+  public: [
+    "/",
+    "/event",
+    "/payment",
+    "/account",
+    "/orders",
+    "/wishlist",
+    "/settings",
+    ...authPaths,
+  ],
   organiser: [
     "/dashboard",
     "/events",
@@ -85,6 +103,17 @@ export function buildSurfaceUrl(
   return `${protocol}//${hostWithPort}${pathname}`;
 }
 
+export function getSurfaceForScope(scope: AuthScope | string | null | undefined): AppSurface {
+  if (scope === AuthScope.Organisation) return "organiser";
+  if (scope === AuthScope.Platform) return "superadmin";
+  return "public";
+}
+
+export function getSurfaceForUser(user: AuthUserLike | null | undefined): AppSurface {
+  return getSurfaceForScope(getPrimaryScope(user));
+}
+
+/** @deprecated Prefer getSurfaceForUser / getSurfaceForScope. */
 export function getSurfaceForRole(role: "public" | "owner" | "superadmin"): AppSurface {
   if (role === "owner") return "organiser";
   if (role === "superadmin") return "superadmin";

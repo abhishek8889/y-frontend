@@ -45,8 +45,15 @@ const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuery
 ) => {
   const result = await rawBaseQuery(args, api, extraOptions);
   const requestUrl = typeof args === "string" ? args : args.url;
-  const isAuthRequest =
-    requestUrl === "organisation/login" || requestUrl.startsWith("organisation/login?");
+  const authRequestPrefixes = [
+    "organisation/login",
+    "platform/login",
+    "public/send-login-otp",
+    "public/verify-login-otp",
+  ];
+  const isAuthRequest = authRequestPrefixes.some(
+    (prefix) => requestUrl === prefix || requestUrl.startsWith(`${prefix}?`),
+  );
 
   if (result.error?.status === 401 && !isAuthRequest) {
     clearAuthSession();

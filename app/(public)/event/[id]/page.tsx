@@ -8,8 +8,8 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import eventCover from "@/assets/event-cover.jpg";
 import homeHeroImage from "@/assets/home-hero.jpg";
-import yourlistLogo from "@/assets/yourlist-logo.png";
 import signupImage from "@/assets/signup-image.png";
+import { PublicSiteHeader } from "@/components/public/PublicSiteHeader";
 import { SelectField } from "@/components/ui/SelectField";
 import { PaymentForm } from "./PaymentForm";
 
@@ -79,13 +79,7 @@ export default function PublicEventPage() {
 
   return (
     <main className="min-h-screen bg-white text-black">
-      <header className="relative flex h-[44px] items-center justify-between border-b border-black/80 px-5 md:px-8">
-        <Link href="/" className="text-[11px] font-medium uppercase hover:opacity-60">Events</Link>
-        <Link href="/" aria-label="Yourlist home" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Image src={yourlistLogo} alt="Yourlist" priority className="h-auto w-[76px]" />
-        </Link>
-        <Link href="/login" className="ml-auto text-[11px] font-medium uppercase hover:opacity-60">Login</Link>
-      </header>
+      <PublicSiteHeader />
 
       <nav aria-label="Breadcrumb" className="flex h-[34px] items-center border-b border-black/70 px-5 text-[10px] uppercase text-black/70 md:px-8">
         <Link href="/" className="hover:text-black">Events</Link>

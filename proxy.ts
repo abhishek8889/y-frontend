@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_TOKEN_KEY, AUTH_USER_KEY } from "@/lib/auth/constants";
-import { canAccessSurface, getPrimaryRole } from "@/lib/auth/roles";
+import { canAccessSurface, getPrimaryScope } from "@/lib/auth/roles";
 import { parseAuthUserCookie } from "@/lib/auth/session";
 import {
   buildSurfaceUrl,
   defaultPathForSurface,
   getHostSurface,
-  getSurfaceForRole,
+  getSurfaceForScope,
   isAuthPath,
   isPathAllowed,
 } from "@/lib/hosts";
@@ -78,8 +78,8 @@ export function proxy(request: NextRequest) {
   }
 
   if (!canAccessSurface(surface, user)) {
-    const role = getPrimaryRole(user);
-    const homeSurface = getSurfaceForRole(role);
+    const scope = getPrimaryScope(user);
+    const homeSurface = getSurfaceForScope(scope);
     const homePath = defaultPathForSurface(homeSurface);
     return redirectTo(request, buildSurfaceUrl(homeSurface, homePath, hostHeader));
   }
