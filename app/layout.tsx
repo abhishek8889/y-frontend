@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 const univers = localFont({
   src: [
+    { path: "../assets/univers/UniversLight.ttf", weight: "300", style: "normal" },
     { path: "../assets/univers/UniversRegular.ttf", weight: "400", style: "normal" },
     { path: "../assets/univers/UniversBold.ttf", weight: "700", style: "normal" },
-    { path: "../assets/univers/UniversCnRg.ttf", weight: "400", style: "normal" },
-    { path: "../assets/univers/UniversCnBold.ttf", weight: "700", style: "normal" },
   ],
   variable: "--font-univers",
   display: "swap",
@@ -21,7 +21,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${univers.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

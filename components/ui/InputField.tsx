@@ -1,49 +1,79 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
-type InputType = InputHTMLAttributes<HTMLInputElement>["type"];
-
-type InputFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "prefix" | "type"> & {
-  label: string;
-  type?: InputType;
+type SharedProps = {
+  label?: string;
+  labelClassName?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
+  prefixClassName?: string;
+  suffixClassName?: string;
   containerClassName?: string;
+  wrapperClassName?: string;
+  density?: "default" | "compact";
+  as?: "input" | "textarea";
 };
 
-export function InputField({
-  label,
-  id,
-  type = "text",
-  prefix,
-  suffix,
-  className = "",
-  containerClassName = "",
-  ...props
-}: InputFieldProps) {
-  const inputId = id ?? props.name;
+type InputFieldProps = SharedProps &
+  (
+    | ({ as?: "input" } & Omit<InputHTMLAttributes<HTMLInputElement>, "prefix">)
+    | ({ as: "textarea" } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "prefix">)
+  );
+
+export function InputField(props: InputFieldProps) {
+  const {
+    label,
+    labelClassName = "",
+    id,
+    as = "input",
+    prefix,
+    suffix,
+    prefixClassName = "ml-5 mr-2",
+    suffixClassName = "mr-6",
+    className = "",
+    containerClassName = "",
+    wrapperClassName = "",
+    density = "default",
+    ...rest
+  } = props;
+  const inputId = id ?? ("name" in rest && typeof rest.name === "string" ? rest.name : undefined);
+  const isTextarea = as === "textarea";
 
   return (
-    <div className="mb-0">
-      <label
-        htmlFor={inputId}
-        className="text-[16px] mb-[6px] block font-bold uppercase leading-[24px] tracking-[0px] text-black"
-      >
-        {label}
-      </label>
+    <div className={`mb-0 ${wrapperClassName}`.trim()}>
+      {label ? (
+        <label
+          htmlFor={inputId}
+          className={`mb-[6px] block shrink-0 text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black ${labelClassName}`.trim()}
+        >
+          {label}
+        </label>
+      ) : null}
 
       <div
-        className={`flex h-[48px] items-center rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${containerClassName}`.trim()}
+        className={`flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
+          isTextarea ? "min-h-[140px] p-0" : density === "compact" ? "h-10 items-center" : "h-[48px] items-center"
+        } ${containerClassName}`.trim()}
       >
-        {prefix ? <span className="mr-2 flex items-center">{prefix}</span> : null}
+        {prefix ? <span className={`flex items-center ${prefixClassName}`}>{prefix}</span> : null}
 
-        <input
-          id={inputId}
-          type={type}
-          {...props}
-          className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
-        />
-
-        {suffix ? <span className="mr-6 flex items-center">{suffix}</span> : null}
+        {isTextarea ? (
+          <textarea
+            id={inputId}
+            rows={"rows" in rest ? rest.rows ?? 4 : 4}
+            {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+            className={`w-full resize-none border-0 bg-transparent px-5 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+          />
+        ) : (
+          <>
+            <input
+              id={inputId}
+              {...(rest as InputHTMLAttributes<HTMLInputElement>)}
+              type={"type" in rest ? rest.type ?? "text" : "text"}
+              className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+            />
+            {suffix ? <span className={`flex items-center ${suffixClassName}`}>{suffix}</span> : null}
+          </>
+        )}
       </div>
     </div>
   );

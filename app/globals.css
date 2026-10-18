@@ -3,6 +3,39 @@
 :root {
   --black: #000000;
   --white: #ffffff;
+  --status-draft: #ff6d00;
+  --status-active: #1a7f37;
+  --status-inactive: #949494;
+  --status-soldout: #dc2626;
+}
+
+/* Shared entity status colors (Draft / Active / Inactive / Sold out) */
+.text-status-draft {
+  color: var(--status-draft);
+}
+.bg-status-draft {
+  background-color: var(--status-draft);
+}
+
+.text-status-active {
+  color: var(--status-active);
+}
+.bg-status-active {
+  background-color: var(--status-active);
+}
+
+.text-status-inactive {
+  color: var(--status-inactive);
+}
+.bg-status-inactive {
+  background-color: var(--status-inactive);
+}
+
+.text-status-soldout {
+  color: var(--status-soldout);
+}
+.bg-status-soldout {
+  background-color: var(--status-soldout);
 }
 
 html,
@@ -22,14 +55,35 @@ body {
 }
 
 a {
-  color: inherit;
   text-decoration: none;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   outline: none;
   font-family: var(--font-univers), sans-serif;
 }
 
+@keyframes event-gallery-loop {
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.event-gallery-track {
+  animation: event-gallery-loop 42s linear infinite;
+  will-change: transform;
+}
+
+.event-gallery-track:hover,
+.event-gallery-paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-gallery-track {
+    animation: none;
+  }
+}
