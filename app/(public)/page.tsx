@@ -10,7 +10,7 @@ import eventCover from "@/assets/event-cover.jpg";
 
 const events = Array.from({ length: 8 }, (_, index) => ({
   id: index + 1,
-  title: "The Closing Party",
+  title: "The Closing Party test",
   date: "Sun, Feb 22, 6:00 PM",
   venue: "The Key Corner",
   imagePosition: ["center", "35% center", "65% center", "center 70%", "20% center", "80% center", "center 25%", "center"][
