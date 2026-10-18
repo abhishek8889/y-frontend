@@ -22,6 +22,7 @@ import {
   mapEventToFormValues,
   toEventLifecycleStatus,
   validateEventForm,
+  type EventFormImage,
   type EventFormValues,
 } from "./eventFormHelpers";
 
@@ -213,7 +214,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
 
     setUploadingGallery(true);
     try {
-      const uploaded = [];
+      const uploaded: EventFormImage[] = [];
       for (const file of selected) {
         const result = await uploadMedia({ file, context: "event-gallery" }).unwrap();
         uploaded.push({

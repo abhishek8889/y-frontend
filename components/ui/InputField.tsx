@@ -15,8 +15,8 @@ type SharedProps = {
 
 type InputFieldProps = SharedProps &
   (
-    | ({ as?: "input" } & InputHTMLAttributes<HTMLInputElement>)
-    | ({ as: "textarea" } & TextareaHTMLAttributes<HTMLTextAreaElement>)
+    | ({ as?: "input" } & Omit<InputHTMLAttributes<HTMLInputElement>, "prefix">)
+    | ({ as: "textarea" } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "prefix">)
   );
 
 export function InputField(props: InputFieldProps) {

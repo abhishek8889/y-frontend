@@ -1,4 +1,6 @@
-import type { CookieAttributes } from "js-cookie";
+import type Cookies from "js-cookie";
+
+type CookieAttributes = Cookies.CookieAttributes;
 
 /**
  * Host-only cookies must be used on *.localhost — browsers reject Domain=.localhost

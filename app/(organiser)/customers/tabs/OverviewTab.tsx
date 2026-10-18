@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import type { Customer, CustomerAction } from "../customerTypes";
-import IconCard from "@/components/ui/IconCard";
+import IconCard, { type IconName } from "@/components/ui/IconCard";
 
 export default function OverviewTab({
   customer,
@@ -54,18 +54,18 @@ export default function OverviewTab({
       <aside className="h-fit border border-black p-6">
         <h2 className="text-[16px] font-bold uppercase">Actions</h2>
         <div className="mt-4 space-y-2">
-          {[
+          {([
             { label: "Send message", action: "message", icon: "send-message-icon" },
             { label: "View orders", icon: "view-orders-icon" },
             { label: "View tickets", icon: "view-tickets-icon" },
             { label: "Issue complimentary ticket", action: "ticket", icon: "issue-ticket-icon" },
             { label: "Suspend account", action: "suspend", icon: "suspend-account-icon" },
-          ].map(({ label, action, icon }) => (
+          ] satisfies { label: string; action?: CustomerAction; icon: IconName }[]).map(({ label, action, icon }) => (
             <button
               key={label}
               type="button"
               onClick={() => {
-                if (action) onAction(action as CustomerAction);
+                if (action) onAction(action);
               }}
               className="flex min-h-[36px] gap-[12px] w-full items-center cursor-pointer border border-[#DFE3E8] rounded-[6px] px-2 text-left text-[14px] hover:bg-black/5"
             >

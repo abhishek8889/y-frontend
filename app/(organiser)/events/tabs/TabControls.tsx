@@ -41,7 +41,7 @@ export function SelectFilter({
   options,
   onChange,
 }: {
-  label: string;
+  label?: string;
   value: string;
   options: FilterOption[];
   onChange: (value: string) => void;

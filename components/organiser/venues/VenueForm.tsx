@@ -22,6 +22,7 @@ import {
   createEmptyVenueFormValues,
   mapVenueToFormValues,
   validateVenueForm,
+  type VenueFormImage,
   type VenueFormValues,
 } from "@/components/organiser/venues/venueFormHelpers";
 
@@ -195,7 +196,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
 
     setUploadingGallery(true);
     try {
-      const uploaded = [];
+      const uploaded: VenueFormImage[] = [];
       for (const file of selected) {
         const result = await uploadMedia({ file, context: "venue-gallery" }).unwrap();
         uploaded.push({
