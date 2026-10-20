@@ -5,7 +5,11 @@ import { AuthScope } from "@/lib/auth/scopes";
 import type { AuthUser } from "@/lib/auth/session";
 import { authCookieOptions, clearAuthCookieOptions } from "@/lib/api/cookieOptions";
 import { clearAuthToken, setAuthToken } from "@/lib/api/token";
-import { buildSurfaceUrl, getSurfaceForScope } from "@/lib/hosts";
+import {
+  buildSurfaceUrl,
+  getSurfaceForScope,
+  isSafeNextPath,
+} from "@/lib/hosts";
 
 export type { AuthUser };
 export { AUTH_USER_KEY };
@@ -49,19 +53,28 @@ export function getPostLoginUrl(user: AuthUserLike, currentHostHeader?: string) 
   return buildSurfaceUrl(surface, path, host);
 }
 
-/** Prefer a safe same-origin `next` path from the login query string when present. */
+/**
+ * Prefer a safe `next` path when present.
+ * Public-host logins stay on the public site (workspace links handle cross-host navigation).
+ */
 export function resolvePostLoginUrl(
   user: AuthUserLike,
   nextPath: string | null | undefined,
   currentHostHeader?: string,
+  options?: { stayOnPublic?: boolean },
 ) {
-  if (nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")) {
-    const host =
-      currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
+  const host =
+    currentHostHeader ?? (typeof window !== "undefined" ? window.location.host : undefined);
+
+  if (options?.stayOnPublic) {
+    return isSafeNextPath(nextPath) ? nextPath : "/";
+  }
+
+  if (isSafeNextPath(nextPath)) {
     const scope = getPrimaryScope(user);
     const surface = getSurfaceForScope(scope);
     return buildSurfaceUrl(surface, nextPath, host);
   }
 
-  return getPostLoginUrl(user, currentHostHeader);
+  return getPostLoginUrl(user, host);
 }

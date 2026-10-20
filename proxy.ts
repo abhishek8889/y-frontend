@@ -9,6 +9,7 @@ import {
   getSurfaceForScope,
   isAuthPath,
   isPathAllowed,
+  isSafeNextPath,
 } from "@/lib/hosts";
 
 function redirectTo(request: NextRequest, absoluteOrPath: string) {
@@ -46,7 +47,6 @@ export function proxy(request: NextRequest) {
         pathname.startsWith("/roles") ||
         pathname.startsWith("/staff") ||
         pathname.startsWith("/finance") ||
-        pathname.startsWith("/settings") ||
         pathname.startsWith("/whitelabels")
       ) {
         return redirectTo(request, buildSurfaceUrl("organiser", pathname, hostHeader));
@@ -56,28 +56,39 @@ export function proxy(request: NextRequest) {
     return redirectTo(request, defaultPathForSurface(surface));
   }
 
-  // Public host: no login required
+  const token = request.cookies.get(AUTH_TOKEN_KEY)?.value;
+  const user = parseAuthUserCookie(request.cookies.get(AUTH_USER_KEY)?.value);
+  const isAuthenticated = Boolean(token && user);
+
+  // Public host: always open (guest or any session)
   if (surface === "public") {
     return NextResponse.next();
   }
 
-  // Auth screens stay reachable on app/admin hosts
+  // Already signed into this workspace → skip auth screens
+  if (isAuthPath(pathname) && isAuthenticated && canAccessSurface(surface, user)) {
+    const nextParam = request.nextUrl.searchParams.get("next");
+    const destination = isSafeNextPath(nextParam)
+      ? nextParam
+      : defaultPathForSurface(surface);
+    return redirectTo(request, destination);
+  }
+
   if (isAuthPath(pathname)) {
     return NextResponse.next();
   }
 
-  // 2) app.* / admin.* require a logged-in user with the matching role
-  const token = request.cookies.get(AUTH_TOKEN_KEY)?.value;
-  const user = parseAuthUserCookie(request.cookies.get(AUTH_USER_KEY)?.value);
-
-  if (!token || !user) {
+  // 2) app.* / admin.* require matching workspace session
+  if (!isAuthenticated) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
+    loginUrl.search = "";
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (!canAccessSurface(surface, user)) {
+    // Wrong workspace token — send them to the host that matches their current scope
     const scope = getPrimaryScope(user);
     const homeSurface = getSurfaceForScope(scope);
     const homePath = defaultPathForSurface(homeSurface);

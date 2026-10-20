@@ -65,22 +65,83 @@ export default function LoginPage() {
       ? "Enter your email and phone to receive a login code"
       : "Enter your details to access your account";
 
+  /** First empty slot, or last slot when the code is complete. */
+  const editableOtpIndex = (() => {
+    const firstEmpty = verificationCode.findIndex((digit) => !digit);
+    return firstEmpty === -1 ? verificationCode.length - 1 : firstEmpty;
+  })();
+
+  function focusOtpIndex(index: number) {
+    queueMicrotask(() => inputRefs.current[index]?.focus());
+  }
+
   function handleCodeChange(index: number, value: string) {
-    const sanitizedValue = value.replace(/[^a-zA-Z0-9]/g, "").slice(-1).toUpperCase();
+    if (index !== editableOtpIndex) return;
+
+    // Multi-char (e.g. autofill) — treat like paste into this slot onward.
+    const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    if (cleaned.length > 1) {
+      const nextCode = [...verificationCode];
+      for (let i = 0; i < cleaned.length && index + i < nextCode.length; i += 1) {
+        nextCode[index + i] = cleaned[i] ?? "";
+      }
+      setVerificationCode(nextCode);
+      const nextFocus = Math.min(index + cleaned.length, nextCode.length - 1);
+      focusOtpIndex(nextFocus);
+      return;
+    }
+
+    const sanitizedValue = cleaned.slice(-1);
     const nextCode = [...verificationCode];
     nextCode[index] = sanitizedValue;
     setVerificationCode(nextCode);
 
     if (sanitizedValue && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1]?.focus();
+      focusOtpIndex(index + 1);
     }
   }
 
+  function handleCodePaste(event: React.ClipboardEvent<HTMLInputElement>) {
+    event.preventDefault();
+    const pasted = event.clipboardData
+      .getData("text")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 6);
+
+    if (!pasted) return;
+
+    const nextCode = [...initialCode];
+    for (let i = 0; i < pasted.length; i += 1) {
+      nextCode[i] = pasted[i] ?? "";
+    }
+    setVerificationCode(nextCode);
+    focusOtpIndex(Math.min(pasted.length, nextCode.length) - 1);
+  }
+
   function handleKeyDown(index: number, event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !verificationCode[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (event.key !== "Backspace") return;
+
+    if (verificationCode[index]) {
+      const nextCode = [...verificationCode];
+      nextCode[index] = "";
+      setVerificationCode(nextCode);
+      return;
+    }
+
+    if (index > 0) {
+      event.preventDefault();
+      const nextCode = [...verificationCode];
+      nextCode[index - 1] = "";
+      setVerificationCode(nextCode);
+      focusOtpIndex(index - 1);
     }
   }
+
+  useEffect(() => {
+    if (modalState !== "public-otp") return;
+    focusOtpIndex(editableOtpIndex);
+  }, [modalState, editableOtpIndex]);
 
   function completeLogin(token: string, user: AuthUser) {
     const expectedScope =
@@ -88,17 +149,25 @@ export default function LoginPage() {
         ? AuthScope.Platform
         : hostSurface === "organiser"
           ? AuthScope.Organisation
-          : AuthScope.Customer;
+          : null;
 
     const actualScope = getUserScope(user);
-    if (actualScope && actualScope !== expectedScope && hostSurface !== "public") {
+
+    // App/admin hosts only accept their native workspace scope.
+    if (expectedScope && actualScope !== expectedScope) {
       appToast.error("This account cannot sign in on this dashboard.");
       return;
     }
 
     setAuthSession(token, user);
     const nextPath = new URLSearchParams(window.location.search).get("next");
-    window.location.assign(resolvePostLoginUrl(user, nextPath, window.location.host));
+    // Public OTP may return organisation/platform scope for multi-workspace users;
+    // stay on the public site and let the account menu link to other hosts.
+    window.location.assign(
+      resolvePostLoginUrl(user, nextPath, window.location.host, {
+        stayOnPublic: hostSurface === "public",
+      }),
+    );
   }
 
   async function handlePasswordLogin(event: FormEvent<HTMLFormElement>) {
@@ -341,23 +410,28 @@ export default function LoginPage() {
 
             <div className="mt-[30px] border-t border-[#E5E5E5] pt-[27px]">
               <div className="grid grid-cols-6 gap-[10px]">
-                {verificationCode.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(element) => {
-                      inputRefs.current[index] = element;
-                    }}
-                    type="text"
-                    inputMode="text"
-                    autoComplete="one-time-code"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(event) => handleCodeChange(index, event.target.value)}
-                    onKeyDown={(event) => handleKeyDown(index, event)}
-                    className="h-[56px] rounded-[4px] border border-[#A9A9A9] bg-white text-center text-[30px] font-normal leading-[44px] text-black outline-none focus:border-black"
-                    aria-label={`Verification code character ${index + 1}`}
-                  />
-                ))}
+                {verificationCode.map((digit, index) => {
+                  const isEditable = index === editableOtpIndex;
+                  return (
+                    <input
+                      key={index}
+                      ref={(element) => {
+                        inputRefs.current[index] = element;
+                      }}
+                      type="text"
+                      inputMode="text"
+                      autoComplete={index === 0 ? "one-time-code" : "off"}
+                      maxLength={isEditable ? 6 : 1}
+                      value={digit}
+                      disabled={!isEditable}
+                      onChange={(event) => handleCodeChange(index, event.target.value)}
+                      onPaste={handleCodePaste}
+                      onKeyDown={(event) => handleKeyDown(index, event)}
+                      className="h-[56px] rounded-[4px] border border-[#A9A9A9] bg-white text-center text-[30px] font-normal leading-[44px] text-black outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-[#F5F5F5] disabled:text-black/70"
+                      aria-label={`Verification code character ${index + 1}`}
+                    />
+                  );
+                })}
               </div>
             </div>
 

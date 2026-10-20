@@ -94,6 +94,8 @@ export const baseApi = createApi({
     "Customers",
     "Roles",
     "RolePermissions",
+    "PublicEvents",
+    "Wishlist",
   ],
   endpoints: () => ({}),
 });

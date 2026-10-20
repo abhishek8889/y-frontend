@@ -2,66 +2,85 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import homeHeroImage from "@/assets/home-hero.jpg";
+import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
+import { EventCard } from "@/components/public/EventCard";
 import { PublicSiteHeader } from "@/components/public/PublicSiteHeader";
 import { SiteFooter } from "@/components/public/SiteFooter";
-import eventCover from "@/assets/event-cover.jpg";
-
-const events = Array.from({ length: 8 }, (_, index) => ({
-  id: index + 1,
-  title: "The Closing Party Test Check",
-  date: "Sun, Feb 22, 6:00 PM",
-  venue: "The Key Corner",
-  imagePosition: ["center", "35% center", "65% center", "center 70%", "20% center", "80% center", "center 25%", "center"][
-    index
-  ],
-}));
+import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 export default function HomePage() {
-  const [isFavorite, setIsFavorite] = useState(true);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("featured");
-  const [favoriteEvents, setFavoriteEvents] = useState<number[]>([]);
-  const sortedEvents = [...events].sort((first, second) => {
-    if (sortBy === "name") return first.title.localeCompare(second.title) || first.id - second.id;
-    if (sortBy === "oldest") return second.id - first.id;
-    return first.id - second.id;
+
+  const { data, isLoading, isFetching, isError } = useGetPublicEventsQuery({
+    search: search || undefined,
+    per_page: 24,
   });
 
-  function toggleEventFavorite(eventId: number) {
-    setFavoriteEvents((current) =>
-      current.includes(eventId)
-        ? current.filter((favoriteId) => favoriteId !== eventId)
-        : [...current, eventId],
-    );
+  const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
+
+  const sortedEvents = useMemo(() => {
+    const items = [...(data?.data?.items ?? [])];
+    if (sortBy === "name") {
+      return items.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+    }
+    if (sortBy === "oldest") {
+      return items.sort((a, b) => {
+        const aTime = a.starts_at ? new Date(a.starts_at).getTime() : 0;
+        const bTime = b.starts_at ? new Date(b.starts_at).getTime() : 0;
+        return aTime - bTime || a.id - b.id;
+      });
+    }
+    // featured / newest first (API already orders by starts_at desc)
+    return items;
+  }, [data?.data?.items, sortBy]);
+
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSearch(searchInput.trim());
   }
 
   return (
     <main className="min-h-screen bg-white text-black">
       <PublicSiteHeader
         showFavorites
-        isFavorite={isFavorite}
-        onToggleFavorite={() => setIsFavorite((value) => !value)}
+        isFavorite={wishlistedIds.size > 0}
+        favoriteCount={wishlistedIds.size}
       />
 
-      <form action="/" className="flex h-[35px] items-center gap-3 border-b border-black/80 px-5 md:px-8">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-black">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex h-[35px] items-center gap-3 border-b border-black/80 px-5 md:px-8"
+      >
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 text-black"
+        >
           <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.6" />
           <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
         <input
           type="search"
           name="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
           placeholder="What are you looking for?"
           aria-label="Search events"
           className="h-full min-w-0 flex-1 bg-transparent text-[10px] uppercase text-black placeholder:text-black/55 focus:outline-none"
         />
       </form>
 
-      <section aria-label="Discover live events" className="relative h-[calc(100svh-152px)] min-h-[420px] max-h-[780px] overflow-hidden bg-black">
+      <section
+        aria-label="Discover live events"
+        className="relative h-[calc(100svh-152px)] min-h-[420px] max-h-[780px] overflow-hidden bg-black"
+      >
         <Image
           src={homeHeroImage}
           alt="A crowd enjoying a live concert beneath bright stage lights"
@@ -71,12 +90,16 @@ export default function HomePage() {
           className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-black/10" aria-hidden="true" />
-        <Link href="/" className="absolute inset-0" aria-label="Explore events" />
+        <Link href="#events" className="absolute inset-0" aria-label="Explore events" />
       </section>
 
-      <section aria-label="Upcoming events" className="bg-white">
+      <section id="events" aria-label="Upcoming events" className="bg-white">
         <div className="flex h-[48px] items-center justify-between border-b border-black/20 px-5 text-[12px] md:px-8">
-          <p aria-live="polite" className="font-medium">{events.length} Events</p>
+          <p aria-live="polite" className="font-medium">
+            {isLoading || isFetching
+              ? "Loading events…"
+              : `${sortedEvents.length} Event${sortedEvents.length === 1 ? "" : "s"}`}
+          </p>
           <label className="flex items-center gap-2 text-[10px] font-medium uppercase">
             Sort by
             <select
@@ -86,50 +109,37 @@ export default function HomePage() {
               className="h-8 bg-transparent pr-1 text-[10px] font-medium uppercase outline-none"
             >
               <option value="featured">Featured</option>
-              <option value="oldest">Newest</option>
+              <option value="oldest">Oldest</option>
               <option value="name">Name</option>
             </select>
           </label>
         </div>
 
-        <div className="grid grid-cols-1 gap-px bg-black/50 sm:grid-cols-2 xl:grid-cols-4">
-          {sortedEvents.map((event) => {
-            const isEventFavorite = favoriteEvents.includes(event.id);
-
-            return (
-              <article key={event.id} className="min-w-0 bg-white">
-                <div className="relative aspect-[0.88/1] overflow-hidden bg-black">
-                  <Link href={`/event/${event.id}`} aria-label={`View ${event.title}`} className="absolute inset-0">
-                    <Image
-                      src={eventCover}
-                      alt="Concert crowd beneath bright stage lights"
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 25vw"
-                      className="object-cover transition-transform duration-500 hover:scale-[1.03]"
-                      style={{ objectPosition: event.imagePosition }}
-                    />
-                  </Link>
-                  <button
-                    type="button"
-                    aria-label={isEventFavorite ? "Remove event from favorites" : "Add event to favorites"}
-                    aria-pressed={isEventFavorite}
-                    onClick={() => toggleEventFavorite(event.id)}
-                    className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-black transition hover:bg-white"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill={isEventFavorite ? "currentColor" : "none"} aria-hidden="true">
-                      <path d="M20.8 8.6c0 4.1-8.8 10.1-8.8 10.1S3.2 12.7 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-                <Link href={`/event/${event.id}`} className="flex min-h-[90px] flex-col items-center justify-center px-3 py-4 text-center hover:bg-black/[0.025]">
-                  <h2 className="text-[12px] font-bold uppercase leading-[16px] text-black">{event.title}</h2>
-                  <p className="mt-1 text-[12px] leading-[16px] text-black/75">{event.date}</p>
-                  <p className="mt-0.5 text-[11px] font-bold leading-[15px] text-black">{event.venue}</p>
-                </Link>
-              </article>
-            );
-          })}
-        </div>
+        {isError ? (
+          <p role="alert" className="px-5 py-10 text-center text-[14px] text-[#b42318] md:px-8">
+            Unable to load events. Please try again.
+          </p>
+        ) : isLoading ? (
+          <p role="status" className="px-5 py-10 text-center text-[14px] text-black/60 md:px-8">
+            Loading events…
+          </p>
+        ) : sortedEvents.length === 0 ? (
+          <p className="px-5 py-10 text-center text-[14px] text-black/60 md:px-8">
+            {search ? "No events match your search." : "No published events yet."}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-px bg-transparent sm:grid-cols-2 xl:grid-cols-4">
+            {sortedEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                isWishlisted={wishlistedIds.has(event.id)}
+                wishlistDisabled={isMutating}
+                onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <SiteFooter />
