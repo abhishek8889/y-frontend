@@ -48,6 +48,7 @@ export function getApiErrorMessage(
       }
       return text;
     }
+    
 
     if ("error" in error && typeof error.error === "string" && error.error.trim()) {
       return error.error;
