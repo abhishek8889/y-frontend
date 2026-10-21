@@ -28,7 +28,11 @@ export function proxy(request: NextRequest) {
   const hostHeader = request.headers.get("host") ?? "localhost";
   const surface = getHostSurface(hostHeader);
 
-  if (pathname.startsWith("/api") || pathname.startsWith("/_next")) {
+  if (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/backend")
+  ) {
     return NextResponse.next();
   }
 

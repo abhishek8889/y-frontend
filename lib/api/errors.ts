@@ -42,7 +42,11 @@ export function getApiErrorMessage(
     if (fromBody) return fromBody;
 
     if (typeof error.data === "string" && error.data.trim()) {
-      return error.data;
+      const text = error.data.trim();
+      if (text.startsWith("<!") || text.startsWith("<html")) {
+        return fallback;
+      }
+      return text;
     }
 
     if ("error" in error && typeof error.error === "string" && error.error.trim()) {
