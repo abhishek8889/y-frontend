@@ -103,48 +103,66 @@ export function formatMoney(value: number | string | null | undefined, currency 
   }
 }
 
+export type TicketSelectOption = {
+  value: string;
+  label: string;
+  ticketId: number;
+  ticketName: string;
+  offerId: number;
+  offerName: string;
+  amount: number;
+  currency: string;
+  maxPerOrder: number | null;
+  remainingQuantity: number | null;
+};
+
+export function maxOfferQuantity(option: TicketSelectOption) {
+  const remaining = option.remainingQuantity ?? 20;
+  const perOrder = option.maxPerOrder ?? remaining;
+  return Math.max(1, Math.min(remaining, perOrder, 20));
+}
+
+/** Percentage taken from event details when the backend includes a fee field. */
+export function getEventPlatformFeeRate(event?: {
+  platform_fee_percentage?: number | string | null;
+  platform_fee_rate?: number | string | null;
+  platform_fee?: number | string | null;
+  booking_platform_fees_percentage?: number | string | null;
+} | null) {
+  const raw =
+    event?.platform_fee_percentage ??
+    event?.platform_fee_rate ??
+    event?.booking_platform_fees_percentage ??
+    event?.platform_fee;
+  const amount = parseMoney(raw);
+  return amount !== null && amount >= 0 ? amount : 0;
+}
+
 /** Build selectable ticket/offer rows for the public event details UI. */
-export function buildTicketSelectOptions(tickets: PublicEventTicket[]) {
-  const options: {
-    value: string;
-    label: string;
-    ticketId: number;
-    offerId?: number;
-    amount: number;
-    currency: string;
-  }[] = [];
+export function buildTicketSelectOptions(tickets: PublicEventTicket[]): TicketSelectOption[] {
+  const options: TicketSelectOption[] = [];
 
   for (const ticket of tickets) {
     const currency = ticket.currency?.trim() || "GBP";
     const offers = ticket.offers ?? [];
 
-    if (offers.length > 0) {
-      for (const offer of offers) {
-        const amount = parseMoney(offer.price);
-        if (amount === null) continue;
-        const priceLabel = formatMoney(amount, currency) ?? String(amount);
-        options.push({
-          value: `offer-${offer.id}`,
-          label: `${ticket.name}${offer.name ? ` · ${offer.name}` : ""} - ${priceLabel}`,
-          ticketId: ticket.id,
-          offerId: offer.id,
-          amount,
-          currency,
-        });
-      }
-      continue;
+    for (const offer of offers) {
+      const amount = parseMoney(offer.price);
+      if (amount === null) continue;
+      const priceLabel = formatMoney(amount, currency) ?? String(amount);
+      options.push({
+        value: `offer-${offer.id}`,
+        label: `${ticket.name}${offer.name ? ` · ${offer.name}` : ""} - ${priceLabel}`,
+        ticketId: ticket.id,
+        ticketName: ticket.name,
+        offerId: offer.id,
+        offerName: offer.name,
+        amount,
+        currency,
+        maxPerOrder: offer.max_per_order ?? null,
+        remainingQuantity: offer.remaining_quantity ?? offer.quantity_cap ?? null,
+      });
     }
-
-    const amount = parseMoney(ticket.base_price);
-    if (amount === null) continue;
-    const priceLabel = formatMoney(amount, currency) ?? String(amount);
-    options.push({
-      value: `ticket-${ticket.id}`,
-      label: `${ticket.name} - ${priceLabel}`,
-      ticketId: ticket.id,
-      amount,
-      currency,
-    });
   }
 
   return options;

@@ -20,7 +20,9 @@ function formatAmount(amount: number) {
 
 export default async function PaymentSuccessPage({ searchParams }: SuccessPageProps) {
   const query = await searchParams;
-  const ticketType = query.ticket === "vip" ? "VIP" : "General admission";
+  const ticketParam = Array.isArray(query.ticket) ? query.ticket[0] : query.ticket;
+  const ticketType =
+    ticketParam === "vip" ? "VIP" : ticketParam?.trim() || "General admission";
   const ticketAmount = query.ticket === "vip" ? 18000 : 6500;
   const reference = typeof query.reference === "string" ? query.reference : "";
   const ticketId = /^pi_[a-zA-Z0-9]+$/.test(reference) ? reference : "Confirmed";

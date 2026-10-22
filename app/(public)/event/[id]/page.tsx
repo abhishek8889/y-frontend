@@ -2,26 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import eventCover from "@/assets/event-cover.jpg";
 import {
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
 } from "@/apis/public/publicEventsApi";
+import { EventTicketBooking } from "@/components/public/EventTicketBooking";
 import { PublicSiteHeader } from "@/components/public/PublicSiteHeader";
-import { SelectField } from "@/components/ui/SelectField";
 import {
-  buildTicketSelectOptions,
   formatPublicEventLongDate,
   formatPublicEventTime,
   formatTicketPriceRange,
   getEventBannerUrl,
 } from "@/lib/events/publicEventFormat";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
-import { PaymentForm } from "./PaymentForm";
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -29,7 +26,6 @@ const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : 
 export default function PublicEventPage() {
   const { id } = useParams<{ id: string }>();
   const uniqueId = typeof id === "string" ? id : "";
-  const router = useRouter();
 
   const {
     data: detailsResponse,
@@ -45,22 +41,12 @@ export default function PublicEventPage() {
 
   const event = detailsResponse?.data;
   const tickets = useMemo(() => ticketsResponse?.data ?? [], [ticketsResponse?.data]);
-  const ticketOptions = useMemo(() => buildTicketSelectOptions(tickets), [tickets]);
   const priceRange = useMemo(() => formatTicketPriceRange(tickets), [tickets]);
 
   const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
   const isWishlisted = event ? wishlistedIds.has(event.id) : false;
 
   const [isPlaying, setIsPlaying] = useState(true);
-  const [selectedTicketValue, setSelectedTicketValue] = useState("");
-  const [bookingMessage, setBookingMessage] = useState("");
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
-  const [paymentError, setPaymentError] = useState("");
-
-  const selectedOption = ticketOptions.find((option) => option.value === selectedTicketValue) ?? null;
-  const ticketAmountCents = selectedOption ? Math.round(selectedOption.amount * 100) : 0;
 
   const galleryImages = useMemo(() => {
     const urls = (event?.images ?? [])
@@ -79,57 +65,6 @@ export default function PublicEventPage() {
 
   const organisationName = event?.organisation?.name?.trim() || "Organiser";
   const organisationInitial = organisationName.charAt(0).toUpperCase() || "O";
-
-  async function handleBookTicket() {
-    if (!selectedOption || !event) return;
-
-    if (isPaymentOpen) {
-      setIsPaymentOpen(false);
-      return;
-    }
-
-    setIsPaymentOpen(true);
-    setPaymentClientSecret(null);
-    setPaymentError("");
-    setBookingMessage("");
-
-    if (!stripePromise) {
-      setPaymentError("Add your Stripe publishable and secret keys to enable checkout.");
-      return;
-    }
-
-    setIsCreatingPayment(true);
-    try {
-      const response = await fetch("/api/payments/create-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.unique_id,
-          ticketType: selectedOption.value,
-          amount: ticketAmountCents,
-        }),
-      });
-      const result: { clientSecret?: unknown; error?: unknown } = await response.json();
-
-      if (!response.ok || typeof result.clientSecret !== "string") {
-        throw new Error(typeof result.error === "string" ? result.error : "Unable to start payment.");
-      }
-
-      setPaymentClientSecret(result.clientSecret);
-    } catch (error) {
-      setPaymentError(error instanceof Error ? error.message : "Unable to start payment. Please try again.");
-    } finally {
-      setIsCreatingPayment(false);
-    }
-  }
-
-  function handlePaymentSuccess(paymentIntentId: string) {
-    const params = new URLSearchParams({
-      ticket: selectedOption?.label ?? selectedTicketValue,
-      reference: paymentIntentId,
-    });
-    router.push(`/payment/success?${params.toString()}`);
-  }
 
   if (!uniqueId) {
     return (
@@ -287,87 +222,9 @@ export default function PublicEventPage() {
               <p role="alert" className="mt-4 text-[13px] text-[#b42318]">
                 Unable to load tickets for this event.
               </p>
-            ) : ticketOptions.length === 0 ? (
-              <p className="mt-4 text-[13px] text-black/60">No tickets available for this event.</p>
             ) : (
-              <>
-                <SelectField
-                  id="event-ticket-type"
-                  name="ticketType"
-                  aria-label="Ticket type"
-                  value={selectedTicketValue}
-                  onChange={(changeEvent) => {
-                    setSelectedTicketValue(changeEvent.target.value);
-                    setIsPaymentOpen(false);
-                    setPaymentClientSecret(null);
-                    setPaymentError("");
-                    setBookingMessage("");
-                  }}
-                  options={ticketOptions.map((option) => ({
-                    value: option.value,
-                    label: option.label,
-                  }))}
-                  placeholder="Select ticket type"
-                  containerClassName="mt-4"
-                  className="!h-[42px] !rounded-[3px] !border-black/60 !px-3 !text-[13px]"
-                />
-
-                {isPaymentOpen ? (
-                  <div className="mt-2">
-                    {isCreatingPayment ? (
-                      <p
-                        role="status"
-                        className="border-y border-black/20 py-4 text-center text-[13px] text-black/60"
-                      >
-                        Preparing secure checkout...
-                      </p>
-                    ) : paymentError ? (
-                      <p
-                        role="alert"
-                        className="border-y border-[#d92d20]/40 py-4 text-[13px] leading-5 text-[#b42318]"
-                      >
-                        {paymentError}
-                      </p>
-                    ) : paymentClientSecret && stripePromise && selectedOption ? (
-                      <Elements
-                        key={paymentClientSecret}
-                        stripe={stripePromise}
-                        options={{
-                          clientSecret: paymentClientSecret,
-                          appearance: {
-                            theme: "stripe",
-                            variables: { colorPrimary: "#000000", borderRadius: "3px" },
-                          },
-                        }}
-                      >
-                        <PaymentForm
-                          clientSecret={paymentClientSecret}
-                          eventTitle={event.name}
-                          ticketType={selectedOption.value.includes("vip") ? "vip" : "general"}
-                          amount={ticketAmountCents}
-                          onSuccess={handlePaymentSuccess}
-                        />
-                      </Elements>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <button
-                  type="button"
-                  disabled={!selectedTicketValue}
-                  onClick={() => void handleBookTicket()}
-                  className="mt-4 h-[44px] w-full rounded-[3px] bg-black text-[12px] font-medium uppercase text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/35"
-                >
-                  {isPaymentOpen ? "Close payment" : "Book ticket"}
-                </button>
-              </>
+              <EventTicketBooking event={event} tickets={tickets} stripePromise={stripePromise} />
             )}
-
-            {bookingMessage ? (
-              <p role="status" className="mt-2 text-center text-[12px] text-[#16834a]">
-                {bookingMessage}
-              </p>
-            ) : null}
 
             <section aria-labelledby="event-information-title" className="mt-7">
               <h2 id="event-information-title" className="text-[13px] font-bold">

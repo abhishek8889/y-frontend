@@ -87,6 +87,10 @@ export type PublicEventDetails = {
   timezone?: string | null;
   status?: string | null;
   images?: PublicEventImage[];
+  platform_fee?: number | string | null;
+  platform_fee_rate?: number | string | null;
+  platform_fee_percentage?: number | string | null;
+  booking_platform_fees_percentage?: number | string | null;
 };
 
 export type PublicEventDetailsResponse = {
@@ -133,6 +137,50 @@ export type PublicEventTicketsResponse = {
   data: PublicEventTicket[];
 };
 
+export type StartBookingOfferPayload = {
+  offer_id: number;
+  qty: number;
+};
+
+export type StartBookingTicketPayload = {
+  offers: StartBookingOfferPayload[];
+};
+
+export type StartBookingOrderItem = {
+  ticket_name: string;
+  offer_name: string;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+  currency: string;
+};
+
+export type StartBookingTicketResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    order: {
+      unique_id: string;
+      checkout_key: string;
+      status: string;
+      subtotal: string;
+      discount_amount: string;
+      platform_fee_amount: string;
+      total_amount: string;
+      currency: string;
+      expires_at?: string | null;
+      items: StartBookingOrderItem[];
+    };
+    payment: {
+      payment_intent_id: string;
+      client_secret: string | null;
+      status: string;
+      amount: string;
+      currency: string;
+    };
+  };
+};
+
 export const publicEventsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getPublicEvents: build.query<PublicEventListResponse, PublicEventListParams | void>({
@@ -172,6 +220,16 @@ export const publicEventsApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { error: true });
       },
     }),
+    startBookingTicket: build.mutation<StartBookingTicketResponse, StartBookingTicketPayload>({
+      query: (body) => ({
+        url: "public/start-booking-ticket",
+        method: "POST",
+        body,
+      }),
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
+    }),
   }),
 });
 
@@ -179,4 +237,5 @@ export const {
   useGetPublicEventsQuery,
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
+  useStartBookingTicketMutation,
 } = publicEventsApi;

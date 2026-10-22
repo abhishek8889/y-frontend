@@ -14,8 +14,8 @@ import { InputField } from "@/components/ui/InputField";
 type PaymentFormProps = {
   clientSecret: string;
   eventTitle: string;
-  ticketType: "general" | "vip";
   amount: number;
+  summaryLines?: { label: string; qty: number }[];
   onSuccess: (paymentIntentId: string) => void;
 };
 
@@ -34,8 +34,8 @@ const stripeFieldOptions = {
 export function PaymentForm({
   clientSecret,
   eventTitle,
-  ticketType,
   amount,
+  summaryLines = [],
   onSuccess,
 }: PaymentFormProps) {
   const stripe = useStripe();
@@ -159,8 +159,15 @@ export function PaymentForm({
 
         <div className="pt-1 text-[13px] leading-5 text-black">
           <p className="font-bold">Total Amount: {formattedAmount}</p>
-          <p>1 Ticket</p>
-          <p>{eventTitle} · {ticketType === "vip" ? "VIP" : "General admission"}</p>
+          {summaryLines.length ? (
+            summaryLines.map((line) => (
+              <p key={line.label}>
+                {line.qty} × {line.label}
+              </p>
+            ))
+          ) : (
+            <p>{eventTitle}</p>
+          )}
         </div>
 
         {errorMessage ? <p role="alert" className="text-[13px] leading-5 text-[#d92d20]">{errorMessage}</p> : null}

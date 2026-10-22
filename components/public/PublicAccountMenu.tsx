@@ -157,33 +157,33 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
           id={menuId}
           role="menu"
           aria-label="Account"
-          className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[280px] overflow-hidden rounded-[8px] border border-white/10 bg-[#111] text-white shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
+          className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[280px] overflow-hidden rounded-[4px] border border-black bg-white text-black shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
         >
-          <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/90">
+          <div className="flex items-center gap-3 border-b border-black/20 px-4 py-3.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-black/20 text-black">
               <UserIcon className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14px] font-medium leading-5">{displayName}</p>
-              <p className="text-[12px] leading-4 text-white/50">Signed in</p>
+              <p className="text-[12px] leading-4 text-black/50">Signed in</p>
             </div>
           </div>
 
-          <div className="border-b border-white/10 py-1.5">
+          <div className="border-b border-black/20 py-1.5">
             <Link
               href="/orders"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-white/5"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
             >
-              <IconCard name={VIEW_TICKETS_ICON} className="h-4 w-4 [&_path]:stroke-white" />
+              <IconCard name={VIEW_TICKETS_ICON} className="h-4 w-4 [&_path]:stroke-black" />
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] leading-5">My Tickets</span>
-                <span className="block text-[12px] leading-4 text-white/45">
+                <span className="block text-[12px] leading-4 text-black/50">
                   View bookings and tickets
                 </span>
               </span>
-              <span className="text-white/35" aria-hidden="true">
+              <span className="text-black/35" aria-hidden="true">
                 ›
               </span>
             </Link>
@@ -191,19 +191,19 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
               href="/wishlist"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-white/5"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
             >
-              <HeartIcon className="h-4 w-4 text-white" />
+              <HeartIcon className="h-4 w-4 text-black" />
               <span className="min-w-0 flex-1 text-[14px] leading-5">My Favourites</span>
-              <span className="text-white/35" aria-hidden="true">
+              <span className="text-black/35" aria-hidden="true">
                 ›
               </span>
             </Link>
           </div>
 
           {workspaces.length > 0 ? (
-            <div className="border-b border-white/10 py-2">
-              <p className="px-4 pb-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-white/40">
+            <div className="border-b border-black/20 py-2">
+              <p className="px-4 pb-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-black/40">
                 Your workspaces
               </p>
               {workspaces.map((workspace) => (
@@ -211,18 +211,18 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
                   key={workspace.key}
                   href={workspace.href}
                   role="menuitem"
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-white/5"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-white/10 text-[12px]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-black/15 bg-black/[0.03] text-[12px]">
                     {workspace.key === "platform" ? "P" : "O"}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] leading-5">{workspace.label}</span>
-                    <span className="block truncate text-[11px] leading-4 text-white/45">
+                    <span className="block truncate text-[11px] leading-4 text-black/50">
                       {workspace.hostLabel}
                     </span>
                   </span>
-                  <ExternalIcon className="text-white/45" />
+                  <ExternalIcon className="text-black/45" />
                 </a>
               ))}
             </div>
@@ -232,9 +232,9 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
             type="button"
             role="menuitem"
             onClick={handleLogout}
-            className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-[14px] transition hover:bg-white/5"
+            className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-[14px] transition hover:bg-black/5"
           >
-            <IconCard name={LOGOUT_ICON} className="h-4 w-4 [&_path]:stroke-white" />
+            <IconCard name={LOGOUT_ICON} className="h-4 w-4 [&_path]:stroke-black" />
             <span>Logout</span>
           </button>
         </div>
