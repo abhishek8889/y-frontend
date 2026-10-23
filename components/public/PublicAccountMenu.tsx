@@ -171,6 +171,23 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
 
           <div className="border-b border-black/20 py-1.5">
             <Link
+              href="/account"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
+            >
+              <UserIcon className="h-4 w-4" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] leading-5">Account</span>
+                <span className="block text-[12px] leading-4 text-black/50">
+                  Name, email, and phone
+                </span>
+              </span>
+              <span className="text-black/35" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+            <Link
               href="/orders"
               role="menuitem"
               onClick={() => setOpen(false)}
@@ -178,9 +195,9 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
             >
               <IconCard name={VIEW_TICKETS_ICON} className="h-4 w-4 [&_path]:stroke-black" />
               <span className="min-w-0 flex-1">
-                <span className="block text-[14px] leading-5">My Tickets</span>
+                <span className="block text-[14px] leading-5">My orders</span>
                 <span className="block text-[12px] leading-4 text-black/50">
-                  View bookings and tickets
+                  Orders, items, and tickets
                 </span>
               </span>
               <span className="text-black/35" aria-hidden="true">

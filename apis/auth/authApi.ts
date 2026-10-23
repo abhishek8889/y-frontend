@@ -62,7 +62,23 @@ export type AboutMeResponse = {
   };
 };
 
-export type ProfileResponse = AuthUser;
+export type ProfileDetails = {
+  id: number;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  country_code?: string | null;
+  country?: string | null;
+  profile_image?: string | null;
+  status?: string | null;
+};
+
+export type ProfileResponse = {
+  success: boolean;
+  message: string;
+  data: ProfileDetails;
+};
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -127,7 +143,7 @@ export const authApi = baseApi.injectEndpoints({
       },
     }),
     getProfile: build.query<ProfileResponse, void>({
-      query: () => "get-profile",
+      query: () => "profile/details",
       providesTags: ["Auth"],
       async onQueryStarted(_, { queryFulfilled }) {
         await withQueryToast(queryFulfilled, { error: true });

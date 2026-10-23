@@ -122,6 +122,61 @@ export function maxOfferQuantity(option: TicketSelectOption) {
   return Math.max(1, Math.min(remaining, perOrder, 20));
 }
 
+export type CheckoutPriceQuote = {
+  subtotal: number;
+  discount: number;
+  discountedSubtotal: number;
+  platformFee: number;
+  total: number;
+  currency: string;
+};
+
+/**
+ * Provisional checkout total before `start-booking-ticket` responds.
+ * Matches the backend: fee is a percentage of the discounted line, added to the customer total.
+ * The booking response replaces this estimate.
+ */
+export function estimateCheckoutPricing(
+  lines: { amount: number; qty: number }[],
+  feeRate: number,
+  currency = "GBP",
+): CheckoutPriceQuote {
+  const rate = Number.isFinite(feeRate) && feeRate > 0 ? feeRate : 0;
+  let subtotalCents = 0;
+  let discountCents = 0;
+  let feeCents = 0;
+
+  for (const line of lines) {
+    const quantity = Math.max(0, Math.trunc(line.qty));
+    const unitCents = Math.round(Math.max(0, line.amount) * 100);
+    const lineSubtotalCents = unitCents * quantity;
+    const lineDiscountCents = 0;
+    const discountedCents = Math.max(0, lineSubtotalCents - lineDiscountCents);
+    const lineFeeCents = Math.round((discountedCents * rate) / 100);
+
+    subtotalCents += lineSubtotalCents;
+    discountCents += lineDiscountCents;
+    feeCents += lineFeeCents;
+  }
+
+  const discountedSubtotalCents = subtotalCents - discountCents;
+
+  return {
+    subtotal: subtotalCents / 100,
+    discount: discountCents / 100,
+    discountedSubtotal: discountedSubtotalCents / 100,
+    platformFee: feeCents / 100,
+    total: (discountedSubtotalCents + feeCents) / 100,
+    currency,
+  };
+}
+
+export function formatFeePercent(rate: number) {
+  if (!Number.isFinite(rate) || rate <= 0) return null;
+  const rounded = Math.round(rate * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
 /** Percentage taken from event details when the backend includes a fee field. */
 export function getEventPlatformFeeRate(event?: {
   platform_fee_percentage?: number | string | null;

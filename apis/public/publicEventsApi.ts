@@ -155,6 +155,59 @@ export type StartBookingOrderItem = {
   currency: string;
 };
 
+export type PublicOrderStatusEvent = {
+  name?: string | null;
+  starts_at?: string | null;
+  timezone?: string | null;
+  venue_name?: string | null;
+  location?: string | null;
+  organisation_name?: string | null;
+};
+
+export type PublicOrderStatusItem = {
+  ticket_name?: string | null;
+  offer_name?: string | null;
+  quantity?: number | string | null;
+  total_price?: string | number | null;
+};
+
+export type PublicOrderStatus = {
+  unique_id: string;
+  status: string;
+  sales_channel?: string | null;
+  subtotal?: string | number | null;
+  discount_amount?: string | number | null;
+  platform_fee_amount?: string | number | null;
+  total_amount?: string | number | null;
+  currency?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  paid_at?: string | null;
+  tickets_pdf_path?: string | null;
+  event?: PublicOrderStatusEvent | null;
+  items?: PublicOrderStatusItem[] | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+/** Accepts the order object, or the usual `{ success, data }` envelope. */
+export function readPublicOrderStatus(response: unknown): PublicOrderStatus {
+  const record = isRecord(response) ? response : null;
+  const payload =
+    record && isRecord(record.data) && typeof record.data.unique_id === "string"
+      ? record.data
+      : record;
+
+  if (!payload || typeof payload.unique_id !== "string" || !payload.unique_id.trim()) {
+    throw new Error("Order details were not returned.");
+  }
+
+  return payload as PublicOrderStatus;
+}
+
 export type StartBookingTicketResponse = {
   success: boolean;
   message: string;
@@ -230,6 +283,11 @@ export const publicEventsApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { error: true });
       },
     }),
+    getPublicOrderStatus: build.query<PublicOrderStatus, string>({
+      query: (orderUniqueId) =>
+        `public/order-status/${encodeURIComponent(orderUniqueId)}`,
+      transformResponse: (response: unknown) => readPublicOrderStatus(response),
+    }),
   }),
 });
 
@@ -238,4 +296,5 @@ export const {
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
   useStartBookingTicketMutation,
+  useGetPublicOrderStatusQuery,
 } = publicEventsApi;

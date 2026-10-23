@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { AUTH_USER_KEY } from "@/lib/auth/constants";
+import { AUTH_CHANGE_EVENT, AUTH_USER_KEY } from "@/lib/auth/constants";
 import { getPrimaryScope, type AuthUserLike } from "@/lib/auth/roles";
 import { AuthScope } from "@/lib/auth/scopes";
 import type { AuthUser } from "@/lib/auth/session";
@@ -14,9 +14,15 @@ import {
 export type { AuthUser };
 export { AUTH_USER_KEY };
 
+function notifyAuthChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+}
+
 export function setAuthSession(token: string, user: AuthUser) {
   setAuthToken(token);
   Cookies.set(AUTH_USER_KEY, JSON.stringify(user), authCookieOptions());
+  notifyAuthChange();
 }
 
 export function getAuthUser(): AuthUser | null {
@@ -35,6 +41,7 @@ export function clearAuthSession() {
   for (const options of clearAuthCookieOptions()) {
     Cookies.remove(AUTH_USER_KEY, options);
   }
+  notifyAuthChange();
 }
 
 export function getPostLoginPath(user: AuthUserLike) {

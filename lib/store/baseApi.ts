@@ -96,6 +96,7 @@ export const baseApi = createApi({
     "RolePermissions",
     "PublicEvents",
     "Wishlist",
+    "MyOrders",
   ],
   endpoints: () => ({}),
 });

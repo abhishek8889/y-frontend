@@ -16,11 +16,16 @@ import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import type { SerializedError } from "@reduxjs/toolkit";
 import { getApiErrorMessage } from "@/lib/api/errors";
 import { getAuthToken } from "@/lib/api/token";
+import { PublicLoginModal } from "@/components/public/PublicLoginModal";
 import {
   buildTicketSelectOptions,
+  estimateCheckoutPricing,
+  formatFeePercent,
   formatMoney,
   getEventPlatformFeeRate,
   maxOfferQuantity,
+  parseMoney,
+  type CheckoutPriceQuote,
   type TicketSelectOption,
 } from "@/lib/events/publicEventFormat";
 
@@ -85,9 +90,12 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
   const [appliedCoupon, setAppliedCoupon] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState("");
   const [paidTotalCents, setPaidTotalCents] = useState(0);
+  const [orderUniqueId, setOrderUniqueId] = useState<string | null>(null);
+  const [confirmedQuote, setConfirmedQuote] = useState<CheckoutPriceQuote | null>(null);
 
   const [startBooking, startBookingState] = useStartBookingTicketMutation();
 
@@ -99,10 +107,17 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
     [ticketOptions, lines],
   );
 
-  const subtotal = lines.reduce((sum, line) => sum + line.option.amount * line.qty, 0);
-  const platformFee = Math.round(subtotal * (feeRate / 100) * 100) / 100;
-  const discount = 0;
-  const total = Math.round((subtotal - discount) * 100) / 100;
+  const estimatedQuote = useMemo(
+    () =>
+      estimateCheckoutPricing(
+        lines.map((line) => ({ amount: line.option.amount, qty: line.qty })),
+        feeRate,
+        currency,
+      ),
+    [lines, feeRate, currency],
+  );
+  const quote = confirmedQuote ?? estimatedQuote;
+  const feeLabel = formatFeePercent(feeRate);
   const totalQty = lines.reduce((sum, line) => sum + line.qty, 0);
 
   function addOffer(value: string) {
@@ -114,6 +129,8 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
     setIsPaymentOpen(false);
     setPaymentClientSecret(null);
     setPaymentError("");
+    setOrderUniqueId(null);
+    setConfirmedQuote(null);
   }
 
   function updateQty(offerId: number, qty: number) {
@@ -126,12 +143,16 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
     );
     setIsPaymentOpen(false);
     setPaymentClientSecret(null);
+    setOrderUniqueId(null);
+    setConfirmedQuote(null);
   }
 
   function removeLine(offerId: number) {
     setLines((current) => current.filter((line) => line.option.offerId !== offerId));
     setIsPaymentOpen(false);
     setPaymentClientSecret(null);
+    setOrderUniqueId(null);
+    setConfirmedQuote(null);
   }
 
   function handleApplyCoupon() {
@@ -142,26 +163,18 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
       return;
     }
     setAppliedCoupon(code.toUpperCase());
-    setCouponMessage("Coupon codes are confirmed when you book, if this event supports them.");
+    setCouponMessage("The coupon is checked when you book. A discount appears only if it applies.");
+    setIsPaymentOpen(false);
+    setPaymentClientSecret(null);
+    setOrderUniqueId(null);
+    setConfirmedQuote(null);
   }
 
-  async function handleBookTicket() {
-    if (!lines.length) return;
-
-    if (isPaymentOpen) {
-      setIsPaymentOpen(false);
-      return;
-    }
-
-    if (!getAuthToken()) {
-      const next = `${window.location.pathname}${window.location.search}`;
-      router.push(`/login?next=${encodeURIComponent(next)}`);
-      return;
-    }
-
+  async function beginCheckout() {
     setIsPaymentOpen(true);
     setPaymentClientSecret(null);
     setPaymentError("");
+    setConfirmedQuote(null);
 
     if (!stripePromise) {
       setPaymentError("Add your Stripe publishable and secret keys to enable checkout.");
@@ -176,13 +189,38 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
         })),
       }).unwrap();
 
+      const nextOrderId = result.data?.order?.unique_id?.trim();
       const clientSecret = result.data?.payment?.client_secret;
-      if (!clientSecret) {
+      if (!nextOrderId || !clientSecret) {
         throw new Error("Unable to start payment.");
       }
 
-      const paidAmount = Number(result.data.payment.amount);
-      setPaidTotalCents(Math.round((Number.isFinite(paidAmount) ? paidAmount : total) * 100));
+      const order = result.data.order;
+      const charge =
+        parseMoney(result.data.payment.amount) ?? parseMoney(order.total_amount);
+      if (charge === null) {
+        throw new Error("Unable to start payment.");
+      }
+
+      const subtotal = parseMoney(order.subtotal) ?? 0;
+      const discount = parseMoney(order.discount_amount) ?? 0;
+      const platformFee = parseMoney(order.platform_fee_amount) ?? 0;
+      setConfirmedQuote({
+        subtotal,
+        discount,
+        discountedSubtotal: Math.round((subtotal - discount) * 100) / 100,
+        platformFee,
+        total: charge,
+        currency: order.currency?.trim() || currency,
+      });
+      if (appliedCoupon && discount <= 0) {
+        setCouponMessage("This coupon could not be applied.");
+      } else if (discount > 0) {
+        setCouponMessage("");
+      }
+
+      setOrderUniqueId(nextOrderId);
+      setPaidTotalCents(Math.round(charge * 100));
       setPaymentClientSecret(clientSecret);
     } catch (error) {
       setPaymentError(
@@ -194,12 +232,34 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
     }
   }
 
-  function handlePaymentSuccess(paymentIntentId: string) {
-    const params = new URLSearchParams({
-      ticket: lines.map((line) => `${line.option.label} × ${line.qty}`).join(", "),
-      reference: paymentIntentId,
-    });
-    router.push(`/payment/success?${params.toString()}`);
+  async function handleBookTicket() {
+    if (!lines.length) return;
+
+    if (isPaymentOpen) {
+      setIsPaymentOpen(false);
+      return;
+    }
+
+    if (!getAuthToken()) {
+      setIsLoginOpen(true);
+      return;
+    }
+
+    await beginCheckout();
+  }
+
+  function handleLoginSuccess() {
+    setIsLoginOpen(false);
+    void beginCheckout();
+  }
+
+  function handlePaymentSuccess() {
+    if (!orderUniqueId) {
+      setPaymentError("Payment succeeded, but the order reference is missing.");
+      return;
+    }
+
+    router.push(`/payment/success?order=${encodeURIComponent(orderUniqueId)}`);
   }
 
   if (ticketOptions.length === 0) {
@@ -294,32 +354,36 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
 
           <dl className="mt-4 space-y-1.5 border-t border-black/30 pt-3 text-[13px]">
             <div className="flex justify-between gap-4">
-              <dt className="text-black/65">
-                Tickets ({totalQty})
-              </dt>
-              <dd>{formatMoney(subtotal, currency)}</dd>
+              <dt className="text-black/65">Tickets ({totalQty})</dt>
+              <dd>{formatMoney(quote.subtotal, quote.currency)}</dd>
             </div>
-            {appliedCoupon ? (
-              <div className="flex justify-between gap-4">
-                <dt className="text-black/65">Discount</dt>
-                <dd>{formatMoney(discount, currency)}</dd>
-              </div>
+            {quote.discount > 0 ? (
+              <>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-black/65">Discount</dt>
+                  <dd>{formatMoney(quote.discount, quote.currency)}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-black/65">Discounted subtotal</dt>
+                  <dd>{formatMoney(quote.discountedSubtotal, quote.currency)}</dd>
+                </div>
+              </>
             ) : null}
             <div className="flex justify-between gap-4">
               <dt className="text-black/65">
-                Platform fee{feeRate > 0 ? ` (${feeRate}%)` : ""}
+                Platform fee{feeLabel ? ` (${feeLabel}%)` : ""}
               </dt>
-              <dd>{formatMoney(platformFee, currency)}</dd>
+              <dd>{formatMoney(quote.platformFee, quote.currency)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t border-black/20 pt-2 font-bold">
               <dt>Total</dt>
-              <dd>{formatMoney(total, currency)}</dd>
+              <dd>{formatMoney(quote.total, quote.currency)}</dd>
             </div>
-            {feeRate > 0 ? (
+            {confirmedQuote ? null : (
               <p className="pt-1 text-[11px] leading-4 text-black/45">
-                Platform fee is included in the ticket price.
+                Estimated total. The final amount is confirmed when you book.
               </p>
-            ) : null}
+            )}
           </dl>
         </>
       ) : null}
@@ -369,6 +433,12 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
       >
         {isPaymentOpen ? "Close payment" : "Book ticket"}
       </button>
+
+      <PublicLoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }

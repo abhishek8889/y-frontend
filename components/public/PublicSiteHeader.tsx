@@ -6,6 +6,7 @@ import { useSyncExternalStore } from "react";
 import yourlistLogo from "@/assets/yourlist-logo.png";
 import { PublicAccountMenu } from "@/components/public/PublicAccountMenu";
 import { getAuthUser } from "@/lib/api/authStorage";
+import { AUTH_CHANGE_EVENT } from "@/lib/auth/constants";
 import { buildSurfaceUrl } from "@/lib/hosts";
 
 type PublicSiteHeaderProps = {
@@ -19,9 +20,11 @@ type PublicSiteHeaderProps = {
 function subscribeAuthUser(onStoreChange: () => void) {
   window.addEventListener("focus", onStoreChange);
   window.addEventListener("storage", onStoreChange);
+  window.addEventListener(AUTH_CHANGE_EVENT, onStoreChange);
   return () => {
     window.removeEventListener("focus", onStoreChange);
     window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(AUTH_CHANGE_EVENT, onStoreChange);
   };
 }
 
