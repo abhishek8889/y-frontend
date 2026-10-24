@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   useAddToWishlistMutation,
@@ -8,19 +8,7 @@ import {
   useRemoveFromWishlistMutation,
 } from "@/apis/public/wishlistApi";
 import { getAuthToken } from "@/lib/api/token";
-
-function subscribeAuthToken(onStoreChange: () => void) {
-  window.addEventListener("focus", onStoreChange);
-  window.addEventListener("storage", onStoreChange);
-  return () => {
-    window.removeEventListener("focus", onStoreChange);
-    window.removeEventListener("storage", onStoreChange);
-  };
-}
-
-function getHasAuthToken() {
-  return Boolean(getAuthToken());
-}
+import { useHasAuthToken } from "@/lib/public/useHasAuthToken";
 
 /**
  * Shared wishlist id set for public listing / details / wishlist pages.
@@ -28,7 +16,7 @@ function getHasAuthToken() {
  */
 export function useWishlistIds() {
   const router = useRouter();
-  const hasToken = useSyncExternalStore(subscribeAuthToken, getHasAuthToken, () => false);
+  const hasToken = useHasAuthToken();
 
   const { data, isLoading, isFetching, isError } = useGetWishlistQuery(
     { per_page: 100 },

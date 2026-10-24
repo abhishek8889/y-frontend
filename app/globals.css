@@ -51,11 +51,55 @@ body {
   font-weight: 400;
 }
 
-/* New sections: Univers Bold Condensed, all capitals. Existing headings are unchanged. */
+/* Headings: Univers Bold Condensed, all capitals. Body: Univers Regular. */
 .font-heading {
   font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.public-site :is(h1, h2, h3, h4, h5, h6, summary),
+.public-site .font-heading {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Condensed Bold draws the T over the following space at small sizes. */
+.public-site summary {
+  word-spacing: 0.28em;
+}
+
+.public-site :is(p, li, dd, dt, label, legend, a, button, span, input, textarea, select) {
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 400;
+}
+
+.public-site .font-body-bold {
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.public-site :is(button, a, span, label).font-heading {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.public-site :is(label, span, button, a).font-body-bold {
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: none;
+}
+
+/* Shared public chrome: header, home search, and breadcrumb. */
+.public-bar {
+  box-sizing: border-box;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  flex-shrink: 0;
 }
 
 * {

@@ -108,13 +108,13 @@ export function OrderStatusConfirmation({ orderUniqueId }: OrderStatusConfirmati
   const isPending = kind === "pending";
 
   return (
-    <section aria-labelledby="payment-success-title" className="w-full max-w-[760px]">
+    <section aria-labelledby="payment-success-title" className="w-full min-w-0 max-w-[760px]">
       <div className="flex flex-col items-center text-center">
         {isPaid ? <SuccessMark /> : null}
-        <h1 id="payment-success-title" className="font-heading mt-3 text-[18px] leading-6">
+        <h1 id="payment-success-title" className="font-heading mt-3 break-words text-[18px] leading-6">
           {isPaid ? "Payment successful" : isPending ? "Confirming payment" : "Payment not confirmed"}
         </h1>
-        <p className="mt-3 text-[13px] font-normal leading-5">
+        <p className="mt-3 max-w-[36rem] text-[13px] font-normal leading-5">
           {isPaid
             ? "Your ticket has been successfully booked."
             : isPending
@@ -128,15 +128,15 @@ export function OrderStatusConfirmation({ orderUniqueId }: OrderStatusConfirmati
           </p>
         ) : null}
         {event?.name ? (
-          <h2 className="font-heading mt-5 text-[16px] leading-5">{event.name}</h2>
+          <h2 className="font-heading mt-5 break-words text-[16px] leading-5">{event.name}</h2>
         ) : null}
       </div>
 
-      <section aria-labelledby="event-details-title" className="mt-5 border border-black/55 px-5 py-4 sm:px-7">
+      <section aria-labelledby="event-details-title" className="mt-5 border border-black/55 px-4 py-4 sm:px-7">
         <h3 id="event-details-title" className="font-heading text-[13px] leading-5">
           Event details
         </h3>
-        <dl className="mt-2 grid gap-x-8 gap-y-1 text-[12px] font-normal leading-[18px] sm:grid-cols-2">
+        <dl className="mt-2 grid gap-x-8 gap-y-2 text-[12px] font-normal leading-[18px] sm:grid-cols-2">
           <Detail label="Date" value={formatPublicEventLongDate(event?.starts_at, event?.timezone)} />
           <Detail label="Time" value={formatPublicEventTime(event?.starts_at, event?.timezone)} />
           <Detail label="Venue" value={event?.venue_name} />
@@ -153,46 +153,31 @@ export function OrderStatusConfirmation({ orderUniqueId }: OrderStatusConfirmati
         </dl>
       </section>
 
-      <section aria-labelledby="price-summary-title" className="mt-3 border border-black/55 px-5 py-4 sm:px-7">
+      <section aria-labelledby="price-summary-title" className="mt-3 border border-black/55 px-4 py-4 sm:px-7">
         <h3 id="price-summary-title" className="font-heading text-[13px] leading-5">
           Price summary
         </h3>
         <dl className="mt-2 space-y-1 text-[12px] font-normal leading-[18px]">
           {items.map((item, index) => (
-            <div key={`${itemLabel(item)}-${index}`} className="flex justify-between gap-4">
-              <dt>
-                {item.quantity ?? 0} × {itemLabel(item)}
-              </dt>
-              <dd>{formatMoney(item.total_price, currency) ?? item.total_price}</dd>
-            </div>
+            <PriceRow
+              key={`${itemLabel(item)}-${index}`}
+              label={`${item.quantity ?? 0} × ${itemLabel(item)}`}
+              value={formatMoney(item.total_price, currency) ?? String(item.total_price ?? "")}
+            />
           ))}
-          {subtotal !== null ? (
-            <div className="flex justify-between gap-4">
-              <dt>Subtotal</dt>
-              <dd>{formatMoney(subtotal, currency)}</dd>
-            </div>
-          ) : null}
+          {subtotal !== null ? <PriceRow label="Subtotal" value={formatMoney(subtotal, currency)} /> : null}
           {discount !== null && discount > 0 ? (
-            <div className="flex justify-between gap-4">
-              <dt>Discount</dt>
-              <dd>{formatMoney(discount, currency)}</dd>
-            </div>
+            <PriceRow label="Discount" value={formatMoney(discount, currency)} />
           ) : null}
           {platformFee !== null && platformFee > 0 ? (
-            <div className="flex justify-between gap-4">
-              <dt>Platform fee</dt>
-              <dd>{formatMoney(platformFee, currency)}</dd>
-            </div>
+            <PriceRow label="Platform fee" value={formatMoney(platformFee, currency)} />
           ) : null}
-          <div className="flex justify-between gap-4 font-bold">
-            <dt>Total amount</dt>
-            <dd>{formatMoney(total, currency)}</dd>
-          </div>
+          <PriceRow label="Total amount" value={formatMoney(total, currency)} emphasis />
         </dl>
       </section>
 
       {data.customer_name || data.customer_email || data.customer_phone ? (
-        <p className="mt-3 text-[12px] font-normal leading-5 text-black/70">
+        <p className="mt-3 break-words text-[12px] font-normal leading-5 text-black/70">
           {[data.customer_name, data.customer_email, data.customer_phone].filter(Boolean).join(" · ")}
         </p>
       ) : null}
@@ -219,9 +204,26 @@ export function OrderStatusConfirmation({ orderUniqueId }: OrderStatusConfirmati
 function Detail({ label, value }: { label: string; value?: string | null }) {
   if (!value?.trim()) return null;
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="inline font-bold">{label}: </dt>
-      <dd className="inline break-all">{value}</dd>
+      <dd className="inline break-words [overflow-wrap:anywhere]">{value}</dd>
+    </div>
+  );
+}
+
+function PriceRow({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value?: string | null;
+  emphasis?: boolean;
+}) {
+  return (
+    <div className={`flex items-start justify-between gap-3 ${emphasis ? "font-bold" : ""}`}>
+      <dt className="min-w-0 break-words">{label}</dt>
+      <dd className="shrink-0 text-right">{value}</dd>
     </div>
   );
 }

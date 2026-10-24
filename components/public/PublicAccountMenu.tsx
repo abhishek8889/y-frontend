@@ -144,7 +144,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
         onClick={() => setOpen((value) => !value)}
         className={
           variant === "button"
-            ? "flex h-[28px] cursor-pointer items-center justify-center bg-black px-5 text-[9px] font-medium uppercase text-white transition hover:bg-black/75"
+            ? "flex h-7 cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-3 text-[10px] uppercase leading-[15.6px] tracking-[0.36px] text-white transition hover:bg-black/80 sm:min-w-[119px] sm:px-7"
             : "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-black transition hover:bg-black/5"
         }
       >
@@ -157,24 +157,24 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
           id={menuId}
           role="menu"
           aria-label="Account"
-          className="absolute right-0 top-[calc(100%+8px)] z-[100] w-[280px] overflow-hidden rounded-[4px] border border-black bg-white text-black shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+          className="absolute right-0 top-[calc(100%+9px)] z-[100] w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-[4px] border border-black bg-white text-black"
         >
-          <div className="flex items-center gap-3 border-b border-black/20 px-4 py-3.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-black/20 text-black">
-              <UserIcon className="h-4 w-4" />
+          <div className="flex items-center gap-3 border-b border-[#d8d8d8] px-4 py-3.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black text-[12px] font-body-bold uppercase">
+              {(displayName || "A").charAt(0)}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-medium leading-5">{displayName}</p>
+              <p className="font-body-bold truncate text-[14px] leading-5">{displayName}</p>
               <p className="text-[12px] leading-4 text-black/50">Signed in</p>
             </div>
           </div>
 
-          <div className="border-b border-black/20 py-1.5">
+          <div className="border-b border-[#d8d8d8] py-1">
             <Link
               href="/account"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-black/[0.04]"
             >
               <UserIcon className="h-4 w-4" />
               <span className="min-w-0 flex-1">
@@ -183,7 +183,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
                   Name, email, and phone
                 </span>
               </span>
-              <span className="text-black/35" aria-hidden="true">
+              <span className="text-black/40" aria-hidden="true">
                 ›
               </span>
             </Link>
@@ -191,7 +191,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
               href="/orders"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-black/[0.04]"
             >
               <IconCard name={VIEW_TICKETS_ICON} className="h-4 w-4 [&_path]:stroke-black" />
               <span className="min-w-0 flex-1">
@@ -200,7 +200,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
                   Orders, items, and tickets
                 </span>
               </span>
-              <span className="text-black/35" aria-hidden="true">
+              <span className="text-black/40" aria-hidden="true">
                 ›
               </span>
             </Link>
@@ -208,34 +208,34 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
               href="/wishlist"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-black/[0.04]"
             >
               <HeartIcon className="h-4 w-4 text-black" />
               <span className="min-w-0 flex-1 text-[14px] leading-5">My Favourites</span>
-              <span className="text-black/35" aria-hidden="true">
+              <span className="text-black/40" aria-hidden="true">
                 ›
               </span>
             </Link>
           </div>
 
           {workspaces.length > 0 ? (
-            <div className="border-b border-black/20 py-2">
-              <p className="px-4 pb-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-black/40">
-                Your workspaces
+            <div className="border-b border-[#d8d8d8] py-2">
+              <p className="px-4 pb-1.5">
+                <span className="font-heading text-[12px] leading-4">Your workspaces</span>
               </p>
               {workspaces.map((workspace) => (
                 <a
                   key={workspace.key}
                   href={workspace.href}
                   role="menuitem"
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-black/5"
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-black/[0.04]"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-black/15 bg-black/[0.03] text-[12px]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-black text-[12px] font-body-bold">
                     {workspace.key === "platform" ? "P" : "O"}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] leading-5">{workspace.label}</span>
-                    <span className="block truncate text-[11px] leading-4 text-black/50">
+                    <span className="block truncate text-[12px] leading-4 text-black/50">
                       {workspace.hostLabel}
                     </span>
                   </span>
@@ -249,7 +249,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
             type="button"
             role="menuitem"
             onClick={handleLogout}
-            className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-[14px] transition hover:bg-black/5"
+            className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-[14px] leading-5 transition hover:bg-black/[0.04]"
           >
             <IconCard name={LOGOUT_ICON} className="h-4 w-4 [&_path]:stroke-black" />
             <span>Logout</span>

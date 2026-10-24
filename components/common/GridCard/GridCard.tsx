@@ -28,7 +28,7 @@ function GridCardCell({
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-[14px] font-bold uppercase leading-[20px] tracking-[0.5px] text-[#AAAAAC]">
+          <p className="font-heading flex items-center gap-2 text-[14px] leading-[20px] tracking-[0.5px] text-[#AAAAAC]">
             {item.indicatorColor ? (
               <span
                 className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
@@ -39,12 +39,12 @@ function GridCardCell({
             <span className="min-w-0">{item.label}</span>
           </p>
 
-          <p className="mt-[6px] text-[22px] font-bold leading-[24px] tracking-[-0.05em] text-black">
+          <p className="mt-[6px] text-[22px] font-normal leading-[24px] tracking-[-0.05em] text-black">
             {item.value}
           </p>
 
           {item.description != null && item.description !== "" ? (
-            <p className="mt-[10px] text-[14px] font-light leading-[20px] text-[#9B9994]">
+            <p className="mt-[10px] text-[14px] font-normal leading-[20px] text-[#9B9994]">
               {item.description}
             </p>
           ) : null}

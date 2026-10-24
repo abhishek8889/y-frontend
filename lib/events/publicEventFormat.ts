@@ -10,75 +10,94 @@ export function getEventBannerUrl(images?: PublicEventImage[] | null) {
   return banner?.url?.trim() || null;
 }
 
-export function formatPublicEventDate(value: string | null | undefined, timezone?: string | null) {
-  if (!value) return "Date TBA";
+export type UtcDateTimeFormat = "date" | "time" | "datetime";
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+function timeZoneAbbreviation(date: Date, timeZone?: string) {
+  const options: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    hour12: true,
+    timeZoneName: "short",
+    ...(timeZone ? { timeZone } : {}),
+  };
+  const read = (locale: string) =>
+    new Intl.DateTimeFormat(locale, options)
+      .formatToParts(date)
+      .find((part) => part.type === "timeZoneName")?.value;
 
   try {
-    return new Intl.DateTimeFormat("en-GB", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      ...(timezone ? { timeZone: timezone } : {}),
+    const primary = read("en-US");
+    if (primary && !primary.startsWith("GMT")) return primary;
+    const fallback = read("en-IN");
+    if (fallback && !fallback.startsWith("GMT")) return fallback;
+    return primary || fallback || "";
+  } catch {
+    return "";
+  }
+}
+
+function formatZoned(
+  date: Date,
+  options: Intl.DateTimeFormatOptions,
+  timeZone?: string,
+  locale = "en-GB",
+) {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      ...options,
+      ...(timeZone ? { timeZone } : {}),
     }).format(date);
   } catch {
-    return new Intl.DateTimeFormat("en-GB", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(date);
+    return new Intl.DateTimeFormat(locale, options).format(date);
   }
+}
+
+/** Convert a UTC timestamp into `timeZone` and render it with `format`. */
+export function formatUtcDateTime(
+  utcTime: string | null | undefined,
+  timeZone?: string | null,
+  format: UtcDateTimeFormat = "date",
+) {
+  if (!utcTime) return null;
+
+  const date = new Date(utcTime);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const zone = timeZone?.trim() || undefined;
+
+  if (format === "date") {
+    return formatZoned(
+      date,
+      { weekday: "long", day: "numeric", month: "long", year: "numeric" },
+      zone,
+    );
+  }
+
+  const clock = formatZoned(
+    date,
+    { hour: "numeric", minute: "2-digit", hour12: true },
+    zone,
+    "en-US",
+  );
+
+  if (format === "time") {
+    const abbreviation = timeZoneAbbreviation(date, zone);
+    return abbreviation ? `${clock} ${abbreviation}` : clock;
+  }
+
+  const day = formatZoned(date, { weekday: "short", day: "numeric", month: "short" }, zone);
+  return `${day}, ${clock}`;
+}
+
+export function formatPublicEventDate(value: string | null | undefined, timezone?: string | null) {
+  return formatUtcDateTime(value, timezone, "datetime") ?? (value?.trim() || "Date TBA");
 }
 
 export function formatPublicEventLongDate(value: string | null | undefined, timezone?: string | null) {
-  if (!value) return "Date TBA";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  try {
-    return new Intl.DateTimeFormat("en-GB", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      ...(timezone ? { timeZone: timezone } : {}),
-    }).format(date);
-  } catch {
-    return new Intl.DateTimeFormat("en-GB", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(date);
-  }
+  return formatUtcDateTime(value, timezone, "date") ?? (value?.trim() || "Date TBA");
 }
 
 export function formatPublicEventTime(value: string | null | undefined, timezone?: string | null) {
-  if (!value) return "Time TBA";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  try {
-    return new Intl.DateTimeFormat("en-GB", {
-      hour: "numeric",
-      minute: "2-digit",
-      timeZoneName: "short",
-      ...(timezone ? { timeZone: timezone } : {}),
-    }).format(date);
-  } catch {
-    return new Intl.DateTimeFormat("en-GB", {
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(date);
-  }
+  return formatUtcDateTime(value, timezone, "time") ?? (value?.trim() || "Time TBA");
 }
 
 export function parseMoney(value: number | string | null | undefined) {

@@ -22,6 +22,7 @@ export type LoginResponse = {
 export type SendPublicLoginOtpRequest = {
   email: string;
   phone: string;
+  country_code: string;
   first_name?: string;
   last_name?: string;
 };

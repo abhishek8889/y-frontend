@@ -5,8 +5,6 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useGetWishlistQuery } from "@/apis/public/wishlistApi";
 import { EventCard } from "@/components/public/EventCard";
-import { PublicSiteHeader } from "@/components/public/PublicSiteHeader";
-import { SiteFooter } from "@/components/public/SiteFooter";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 export default function PublicWishlistPage() {
@@ -33,13 +31,7 @@ export default function PublicWishlistPage() {
   );
 
   return (
-    <main className="min-h-screen bg-white text-black">
-      <PublicSiteHeader
-        showFavorites
-        isFavorite={wishlistedIds.size > 0}
-        favoriteCount={wishlistedIds.size}
-      />
-
+    <main className="bg-white text-black">
       <div className="border-b border-black/20 px-5 py-8 md:px-8">
         <h1 className="text-[24px] font-bold uppercase leading-[32px]">Wishlist</h1>
         <p className="mt-2 text-[14px] leading-[22px] text-black/70">
@@ -70,7 +62,7 @@ export default function PublicWishlistPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-px bg-transparent sm:grid-cols-2 xl:grid-cols-4">
+        <div className="-mb-px grid grid-cols-1 border-t border-black sm:grid-cols-2 xl:grid-cols-4">
           {events.map((event) => (
             <EventCard
               key={event.id}
@@ -82,8 +74,6 @@ export default function PublicWishlistPage() {
           ))}
         </div>
       )}
-
-      <SiteFooter />
     </main>
   );
 }

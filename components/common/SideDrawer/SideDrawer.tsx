@@ -75,7 +75,7 @@ export function SideDrawer({
             <div className="min-w-0">
               <h2
                 id="side-drawer-title"
-                className="text-[18px] font-bold uppercase leading-[26px] tracking-[-0.02em] text-black"
+                className="font-heading text-[18px] leading-[26px] tracking-[-0.02em] text-black"
               >
                 {title}
               </h2>
@@ -105,7 +105,7 @@ export function SideDrawer({
                 onClick={handleCancel}
                 disabled={isSubmitting}
                 className={[
-                  "h-[46px] rounded-[4px] border border-black bg-white px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-black",
+                  "h-[46px] rounded-[4px] border border-black bg-white px-5 text-[12px] font-normal uppercase tracking-[0.12em] text-black",
                   showSubmit ? "flex-1" : "w-full",
                 ].join(" ")}
               >
@@ -119,7 +119,7 @@ export function SideDrawer({
                 onClick={onSubmit}
                 disabled={isSubmitting}
                 className={[
-                  "h-[46px] rounded-[4px] border border-black bg-black px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-white disabled:opacity-60",
+                  "h-[46px] rounded-[4px] border border-black bg-black px-5 text-[12px] font-normal uppercase tracking-[0.12em] text-white disabled:opacity-60",
                   showCancel ? "flex-1" : "w-full",
                 ].join(" ")}
               >

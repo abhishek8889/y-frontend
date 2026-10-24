@@ -10,11 +10,10 @@ import {
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
 } from "@/apis/public/publicEventsApi";
+import { Breadcrumb } from "@/components/common/Breadcrumb";
 import { EventTicketBooking } from "@/components/public/EventTicketBooking";
-import { PublicSiteHeader } from "@/components/public/PublicSiteHeader";
 import {
-  formatPublicEventLongDate,
-  formatPublicEventTime,
+  formatUtcDateTime,
   formatTicketPriceRange,
   getEventBannerUrl,
 } from "@/lib/events/publicEventFormat";
@@ -22,6 +21,31 @@ import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+
+/** Header and breadcrumb are both 46px. Full-height gallery starts at the desktop split. */
+const GALLERY_FRAME =
+  "aspect-[4/5] h-auto min-h-0 sm:aspect-[3/2] lg:aspect-auto lg:h-[calc(100svh-92px)]";
+
+function AccordionChevron() {
+  return (
+    <svg
+      width="12"
+      height="8"
+      viewBox="0 0 12 8"
+      aria-hidden="true"
+      className="shrink-0 transition-transform duration-200 group-open:rotate-180"
+    >
+      <path
+        d="M1 1.25 6 6.25 11 1.25"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default function PublicEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,8 +92,7 @@ export default function PublicEventPage() {
 
   if (!uniqueId) {
     return (
-      <main className="min-h-screen bg-white text-black">
-        <PublicSiteHeader />
+      <main className="bg-white text-black">
         <p className="px-5 py-12 text-center text-[14px] text-[#b42318]">Invalid event link.</p>
       </main>
     );
@@ -77,8 +100,7 @@ export default function PublicEventPage() {
 
   if (isDetailsLoading) {
     return (
-      <main className="min-h-screen bg-white text-black">
-        <PublicSiteHeader />
+      <main className="bg-white text-black">
         <p role="status" className="px-5 py-12 text-center text-[14px] text-black/60">
           Loading event…
         </p>
@@ -88,8 +110,7 @@ export default function PublicEventPage() {
 
   if (isDetailsError || !event) {
     return (
-      <main className="min-h-screen bg-white text-black">
-        <PublicSiteHeader />
+      <main className="bg-white text-black">
         <div className="px-5 py-12 text-center md:px-8">
           <p role="alert" className="text-[14px] text-[#b42318]">
             Event not found or unavailable.
@@ -103,42 +124,38 @@ export default function PublicEventPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-black">
-      <PublicSiteHeader />
-
-      <nav
-        aria-label="Breadcrumb"
-        className="flex h-[34px] items-center border-b border-black/70 px-5 text-[10px] uppercase text-black/70 md:px-8"
-      >
-        <Link href="/" className="hover:text-black">
-          Events
-        </Link>
-        <span className="mx-2">/</span>
-        <span>{event.venue?.name || "Venue"}</span>
-        <span className="mx-2">/</span>
-        <span className="truncate text-black">{event.name}</span>
-      </nav>
+    <main className="bg-white text-black">
+      <Breadcrumb
+        items={[
+          { label: "Events", href: "/" },
+          { label: event.venue?.name || "Venue" },
+          { label: event.name },
+        ]}
+      />
 
       <div className="grid lg:grid-cols-2">
         <section
           aria-label="Event photos"
-          className="relative h-[62svh] min-h-[390px] overflow-hidden bg-black lg:sticky lg:top-0 lg:h-[calc(100svh-78px)] lg:min-h-[540px]"
+          className={`relative overflow-hidden bg-white lg:sticky lg:top-0 ${GALLERY_FRAME}`}
         >
           <div className={`event-gallery-track ${isPlaying ? "" : "event-gallery-paused"}`}>
             {[...galleryImages, ...galleryImages].map((image, index) => (
               <div
                 key={`${index}-${typeof image === "string" ? image : index}`}
-                className="relative h-[62svh] min-h-[390px] w-full lg:h-[78svh] lg:min-h-[540px]"
+                className={`flex w-full flex-col ${GALLERY_FRAME}`}
               >
-                <Image
-                  src={image}
-                  alt={`${event.name} photo ${(index % galleryImages.length) + 1}`}
-                  fill
-                  priority={index === 0}
-                  sizes="(max-width: 1023px) 100vw, 50vw"
-                  className="object-cover object-center"
-                  unoptimized={typeof image === "string"}
-                />
+                <div className="relative min-h-0 w-full flex-1">
+                  <Image
+                    src={image}
+                    alt={`${event.name} photo ${(index % galleryImages.length) + 1}`}
+                    fill
+                    priority={index === 0}
+                    sizes="(max-width: 1023px) 100vw, 50vw"
+                    className="object-cover object-center"
+                    unoptimized={typeof image === "string"}
+                  />
+                </div>
+                <div className="h-1 shrink-0 bg-white" aria-hidden="true" />
               </div>
             ))}
           </div>
@@ -184,28 +201,30 @@ export default function PublicEventPage() {
           </button>
         </section>
 
-        <section className="flex min-h-[660px] flex-col px-6 py-10 sm:px-10 lg:min-h-[calc(100svh-78px)] lg:px-[min(8vw,112px)] lg:py-12">
+        <section className="flex flex-col px-4 py-8 sm:px-8 lg:min-h-[calc(100svh-92px)] lg:px-[min(8vw,112px)] lg:py-12">
           <div className="mx-auto w-full max-w-[540px]">
             <div className="text-center">
-              <h1 className="text-[23px] font-bold uppercase leading-[28px]">{event.name}</h1>
+              <h1 className="break-words text-[20px] font-bold uppercase leading-6 sm:text-[23px] sm:leading-7">
+                {event.name}
+              </h1>
               <p className="mt-2 text-[12px] uppercase text-black/60">Organised by</p>
               <div className="mt-1 flex items-center justify-center gap-2 text-[13px] font-bold uppercase">
                 <span
                   aria-hidden="true"
-                  className="flex h-5 w-5 items-center justify-center rounded-full border border-black text-[10px]"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-black text-[10px]"
                 >
                   {organisationInitial}
                 </span>
-                {organisationName}
+                <span className="min-w-0 break-words">{organisationName}</span>
               </div>
             </div>
 
-            <div className="mt-7 flex justify-between gap-4 border-t border-black/50 pt-3 text-[12px]">
-              <p>
-                <strong>Date:</strong> {formatPublicEventLongDate(event.starts_at, event.timezone)}
+            <div className="mt-7 flex flex-col gap-2 border-t border-[#d8d8d8] pt-3 text-[12px] sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+              <p className="min-w-0">
+                <strong>Date:</strong> {formatUtcDateTime(event.starts_at, event.timezone, "date") ?? "Date TBA"}
               </p>
               <p className="shrink-0">
-                <strong>Time:</strong> {formatPublicEventTime(event.starts_at, event.timezone)}
+                <strong>Time:</strong> {formatUtcDateTime(event.starts_at, event.timezone, "time") ?? "Time TBA"}
               </p>
             </div>
             {priceRange ? (
@@ -230,7 +249,7 @@ export default function PublicEventPage() {
               <h2 id="event-information-title" className="text-[13px] font-bold">
                 Event information
               </h2>
-              <dl className="mt-2 space-y-1 text-[11px] uppercase leading-[17px]">
+              <dl className="mt-2 space-y-1 break-words text-[11px] uppercase leading-[17px]">
                 {event.category?.name ? (
                   <div>
                     <dt className="inline font-bold">Event type: </dt>
@@ -239,7 +258,14 @@ export default function PublicEventPage() {
                 ) : null}
                 <div>
                   <dt className="inline font-bold">Event starts: </dt>
-                  <dd className="inline">{formatPublicEventTime(event.starts_at, event.timezone)}</dd>
+                  <dd className="inline">
+                    {[
+                      formatUtcDateTime(event.starts_at, event.timezone, "date"),
+                      formatUtcDateTime(event.starts_at, event.timezone, "time"),
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "Date TBA"}
+                  </dd>
                 </div>
                 {event.venue?.name ? (
                   <div>
@@ -256,21 +282,21 @@ export default function PublicEventPage() {
               </dl>
             </section>
 
-            <details className="mt-6 border-y border-black/40 py-3">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase">
+            <details className="group mt-6 border-y border-[#d8d8d8]">
+              <summary className="flex h-[60px] cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase [&::-webkit-details-marker]:hidden">
                 About the event
-                <span aria-hidden="true">⌄</span>
+                <AccordionChevron />
               </summary>
-              <p className="pt-3 text-[13px] leading-5 text-black/70 whitespace-pre-wrap">
+              <p className="pb-10 pt-5 text-[13px] leading-5 text-black/70 whitespace-pre-wrap">
                 {event.description?.trim() || "More details for this event will appear here."}
               </p>
             </details>
-            <details className="border-b border-black/40 py-3">
-              <summary className="flex cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase">
+            <details className="group border-b border-[#d8d8d8]">
+              <summary className="flex h-[60px] cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase [&::-webkit-details-marker]:hidden">
                 Terms &amp; conditions
-                <span aria-hidden="true">⌄</span>
+                <AccordionChevron />
               </summary>
-              <p className="pt-3 text-[13px] leading-5 text-black/70">
+              <p className="pb-10 pt-5 text-[13px] leading-5 text-black/70">
                 Tickets are subject to availability. Entry is subject to venue terms and age
                 restrictions.
               </p>

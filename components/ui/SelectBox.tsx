@@ -39,6 +39,7 @@ export type SelectBoxProps = {
   "aria-label"?: string;
   "aria-labelledby"?: string;
   onChange?: (event: SelectChangeEvent) => void;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function SelectBox({
@@ -55,6 +56,7 @@ export function SelectBox({
   className = "",
   containerClassName = "",
   onChange,
+  onOpenChange,
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: SelectBoxProps) {
@@ -70,6 +72,14 @@ export function SelectBox({
     () => options.find((option) => option.value === selectedValue) ?? null,
     [options, selectedValue],
   );
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
+
+  useEffect(() => {
+    return () => onOpenChange?.(false);
+  }, [onOpenChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -95,9 +105,10 @@ export function SelectBox({
   }, [open]);
 
   function commitValue(nextValue: string) {
+    onOpenChange?.(false);
+    setOpen(false);
     if (value === undefined) setInternalValue(nextValue);
     onChange?.({ target: { name, value: nextValue } });
-    setOpen(false);
   }
 
   function handleTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {

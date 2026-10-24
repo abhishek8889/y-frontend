@@ -26,6 +26,7 @@ type SelectFieldProps = {
   required?: boolean;
   "aria-label"?: string;
   onChange?: (event: { target: { name?: string; value: string } }) => void;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function SelectField({
@@ -45,6 +46,7 @@ export function SelectField({
   disabled,
   required,
   onChange,
+  onOpenChange,
   "aria-label": ariaLabel,
 }: SelectFieldProps) {
   const selectId = id ?? name;
@@ -75,6 +77,7 @@ export function SelectField({
         containerClassName={containerClassName}
         aria-label={ariaLabel ?? label}
         onChange={onChange}
+        onOpenChange={onOpenChange}
       />
     </div>
   );

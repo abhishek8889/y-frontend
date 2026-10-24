@@ -7,8 +7,8 @@ import {
 } from "@/apis/auth/authApi";
 import { setAuthSession } from "@/lib/api/authStorage";
 import { appToast } from "@/lib/ui/toast";
-import IconCard, { CLOSE_ICON, EMAIL_SENT_ICON, INFO_ICON } from "@/components/ui/IconCard";
-import { InputField } from "@/components/ui/InputField";
+import { PublicLoginForm } from "@/components/public/PublicLoginForm";
+import { PublicLoginOtp } from "@/components/public/PublicLoginOtp";
 
 const initialCode = ["", "", "", "", "", ""];
 
@@ -24,6 +24,7 @@ export function PublicLoginModal({ isOpen, onClose, onSuccess }: PublicLoginModa
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [step, setStep] = useState<"details" | "otp">("details");
   const [verificationCode, setVerificationCode] = useState(initialCode);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -31,7 +32,6 @@ export function PublicLoginModal({ isOpen, onClose, onSuccess }: PublicLoginModa
   const titleId = "public-login-title";
   onCloseRef.current = onClose;
 
-  const isBusy = isSendingOtp || isVerifyingOtp;
   const editableOtpIndex = (() => {
     const firstEmpty = verificationCode.findIndex((digit) => !digit);
     return firstEmpty === -1 ? verificationCode.length - 1 : firstEmpty;
@@ -130,14 +130,18 @@ export function PublicLoginModal({ isOpen, onClose, onSuccess }: PublicLoginModa
     event.preventDefault();
 
     const trimmedEmail = email.trim();
-    const trimmedPhone = phone.trim();
+    const trimmedPhone = phone.replace(/\D/g, "");
     if (!trimmedEmail || !trimmedPhone) {
       appToast.warning("Email and phone are required.");
       return;
     }
 
     try {
-      await sendPublicOtp({ email: trimmedEmail, phone: trimmedPhone }).unwrap();
+      await sendPublicOtp({
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        country_code: countryCode,
+      }).unwrap();
       setVerificationCode(initialCode);
       setStep("otp");
     } catch {
@@ -177,7 +181,8 @@ export function PublicLoginModal({ isOpen, onClose, onSuccess }: PublicLoginModa
     try {
       await sendPublicOtp({
         email: email.trim(),
-        phone: phone.trim(),
+        phone: phone.replace(/\D/g, ""),
+        country_code: countryCode,
       }).unwrap();
       setVerificationCode(initialCode);
     } catch {
@@ -197,122 +202,54 @@ export function PublicLoginModal({ isOpen, onClose, onSuccess }: PublicLoginModa
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[500px] rounded-[4px] bg-white px-[32px] pb-[30px] pt-[28px] shadow-[0_35px_90px_rgba(0,0,0,0.28)]"
+        className="relative w-full max-w-[500px] rounded-[4px] bg-white px-4 pb-8 pt-8 shadow-[0_35px_90px_rgba(0,0,0,0.28)] sm:px-8"
       >
         <button
           type="button"
           aria-label="Close login"
           onClick={onClose}
-          className="absolute right-[18px] top-[18px] flex h-[28px] w-[28px] cursor-pointer items-center justify-center bg-white"
+          className="absolute right-4 top-4 flex h-8 w-8 cursor-pointer items-center justify-center bg-transparent text-black"
         >
-          <IconCard name={CLOSE_ICON} className="h-6 w-6" />
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M1 1 13 13M13 1 1 13" stroke="currentColor" strokeWidth="1.25" />
+          </svg>
         </button>
 
         {step === "details" ? (
           <>
-            <h2 id={titleId} className="font-heading text-center text-[24px] leading-[32px] text-black">
-              Log in
+            <h2 id={titleId} className="text-center text-[18px] leading-[22px] text-black">
+              Login
             </h2>
-            <p className="mt-[10px] text-center text-[16px] font-normal leading-[24px] text-black">
-              Enter your email and phone to receive a login code. Your selected tickets stay on this
-              page.
+            <p className="mt-3 text-center text-[14px] leading-5 text-black">
+              Discover events, book tickets, and manage your bookings — all in one place.
             </p>
-            <form className="mt-[28px] space-y-[22px]" onSubmit={(event) => void handleSendOtp(event)}>
-              <InputField
-                label="Email"
-                type="email"
-                placeholder="Enter your email"
-                name="login-email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-              <InputField
-                label="Phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                name="login-phone"
-                autoComplete="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                required
-              />
-              <button
-                type="submit"
-                disabled={isBusy}
-                className="mt-[22px] flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-bold uppercase tracking-[0.04em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSendingOtp ? "Sending code..." : "Send login code"}
-              </button>
-            </form>
+            <PublicLoginForm
+              idPrefix="modal-login"
+              email={email}
+              phone={phone}
+              countryCode={countryCode}
+              onEmailChange={setEmail}
+              onPhoneChange={setPhone}
+              onCountryCodeChange={setCountryCode}
+              onSubmit={(event) => void handleSendOtp(event)}
+              isSubmitting={isSendingOtp}
+            />
           </>
         ) : (
-          <>
-            <div className="mx-auto flex h-[52px] w-[52px] items-center justify-center text-black">
-              <IconCard name={EMAIL_SENT_ICON} className="h-[52px] w-[52px]" />
-            </div>
-            <h2 id={titleId} className="font-heading mt-[30px] text-center text-[24px] leading-[32px] text-black">
-              Verify your email
-            </h2>
-            <p className="mt-[10px] text-center text-[16px] font-normal leading-[24px] text-black">
-              We&apos;ve sent you a verification code to {email.trim() || "your email"}
-              <br />
-              Enter it below to verify your email address.
-            </p>
-            <div className="mt-[30px] border-t border-[#E5E5E5] pt-[27px]">
-              <div className="grid grid-cols-6 gap-[10px]">
-                {verificationCode.map((digit, index) => {
-                  const isEditable = index === editableOtpIndex;
-                  return (
-                    <input
-                      key={index}
-                      ref={(element) => {
-                        inputRefs.current[index] = element;
-                      }}
-                      type="text"
-                      inputMode="text"
-                      autoComplete={index === 0 ? "one-time-code" : "off"}
-                      maxLength={isEditable ? 6 : 1}
-                      value={digit}
-                      disabled={!isEditable}
-                      onChange={(event) => handleCodeChange(index, event.target.value)}
-                      onPaste={handleCodePaste}
-                      onKeyDown={(event) => handleKeyDown(index, event)}
-                      className="h-[56px] rounded-[4px] border border-[#A9A9A9] bg-white text-center text-[30px] font-normal leading-[44px] text-black outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-[#F5F5F5] disabled:text-black/70"
-                      aria-label={`Verification code character ${index + 1}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-            <p className="mt-[20px] text-center text-[16px] font-normal leading-[24px] text-black">
-              Didn&apos;t get your code?{" "}
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => void handleResendOtp()}
-                className="cursor-pointer font-bold underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Send a new code
-              </button>
-            </p>
-            <div className="mt-[30px] flex items-start gap-[10px] rounded-[4px] bg-[#F5F5F5] px-[22px] py-[12px] text-left text-[14px] font-normal leading-[20px] text-black">
-              <IconCard name={INFO_ICON} className="mt-[2px] h-4 w-4 shrink-0 text-[#949494]" />
-              <span>
-                The code expires in 10 minutes. If you don&apos;t see the email, check your spam
-                folder or use the resend option above.
-              </span>
-            </div>
-            <button
-              type="button"
-              disabled={isBusy}
-              onClick={() => void handleVerifyOtp()}
-              className="mt-[30px] flex h-[52px] w-full cursor-pointer items-center justify-center border border-black bg-black text-[14px] font-bold uppercase tracking-[0.02em] text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isVerifyingOtp ? "Verifying..." : "Verify & continue"}
-            </button>
-          </>
+          <PublicLoginOtp
+            titleId={titleId}
+            email={email}
+            code={verificationCode}
+            editableIndex={editableOtpIndex}
+            inputRefs={inputRefs}
+            onChange={handleCodeChange}
+            onPaste={handleCodePaste}
+            onKeyDown={handleKeyDown}
+            onResend={() => void handleResendOtp()}
+            onVerify={() => void handleVerifyOtp()}
+            isSending={isSendingOtp}
+            isVerifying={isVerifyingOtp}
+          />
         )}
       </div>
     </div>

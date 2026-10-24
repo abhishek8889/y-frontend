@@ -35,7 +35,7 @@ export function DataTableEmpty({
       <div className="mb-4 flex h-14 w-14 items-center justify-center border border-black/20 bg-[#F5F5F5] text-black/55">
         <EmptyTableIcon />
       </div>
-      <h3 className="text-[20px] font-black uppercase leading-6 tracking-[-0.02em] text-black sm:text-[22px]">
+      <h3 className="font-heading text-[20px] leading-6 tracking-[-0.02em] text-black sm:text-[22px]">
         {title}
       </h3>
       {subtitle ? (
@@ -45,7 +45,7 @@ export function DataTableEmpty({
         <Button
           type="button"
           onClick={onButtonClick}
-          className="mt-5 inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[3px] border border-black bg-black px-4 text-[14px] font-bold uppercase text-white transition hover:bg-white hover:text-black"
+          className="mt-5 inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[3px] border border-black bg-black px-4 text-[14px] font-normal uppercase text-white transition hover:bg-white hover:text-black"
         >
           {buttonLabel}
         </Button>

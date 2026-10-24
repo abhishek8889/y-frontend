@@ -3,9 +3,16 @@
 import { useRef } from "react";
 import { Toaster } from "react-hot-toast";
 import { Provider } from "react-redux";
+import { AuthSessionProvider } from "@/lib/public/useHasAuthToken";
 import { makeStore, type AppStore } from "@/lib/store/store";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  initialHasToken,
+  children,
+}: {
+  initialHasToken: boolean;
+  children: React.ReactNode;
+}) {
   const storeRef = useRef<AppStore | null>(null);
 
   if (!storeRef.current) {
@@ -14,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <Provider store={storeRef.current}>
-      {children}
+      <AuthSessionProvider initialHasToken={initialHasToken}>{children}</AuthSessionProvider>
       <Toaster
         position="top-center"
         reverseOrder={false}

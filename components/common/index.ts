@@ -29,3 +29,6 @@ export { YourlistAlert, SuccessCheckIcon, WarningAlertIcon } from "./YourlistAle
 export type { YourlistAlertProps, YourlistAlertVariant } from "./YourlistAlert";
 
 export { StatusBadge } from "./StatusBadge";
+
+export { Breadcrumb } from "./Breadcrumb";
+export type { BreadcrumbItem } from "./Breadcrumb";

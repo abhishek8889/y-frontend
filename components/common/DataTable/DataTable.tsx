@@ -66,14 +66,14 @@ export function DataTable<T>({
         <div className={scrollAreaClass}>
           <table className="w-full min-w-full border-collapse text-left">
             <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-black/20 text-[14px] font-bold uppercase text-black">
+              <tr className="border-b border-black/20 text-[14px] text-black">
                 {columns.map((column) => {
                   const isSorted = sorting?.id === column.id;
                   return (
                     <th
                       key={column.id}
                       scope="col"
-                      className={`bg-white px-3 py-4 text-[14px] font-bold uppercase text-black ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
+                      className={`font-heading bg-white px-3 py-4 text-[14px] text-black ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button

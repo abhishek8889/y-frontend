@@ -24,15 +24,15 @@ export function EventCard({
   const imageSrc = model.imageUrl || eventCover;
 
   return (
-    <article className="min-w-0 bg-white">
-      <div className="relative aspect-[0.88/1] overflow-hidden bg-black">
+    <article className="min-w-0 border-r border-b border-black bg-white">
+      <div className="relative aspect-[360/417] overflow-hidden bg-black">
         <Link href={href} aria-label={`View ${model.name}`} className="absolute inset-0">
           <Image
             src={imageSrc}
             alt={model.name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 hover:scale-[1.03]"
+            className="object-cover"
             unoptimized={typeof imageSrc === "string"}
           />
         </Link>
@@ -47,11 +47,11 @@ export function EventCard({
               clickEvent.stopPropagation();
               onToggleWishlist(event.id);
             }}
-            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="absolute top-[14px] right-[15px] z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             <svg
-              width="18"
-              height="18"
+              width="19"
+              height="19"
               viewBox="0 0 24 24"
               fill={isWishlisted ? "currentColor" : "none"}
               aria-hidden="true"
@@ -65,14 +65,20 @@ export function EventCard({
             </svg>
           </button>
         ) : null}
+        <img
+          src="/landing/card-action.svg"
+          width={27}
+          height={27}
+          alt=""
+          className="pointer-events-none absolute right-4 bottom-[18px]"
+        />
       </div>
-      <Link
-        href={href}
-        className="flex min-h-[90px] flex-col items-center justify-center px-3 py-4 text-center hover:bg-black/[0.025]"
-      >
-        <h2 className="text-[12px] font-bold uppercase leading-[16px] text-black">{model.name}</h2>
-        <p className="mt-1 text-[12px] leading-[16px] text-black/75">{model.dateLabel}</p>
-        <p className="mt-0.5 text-[11px] font-bold leading-[15px] text-black">{model.venueName}</p>
+      <Link href={href} className="flex flex-col items-center gap-2 px-3 pt-2 pb-6 text-center">
+        <h2 className="text-[16px] leading-[13.8px] text-black">{model.name}</h2>
+        <span className="flex flex-col items-center gap-0.5">
+          <span className="text-[14px] leading-[19.6px] text-black">{model.dateLabel}</span>
+          <span className="font-body-bold text-[14px] leading-[19.6px] text-black">{model.venueName}</span>
+        </span>
       </Link>
     </article>
   );

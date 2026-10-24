@@ -31,12 +31,12 @@ export function DataTablePagination({
 
       <div className="flex flex-wrap items-center gap-3">
         {onPageSizeChange ? (
-          <label className="flex items-center gap-2 text-[14px] font-bold uppercase text-black">
+          <label className="flex items-center gap-2 text-[14px] font-normal uppercase text-black">
             Rows
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-[40px] min-w-[72px] border border-black bg-white px-2 text-[14px] font-bold uppercase text-black outline-none"
+              className="h-[40px] min-w-[72px] border border-black bg-white px-2 text-[14px] font-normal uppercase text-black outline-none"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -52,18 +52,18 @@ export function DataTablePagination({
             type="button"
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
-            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
+            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-normal uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
           >
             Prev
           </button>
-          <span className="min-w-[72px] text-center text-[14px] font-bold uppercase text-black">
+          <span className="min-w-[72px] text-center text-[14px] font-normal uppercase text-black">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
-            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-bold uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
+            className="h-[40px] min-w-[72px] border border-black bg-white px-3 text-[14px] font-normal uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black"
           >
             Next
           </button>

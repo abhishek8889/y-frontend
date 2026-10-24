@@ -18,7 +18,7 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-bold uppercase ${textClass} ${className}`.trim()}
+      className={`inline-flex items-center gap-1.5 font-normal uppercase ${textClass} ${className}`.trim()}
     >
       {showDot ? (
         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusBgClass(status)}`} aria-hidden="true" />

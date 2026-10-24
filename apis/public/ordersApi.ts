@@ -17,6 +17,17 @@ export type MyOrderEvent = {
   starts_at?: string | null;
   ends_at?: string | null;
   timezone?: string | null;
+  event_type?: string | null;
+  type?: string | null;
+  organisation_name?: string | null;
+  organisation?: { name?: string | null } | null;
+  category?: { name?: string | null } | null;
+  banner?: {
+    path?: string | null;
+    url?: string | null;
+    alt_text?: string | null;
+  } | null;
+  images?: { type?: string | null; url?: string | null; alt_text?: string | null }[] | null;
   venue?: {
     id?: number;
     unique_id?: string | null;

@@ -9,8 +9,6 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import { InputField } from "@/components/ui/InputField";
-
 type PaymentFormProps = {
   clientSecret: string;
   eventTitle: string;
@@ -18,6 +16,10 @@ type PaymentFormProps = {
   summaryLines?: { label: string; qty: number }[];
   onSuccess: (paymentIntentId: string) => void;
 };
+
+const fieldLabelClass = "block text-[13px] font-bold normal-case leading-5 text-black";
+const fieldBoxClass =
+  "mt-1.5 flex h-[44px] items-center overflow-hidden border border-black/45 px-3 focus-within:border-black";
 
 const stripeFieldOptions = {
   style: {
@@ -124,35 +126,43 @@ export function PaymentForm({
         <span className="h-px flex-1 bg-black/20" />
       </div>
 
-      <form onSubmit={handleCardPayment} className="space-y-4">
-        <label className="block text-[13px] font-bold text-black">
+      <form onSubmit={handleCardPayment} className="flex flex-col gap-4">
+        <label className={fieldLabelClass}>
           Card Information
-          <span className="mt-1.5 flex h-[44px] items-center border border-black/45 px-3 focus-within:border-black">
-            <CardNumberElement options={{ ...stripeFieldOptions, showIcon: true }} className="w-full" />
+          <span className={fieldBoxClass}>
+            <CardNumberElement
+              options={{ ...stripeFieldOptions, showIcon: true, disableLink: true }}
+              className="min-w-0 w-full"
+            />
           </span>
         </label>
 
-        <InputField
-          label="Cardholder Name"
-          name="cardholderName"
-          value={cardholderName}
-          onChange={(event) => setCardholderName(event.target.value)}
-          placeholder="Full name on card"
-          className="px-3"
-          containerClassName="!h-[44px] !rounded-none !border-black/45 focus-within:!border-black"
-        />
+        <label className={fieldLabelClass} htmlFor="cardholderName">
+          Cardholder Name
+          <span className={fieldBoxClass}>
+            <input
+              id="cardholderName"
+              name="cardholderName"
+              value={cardholderName}
+              onChange={(event) => setCardholderName(event.target.value)}
+              placeholder="Full name on card"
+              autoComplete="cc-name"
+              className="h-full w-full border-0 bg-transparent text-[14px] font-normal normal-case text-black outline-none placeholder:text-[#777777]"
+            />
+          </span>
+        </label>
 
         <div className="grid grid-cols-2 gap-4">
-          <label className="block text-[13px] font-bold text-black">
+          <label className={fieldLabelClass}>
             Expiry Date
-            <span className="mt-1.5 flex h-[44px] items-center border border-black/45 px-3 focus-within:border-black">
-              <CardExpiryElement options={stripeFieldOptions} className="w-full" />
+            <span className={fieldBoxClass}>
+              <CardExpiryElement options={stripeFieldOptions} className="min-w-0 w-full" />
             </span>
           </label>
-          <label className="block text-[13px] font-bold text-black">
+          <label className={fieldLabelClass}>
             CVC
-            <span className="mt-1.5 flex h-[44px] items-center border border-black/45 px-3 focus-within:border-black">
-              <CardCvcElement options={stripeFieldOptions} className="w-full" />
+            <span className={fieldBoxClass}>
+              <CardCvcElement options={stripeFieldOptions} className="min-w-0 w-full" />
             </span>
           </label>
         </div>

@@ -58,7 +58,7 @@ export function DataTableToolbar({
               density="compact"
               wrapperClassName="!gap-0 w-full sm:w-auto"
               containerClassName="!h-[40px] min-w-[120px]"
-              className={`!h-[40px] !rounded-none !border-black !px-2 !pr-9 w-full min-w-[120px] text-[14px] font-bold uppercase sm:w-auto ${filter.className ?? ""}`.trim()}
+              className={`!h-[40px] !rounded-none !border-black !px-2 !pr-9 w-full min-w-[120px] text-[14px] font-normal uppercase sm:w-auto ${filter.className ?? ""}`.trim()}
             />
           ))}
           {toolbarExtra}

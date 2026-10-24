@@ -57,30 +57,27 @@ export function SiteFooter() {
 
   return (
     <footer className="border-t border-black bg-white text-black">
-      <div className="flex h-[36px] items-center border-b border-black/70 px-4 md:px-6">
+      <div className="flex h-[50px] items-center border-b border-black px-5">
         <Link href="/" aria-label="Yourlist home" className="inline-flex">
-          <Image src={yourlistLogo} alt="Yourlist" className="h-auto w-[70px]" />
+          <Image src={yourlistLogo} alt="Yourlist" className="h-[31px] w-[97px] object-contain" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         {footerGroups.map((group) => (
-          <section
-            key={group.title}
-            className="min-h-[112px] border-b border-r border-black/70 px-4 py-3 last:border-r-0 sm:px-5"
-          >
-            <h2 className="text-[10px] font-bold uppercase leading-[14px]">{group.title}</h2>
-            <ul className="mt-2 space-y-1">
+          <section key={group.title} className="min-h-[185px] border-r border-b border-black px-5 py-[15px]">
+            <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">{group.title}</h2>
+            <ul className="mt-4 space-y-1">
               {group.links.map((link) => (
                 <li key={link.label}>
                   {link.href.startsWith("http") ||
                   link.href.startsWith("mailto:") ||
                   link.href === "#" ? (
-                    <a href={link.href} className="text-[11px] leading-[15px] hover:underline">
+                    <a href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
                       {link.label}
                     </a>
                   ) : (
-                    <Link href={link.href} className="text-[11px] leading-[15px] hover:underline">
+                    <Link href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
                       {link.label}
                     </Link>
                   )}
@@ -90,32 +87,31 @@ export function SiteFooter() {
           </section>
         ))}
 
-        <section className="col-span-2 min-h-[112px] border-b border-black/70 px-4 py-3 sm:col-span-1 sm:border-r sm:px-5">
-          <h2 className="text-[10px] font-bold uppercase leading-[14px]">Contact us</h2>
-          <ul className="mt-2 space-y-1">
+        <section className="min-h-[185px] border-b border-black px-5 py-[15px] sm:border-r">
+          <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">Contact us</h2>
+          <ul className="mt-4 space-y-1">
             <li>
-              <a
-                href="tel:+44123456789"
-                className="flex items-center gap-2 text-[11px] leading-[15px] hover:underline"
-              >
-                <span aria-hidden="true">⌕</span> 123456789
+              <a href="tel:+44123456789" className="flex items-center gap-2 text-[14px] leading-4 hover:underline">
+                <img src="/landing/phone.svg" width={17} height={17} alt="" />
+                123456789
               </a>
             </li>
             <li>
               <a
                 href="mailto:yourlist@gmail.com"
-                className="flex items-center gap-2 text-[11px] leading-[15px] hover:underline"
+                className="flex items-center gap-2 text-[14px] leading-4 hover:underline"
               >
-                <span aria-hidden="true">✉</span> yourlist@gmail.com
+                <img src="/landing/email.svg" width={17} height={17} alt="" />
+                yourlist@gmail.com
               </a>
             </li>
           </ul>
         </section>
       </div>
 
-      <div className="flex min-h-[29px] items-center justify-center px-3 py-2 text-center text-[9px] leading-[13px]">
+      <p className="px-3 py-2 text-center text-[12px] leading-[18px]">
         © 2025 yourlist Ltd. All Rights Reserved.
-      </div>
+      </p>
     </footer>
   );
 }

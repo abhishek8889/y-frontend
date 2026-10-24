@@ -76,7 +76,7 @@ export function YourlistAlert({
         <header className="relative flex shrink-0 items-center justify-center border-b border-black px-12 py-5">
           <h2
             id={titleId}
-            className="text-center text-[16px] font-bold uppercase leading-[22px] tracking-[0.02em] text-black sm:text-[18px] sm:leading-[24px]"
+            className="font-heading text-center text-[16px] leading-[22px] tracking-[0.02em] text-black sm:text-[18px] sm:leading-[24px]"
           >
             {title}
           </h2>
@@ -120,7 +120,7 @@ export function YourlistAlert({
                     onClick={onSecondaryClick}
                     disabled={isSubmitting}
                     className={[
-                      "h-[46px] rounded-[4px] border border-black bg-white px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-black transition hover:bg-black/5 disabled:opacity-60 sm:text-[13px]",
+                      "h-[46px] rounded-[4px] border border-black bg-white px-4 text-[12px] font-normal uppercase tracking-[0.08em] text-black transition hover:bg-black/5 disabled:opacity-60 sm:text-[13px]",
                       hasPrimary ? "sm:flex-1" : "w-full",
                     ].join(" ")}
                   >
@@ -134,7 +134,7 @@ export function YourlistAlert({
                     onClick={onPrimaryClick}
                     disabled={isSubmitting}
                     className={[
-                      "h-[46px] rounded-[4px] border border-black bg-black px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition hover:opacity-90 disabled:opacity-60 sm:text-[13px]",
+                      "h-[46px] rounded-[4px] border border-black bg-black px-4 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:opacity-90 disabled:opacity-60 sm:text-[13px]",
                       hasSecondary ? "sm:flex-1" : "w-full",
                     ].join(" ")}
                   >

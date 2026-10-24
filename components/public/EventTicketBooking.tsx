@@ -86,6 +86,7 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
 
   const [lines, setLines] = useState<BookingLine[]>([]);
   const [pickerValue, setPickerValue] = useState("");
+  const [ticketMenuOpen, setTicketMenuOpen] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
@@ -268,20 +269,26 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
 
   return (
     <div className="mt-4">
+      {ticketMenuOpen ? (
+        <div className="fixed inset-0 z-[60] bg-black/28" aria-hidden="true" />
+      ) : null}
       {unusedOptions.length > 0 ? (
-        <SelectField
-          id="event-ticket-type"
-          name="ticketType"
-          aria-label={lines.length ? "Add another ticket" : "Ticket type"}
-          value={pickerValue}
-          onChange={(changeEvent) => addOffer(changeEvent.target.value)}
-          options={unusedOptions.map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-          placeholder={lines.length ? "Add another ticket" : "Select ticket type"}
-          className="!h-[42px] !rounded-[3px] !border-black/60 !text-[13px]"
-        />
+        <div className={ticketMenuOpen ? "relative z-[70]" : undefined}>
+          <SelectField
+            id="event-ticket-type"
+            name="ticketType"
+            aria-label={lines.length ? "Add another ticket" : "Ticket type"}
+            value={pickerValue}
+            onChange={(changeEvent) => addOffer(changeEvent.target.value)}
+            onOpenChange={setTicketMenuOpen}
+            options={unusedOptions.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            placeholder={lines.length ? "Add another ticket" : "Select ticket type"}
+            className="!h-[42px] !rounded-[3px] !border-black/60 !text-[13px]"
+          />
+        </div>
       ) : null}
 
       {lines.length > 0 ? (
@@ -290,30 +297,32 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
             const maxQty = maxOfferQuantity(line.option);
             const lineTotal = line.option.amount * line.qty;
             return (
-              <li key={line.option.offerId} className="flex items-center gap-3 px-3 py-3">
+              <li key={line.option.offerId} className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center">
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium leading-5">{line.option.ticketName}</p>
                   <p className="text-[12px] text-black/55">
                     {line.option.offerName} · {formatMoney(line.option.amount, line.option.currency)} each
                   </p>
                 </div>
-                <QuantityStepper
-                  value={line.qty}
-                  max={maxQty}
-                  disabled={startBookingState.isLoading}
-                  onChange={(qty) => updateQty(line.option.offerId, qty)}
-                />
-                <p className="w-[72px] text-right text-[13px] font-medium">
-                  {formatMoney(lineTotal, line.option.currency)}
-                </p>
-                <button
-                  type="button"
-                  aria-label={`Remove ${line.option.label}`}
-                  onClick={() => removeLine(line.option.offerId)}
-                  className="cursor-pointer text-[18px] leading-none text-black/40 hover:text-black"
-                >
-                  ×
-                </button>
+                <div className="flex items-center justify-between gap-3 sm:contents">
+                  <QuantityStepper
+                    value={line.qty}
+                    max={maxQty}
+                    disabled={startBookingState.isLoading}
+                    onChange={(qty) => updateQty(line.option.offerId, qty)}
+                  />
+                  <p className="min-w-[4.5rem] flex-1 text-right text-[13px] font-medium sm:w-[72px] sm:flex-none">
+                    {formatMoney(lineTotal, line.option.currency)}
+                  </p>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${line.option.label}`}
+                    onClick={() => removeLine(line.option.offerId)}
+                    className="cursor-pointer text-[18px] leading-none text-black/40 hover:text-black"
+                  >
+                    ×
+                  </button>
+                </div>
               </li>
             );
           })}

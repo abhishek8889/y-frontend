@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="839" height="123" viewBox="0 0 839 123" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path id="Check-ins area" d="M0 123C57.8621 123 86.7931 120.886 140.316 117.716C193.838 114.545 231.448 101.863 279.184 94.4644C326.921 87.0663 376.103 71.2132 419.5 61.7014C462.897 52.1895 520.759 27.8814 559.815 16.2558C598.872 4.63024 650.948 -1.711 698.684 0.402748C746.421 2.51649 795.603 2.51649 839 13.0852V123H0Z" fill="url(#paint0_linear_0_49)"/>
+<defs>
+<linearGradient id="paint0_linear_0_49" x1="0" y1="-1.38019e-08" x2="0" y2="123" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2478FF" stop-opacity="0.145098"/>
+<stop offset="1" stop-color="#2478FF" stop-opacity="0.0117647"/>
+</linearGradient>
+</defs>
+</svg>

@@ -2,32 +2,15 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSyncExternalStore } from "react";
 import { useGetProfileQuery } from "@/apis/auth/authApi";
 import { getApiErrorMessage } from "@/lib/api/errors";
-import { getAuthToken } from "@/lib/api/token";
-import { AUTH_CHANGE_EVENT } from "@/lib/auth/constants";
+import { useHasAuthToken } from "@/lib/public/useHasAuthToken";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import type { SerializedError } from "@reduxjs/toolkit";
 
-function subscribeAuth(onStoreChange: () => void) {
-  window.addEventListener("focus", onStoreChange);
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(AUTH_CHANGE_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("focus", onStoreChange);
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(AUTH_CHANGE_EVENT, onStoreChange);
-  };
-}
-
-function getHasAuthToken() {
-  return Boolean(getAuthToken());
-}
-
 export function AccountDetails() {
   const router = useRouter();
-  const hasToken = useSyncExternalStore(subscribeAuth, getHasAuthToken, () => false);
+  const hasToken = useHasAuthToken();
   const { data, isLoading, isError, error } = useGetProfileQuery(undefined, { skip: !hasToken });
   const profile = data?.data;
   const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim();
