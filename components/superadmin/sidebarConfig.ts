@@ -1,17 +1,42 @@
+import {
+  DASHBOARD_ICON,
+  CLUBSITE_ICON,
+  SETTINGS_ICON,
+  type IconName,
+} from "@/components/ui/IconCard";
+
 export type SuperadminSidebarItem = {
   key: string;
   label: string;
   path: string;
-  /** Set when admin about-me permission modules are available. */
+  icon: IconName;
+  /** Omit or null = always visible. Matches platform permission keys from about-me / login. */
   requiredPermission?: string | null;
 };
 
 /**
- * Superadmin sidebar config — kept separate from organisation menu items.
- * Items without `requiredPermission` always show (current admin UX).
+ * Platform sidebar. Item `key` aligns with permission module names where gated.
+ * Example login permissions: organisations.*, settings.update
  */
 export const superadminSidebarConfig: SuperadminSidebarItem[] = [
-  { key: "overview", label: "Overview", path: "/admin" },
-  { key: "organisers", label: "Organisers", path: "/admin/organisers" },
-  { key: "settings", label: "Settings", path: "/admin/settings" },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    path: "/admin",
+    icon: DASHBOARD_ICON,
+  },
+  {
+    key: "organisations",
+    label: "Organisations",
+    path: "/admin/organisations",
+    icon: CLUBSITE_ICON,
+    requiredPermission: "organisations.read",
+  },
+  {
+    key: "settings",
+    label: "Platform Settings",
+    path: "/admin/settings",
+    icon: SETTINGS_ICON,
+    requiredPermission: "settings.update",
+  },
 ];

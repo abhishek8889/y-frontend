@@ -1,14 +1,16 @@
+"use client";
+
 export default function SuperadminHomePage() {
   return (
-    <div className="px-6 py-8 text-black md:px-8">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-black/50">Superadmin</p>
-      <h1 className="mt-3 text-[28px] font-black uppercase tracking-[-0.04em]">Admin dashboard</h1>
-      <p className="mt-3 max-w-xl text-[14px] leading-6 text-black/65">
-        Platform management screens will live here. Keep new UI under `components/superadmin` so this
-        product can be extracted into its own Next app later.
-      </p>
+    <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
+      <div className="flex flex-col gap-[11px]">
+        <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
+          Dashboard
+        </h1>
+        <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
+          Platform overview. Content modules will be added here.
+        </p>
+      </div>
     </div>
   );
 }
-
-// sdf
