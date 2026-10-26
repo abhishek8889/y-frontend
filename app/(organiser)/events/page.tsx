@@ -538,7 +538,9 @@ export default function EventsPage() {
                       eventTimezone={activeEvent.timezone}
                     />
                   ) : null}
-                  {activeTab === "Orders" ? <OrdersTab eventTitle={activeEvent.name} /> : null}
+                  {activeTab === "Orders" ? (
+                    <OrdersTab eventId={activeEvent.id} eventTitle={activeEvent.name} />
+                  ) : null}
                   {activeTab === "Refunds" ? <RefundsTab eventTitle={activeEvent.name} /> : null}
                   {activeTab === "Attendees" ? (
                     <AttendeesTab eventTitle={activeEvent.name} />

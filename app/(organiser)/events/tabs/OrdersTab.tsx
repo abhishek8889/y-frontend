@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  formatSalesChannel,
+  normalizeEventOrderList,
+  orderTicketSummary,
+  useGetEventOrderDetailsQuery,
+  useGetEventOrdersQuery,
+  type EventOrderListItem,
+} from "@/apis/organisation/eventOrdersApi";
 import {
   ActionMenu,
   DataTable,
@@ -8,88 +16,28 @@ import {
   type ActionMenuItem,
   type DataTableColumn,
 } from "@/components/common";
-import {
-  OrderDetailsModal,
-  type EventOrderDetails,
-} from "@/components/organiser/events/OrderDetailsModal";
+import { OrderDetailsModal } from "@/components/organiser/events/OrderDetailsModal";
 import { ExportButton, ResultNotice } from "./TabControls";
 
-type EventOrder = EventOrderDetails;
-
-const initialOrders: EventOrder[] = [
-  {
-    id: "1",
-    orderId: "#ORD-4821",
-    customerName: "Smith Jon",
-    customerEmail: "user@gmail.com",
-    tickets: "Adult GA",
-    ticketCount: 2,
-    payment: "Card",
-    source: "Website",
-    amount: 50,
-    status: "paid",
-    date: "01 Sep 2026, 10:00 AM",
-  },
-  {
-    id: "2",
-    orderId: "#ORD-4819",
-    customerName: "Alex Morgan",
-    customerEmail: "alex@example.com",
-    tickets: "VIP",
-    ticketCount: 1,
-    payment: "Apple Pay",
-    source: "Website",
-    amount: 75,
-    status: "paid",
-    date: "31 Aug 2026, 4:15 PM",
-  },
-  {
-    id: "3",
-    orderId: "#ORD-4812",
-    customerName: "Jamie Lee",
-    customerEmail: "jamie@example.com",
-    tickets: "Adult GA",
-    ticketCount: 4,
-    payment: "Card",
-    source: "Box office",
-    amount: 100,
-    status: "refunded",
-    date: "30 Aug 2026, 11:30 AM",
-  },
-  {
-    id: "4",
-    orderId: "#ORD-4808",
-    customerName: "Priya Shah",
-    customerEmail: "priya@example.com",
-    tickets: "Early Bird",
-    ticketCount: 2,
-    payment: "Cash",
-    source: "Box office",
-    amount: 36,
-    status: "paid",
-    date: "29 Aug 2026, 1:05 PM",
-  },
-  {
-    id: "5",
-    orderId: "#ORD-4801",
-    customerName: "Chris Evans",
-    customerEmail: "chris@example.com",
-    tickets: "VIP",
-    ticketCount: 3,
-    payment: "Card",
-    source: "Partner",
-    amount: 225,
-    status: "paid",
-    date: "28 Aug 2026, 9:40 AM",
-  },
-];
-
-function formatGbp(amount: number) {
-  return `£${amount.toFixed(2)}`;
+function formatOrderDate(value: string | null | undefined) {
+  if (!value?.trim()) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
-export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
-  const [orders, setOrders] = useState(initialOrders);
+type OrdersTabProps = {
+  eventId: number;
+  eventTitle: string;
+};
+
+export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -97,88 +45,154 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [notice, setNotice] = useState("");
-  const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [detailsOrder, setDetailsOrder] = useState<EventOrder | null>(null);
+  const [openActionId, setOpenActionId] = useState<number | null>(null);
+  const [detailsOrderId, setDetailsOrderId] = useState<number | null>(null);
 
-  const filteredOrders = useMemo(
-    () =>
-      orders.filter((order) => {
-        const matchesSearch = `${order.orderId} ${order.customerName} ${order.customerEmail} ${order.tickets}`
+  const { data, isLoading, isFetching, isError } = useGetEventOrdersQuery({
+    eventId,
+  });
+
+  const {
+    data: detailsData,
+    isLoading: isDetailsLoading,
+    isFetching: isDetailsFetching,
+    isError: isDetailsError,
+  } = useGetEventOrderDetailsQuery(detailsOrderId as number, {
+    skip: detailsOrderId == null,
+  });
+
+  const orders = useMemo(() => normalizeEventOrderList(data?.data), [data?.data]);
+
+  const ticketOptions = useMemo(() => {
+    const names = new Set<string>();
+    for (const order of orders) {
+      for (const item of order.items ?? []) {
+        if (item.ticket_name?.trim()) names.add(item.ticket_name.trim());
+      }
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [orders]);
+
+  const sourceOptions = useMemo(() => {
+    const channels = new Set<string>();
+    for (const order of orders) {
+      if (order.sales_channel?.trim()) channels.add(order.sales_channel.trim());
+    }
+    return Array.from(channels).sort((a, b) => a.localeCompare(b));
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return orders.filter((order) => {
+      const ticketSummary = orderTicketSummary(order);
+      const matchesSearch =
+        !query ||
+        [
+          order.unique_id,
+          order.customer_name,
+          order.customer_email,
+          ticketSummary.label,
+          order.status,
+          order.sales_channel,
+        ]
+          .filter(Boolean)
+          .join(" ")
           .toLowerCase()
-          .includes(search.toLowerCase());
-        return (
-          matchesSearch &&
-          (ticketFilter === "all" || order.tickets === ticketFilter) &&
-          (statusFilter === "all" || order.status === statusFilter) &&
-          (sourceFilter === "all" || order.source === sourceFilter)
-        );
-      }),
-    [orders, search, ticketFilter, statusFilter, sourceFilter],
-  );
+          .includes(query);
+
+      const matchesTicket =
+        ticketFilter === "all" ||
+        (order.items ?? []).some((item) => item.ticket_name === ticketFilter);
+
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+      const matchesSource =
+        sourceFilter === "all" || order.sales_channel === sourceFilter;
+
+      return matchesSearch && matchesTicket && matchesStatus && matchesSource;
+    });
+  }, [orders, search, ticketFilter, statusFilter, sourceFilter]);
 
   const pagedOrders = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, page, pageSize]);
 
-  const handleRefund = useCallback((order: EventOrder) => {
-    setOrders((current) =>
-      current.map((item) => (item.id === order.id ? { ...item, status: "refunded" } : item)),
-    );
-    setNotice(`${order.orderId} has been marked as refunded.`);
-    setDetailsOrder((current) =>
-      current?.id === order.id ? { ...order, status: "refunded" } : current,
-    );
-  }, []);
-
-  const orderActions = useMemo<ActionMenuItem<EventOrder>[]>(
+  const orderActions = useMemo<ActionMenuItem<EventOrderListItem>[]>(
     () => [
       {
         key: "view",
         label: "View details",
-        onClick: (order) => setDetailsOrder(order),
+        onClick: (order) => {
+          setDetailsOrderId(order.id);
+          setOpenActionId(null);
+        },
       },
       {
-        key: "refund",
-        label: "Refund order",
-        hidden: (order) => order.status === "refunded",
-        onClick: (order) => handleRefund(order),
+        key: "pdf",
+        label: "Download tickets PDF",
+        hidden: (order) => !order.tickets_pdf_path?.trim(),
+        onClick: (order) => {
+          const url = order.tickets_pdf_path?.trim();
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+          setOpenActionId(null);
+        },
       },
       {
         key: "resend",
         label: "Resend ticket email",
-        onClick: (order) => setNotice(`Ticket email resent for ${order.orderId}.`),
+        onClick: (order) => {
+          setNotice(`Resend email is not available yet for ${order.unique_id}.`);
+          setOpenActionId(null);
+        },
       },
     ],
-    [handleRefund],
+    [],
   );
 
-  const columns = useMemo<DataTableColumn<EventOrder>[]>(
+  const columns = useMemo<DataTableColumn<EventOrderListItem>[]>(
     () => [
-      { id: "orderId", header: "ORDER ID", accessorKey: "orderId" },
+      {
+        id: "orderId",
+        header: "ORDER ID",
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap text-[14px] font-normal text-black">
+            {row.unique_id}
+          </span>
+        ),
+      },
       {
         id: "customer",
         header: "CUSTOMER",
         cell: ({ row }) => (
-          <div>
-            <strong className="block font-bold">{row.customerName}</strong>
-            <span className="text-[14px] text-[#666]">{row.customerEmail}</span>
+          <div className="min-w-[140px]">
+            <strong className="block font-bold">{row.customer_name || "—"}</strong>
+            <span className="text-[14px] text-[#666]">{row.customer_email || "—"}</span>
           </div>
         ),
       },
       {
         id: "tickets",
         header: "TICKETS",
-        cell: ({ row }) => `${row.tickets} × ${row.ticketCount}`,
+        cell: ({ row }) => {
+          const summary = orderTicketSummary(row);
+          return `${summary.label} × ${summary.quantity}`;
+        },
       },
-      { id: "payment", header: "PAYMENT", accessorKey: "payment" },
-      { id: "source", header: "SOURCE", accessorKey: "source" },
+      {
+        id: "source",
+        header: "SOURCE",
+        cell: ({ row }) => formatSalesChannel(row.sales_channel),
+      },
       {
         id: "amount",
         header: "AMOUNT",
-        cell: ({ row }) => formatGbp(row.amount),
+        cell: ({ row }) => row.formatted_total || `${row.currency_sign || "£"}${row.total_amount || "0.00"}`,
       },
-      { id: "date", header: "DATE", accessorKey: "date" },
+      {
+        id: "date",
+        header: "DATE",
+        cell: ({ row }) => formatOrderDate(row.paid_at || row.created_at),
+      },
       {
         id: "status",
         header: "STATUS",
@@ -195,7 +209,7 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
             actions={orderActions}
             open={openActionId === row.id}
             onOpenChange={(nextOpen) => setOpenActionId(nextOpen ? row.id : null)}
-            ariaLabel={`Open actions for ${row.orderId}`}
+            ariaLabel={`Open actions for ${row.unique_id}`}
           />
         ),
       },
@@ -216,23 +230,24 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
             "Customer",
             "Email",
             "Tickets",
-            "Payment",
             "Source",
             "Amount",
             "Date",
             "Status",
           ]}
-          rows={filteredOrders.map((order) => [
-            order.orderId,
-            order.customerName,
-            order.customerEmail,
-            `${order.tickets} × ${order.ticketCount}`,
-            order.payment,
-            order.source,
-            order.amount,
-            order.date,
-            order.status,
-          ])}
+          rows={filteredOrders.map((order) => {
+            const summary = orderTicketSummary(order);
+            return [
+              order.unique_id,
+              order.customer_name || "",
+              order.customer_email || "",
+              `${summary.label} × ${summary.quantity}`,
+              formatSalesChannel(order.sales_channel),
+              order.formatted_total || order.total_amount || "",
+              formatOrderDate(order.paid_at || order.created_at),
+              order.status,
+            ];
+          })}
         />
       </div>
 
@@ -264,9 +279,7 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
             value: ticketFilter,
             options: [
               { value: "all", label: "All ticket type" },
-              { value: "Adult GA", label: "Adult GA" },
-              { value: "VIP", label: "VIP" },
-              { value: "Early Bird", label: "Early Bird" },
+              ...ticketOptions.map((name) => ({ value: name, label: name })),
             ],
           },
           {
@@ -277,7 +290,9 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
             options: [
               { value: "all", label: "All status" },
               { value: "paid", label: "Paid" },
+              { value: "pending", label: "Pending" },
               { value: "refunded", label: "Refunded" },
+              { value: "cancelled", label: "Cancelled" },
             ],
           },
           {
@@ -287,9 +302,10 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
             value: sourceFilter,
             options: [
               { value: "all", label: "All sources" },
-              { value: "Website", label: "Website" },
-              { value: "Box office", label: "Box office" },
-              { value: "Partner", label: "Partner" },
+              ...sourceOptions.map((channel) => ({
+                value: channel,
+                label: formatSalesChannel(channel),
+              })),
             ],
           },
         ]}
@@ -309,14 +325,19 @@ export default function OrdersTab({ eventTitle }: { eventTitle: string }) {
           setPageSize(size);
           setPage(1);
         }}
+        isLoading={isLoading || isFetching}
+        isError={isError}
+        errorMessage="Unable to load orders."
         emptyMessage="No orders match these filters."
         bodyHeightClassName={false}
       />
 
       <OrderDetailsModal
-        open={Boolean(detailsOrder)}
-        order={detailsOrder}
-        onClose={() => setDetailsOrder(null)}
+        open={detailsOrderId != null}
+        order={detailsData?.data ?? null}
+        isLoading={isDetailsLoading || isDetailsFetching}
+        isError={isDetailsError}
+        onClose={() => setDetailsOrderId(null)}
       />
     </section>
   );

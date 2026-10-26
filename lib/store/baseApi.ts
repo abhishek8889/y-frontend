@@ -91,6 +91,7 @@ export const baseApi = createApi({
     "Events",
     "EventCategories",
     "EventTickets",
+    "EventOrders",
     "Venues",
     "venuePageOverview",
     "Customers",
