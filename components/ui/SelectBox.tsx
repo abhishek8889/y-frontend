@@ -3,6 +3,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -42,6 +43,10 @@ export type SelectBoxProps = {
   onOpenChange?: (open: boolean) => void;
 };
 
+const LIST_MAX_HEIGHT = 240;
+const LIST_GAP = 4;
+const VIEWPORT_PADDING = 8;
+
 export function SelectBox({
   id,
   name,
@@ -64,7 +69,9 @@ export function SelectBox({
   const listboxId = `${id ?? generatedId}-listbox`;
   const triggerId = id ?? generatedId;
   const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
+  const [openAbove, setOpenAbove] = useState(false);
   const [internalValue, setInternalValue] = useState(String(defaultValue ?? ""));
   const selectedValue = value !== undefined ? String(value) : internalValue;
 
@@ -80,6 +87,38 @@ export function SelectBox({
   useEffect(() => {
     return () => onOpenChange?.(false);
   }, [onOpenChange]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setOpenAbove(false);
+      return;
+    }
+
+    function updatePlacement() {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const rect = root.getBoundingClientRect();
+      const listHeight = Math.min(
+        listRef.current?.offsetHeight ?? LIST_MAX_HEIGHT,
+        LIST_MAX_HEIGHT,
+      );
+      const spaceBelow = window.innerHeight - rect.bottom - LIST_GAP - VIEWPORT_PADDING;
+      const spaceAbove = rect.top - LIST_GAP - VIEWPORT_PADDING;
+      const fitsBelow = listHeight <= spaceBelow;
+      const fitsAbove = listHeight <= spaceAbove;
+
+      setOpenAbove(!fitsBelow && (fitsAbove || spaceAbove > spaceBelow));
+    }
+
+    updatePlacement();
+    window.addEventListener("resize", updatePlacement);
+    window.addEventListener("scroll", updatePlacement, true);
+    return () => {
+      window.removeEventListener("resize", updatePlacement);
+      window.removeEventListener("scroll", updatePlacement, true);
+    };
+  }, [open, options.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -126,7 +165,12 @@ export function SelectBox({
     }
   }
 
-  const heightClass = density === "compact" ? "h-10" : "h-[48px]";
+  const isCompact = density === "compact";
+  const heightClass = isCompact ? "h-10" : "h-[48px]";
+  const labelPadClass = isCompact ? "pl-2.5 pr-2" : "px-5 pr-2";
+  const chevronWrapClass = isCompact
+    ? "flex w-10 shrink-0 items-center justify-center pr-1"
+    : "flex w-11 shrink-0 items-center justify-center";
   const displayLabel = selectedOption?.label ?? placeholder ?? "Select";
   const isPlaceholder = !selectedOption;
 
@@ -148,17 +192,19 @@ export function SelectBox({
           if (!disabled) setOpen((current) => !current);
         }}
         onKeyDown={handleTriggerKeyDown}
-        className={`flex w-full ${heightClass} cursor-pointer items-center overflow-hidden rounded-[4px] border border-black bg-white text-left text-black outline-none transition hover:bg-black/[0.02] focus-visible:ring-1 focus-visible:ring-black disabled:cursor-not-allowed disabled:opacity-50 ${containerClassName} ${className}`.trim()}
+        className={`flex w-full ${heightClass} cursor-pointer items-center overflow-hidden rounded-[4px] border border-black bg-white p-0 text-left text-black outline-none transition hover:bg-black/[0.02] focus-visible:ring-1 focus-visible:ring-black disabled:cursor-not-allowed disabled:opacity-50 ${containerClassName} ${className}`.trim()}
       >
-        {prefix ? <span className="mr-2 flex items-center pl-5">{prefix}</span> : null}
+        {prefix ? (
+          <span className={`mr-2 flex items-center ${isCompact ? "pl-2.5" : "pl-5"}`}>{prefix}</span>
+        ) : null}
         <span
-          className={`min-w-0 flex-1 truncate px-5 pr-2 text-[14px] leading-[20px] ${
+          className={`min-w-0 flex-1 truncate text-[14px] leading-[20px] ${labelPadClass} ${
             isPlaceholder ? "text-black/45" : "text-black"
           } ${prefix ? "!pl-0" : ""}`.trim()}
         >
           {displayLabel}
         </span>
-        <span className="flex w-[44px] shrink-0 items-center justify-center" aria-hidden="true">
+        <span className={chevronWrapClass} aria-hidden="true">
           <svg
             width="10"
             height="6"
@@ -179,10 +225,13 @@ export function SelectBox({
 
       {open ? (
         <ul
+          ref={listRef}
           id={listboxId}
           role="listbox"
           aria-labelledby={triggerId}
-          className="absolute left-0 right-0 top-[calc(100%+4px)] z-[80] max-h-[240px] overflow-auto rounded-[4px] border border-black bg-white py-1 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+          className={`absolute left-0 right-0 z-[80] max-h-[240px] overflow-auto rounded-[4px] border border-black bg-white py-1 shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
+            openAbove ? "bottom-[calc(100%+4px)] top-auto" : "top-[calc(100%+4px)] bottom-auto"
+          }`}
         >
           {placeholder ? (
             <li

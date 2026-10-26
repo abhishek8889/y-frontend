@@ -43,7 +43,7 @@ export default function EventsTab() {
   function saveEvents() {
     setSavedIds(selectedEventIds);
     setSavedHiddenIds(hiddenIds);
-    setNotice("Clubsite events saved.");
+    setNotice("Site events saved.");
   }
 
   function cancelChanges() {
@@ -53,7 +53,7 @@ export default function EventsTab() {
   }
 
   return (
-    <section className="mt-4" aria-label="Clubsite event listings">
+    <section className="mt-4" aria-label="Site event listings">
       <h3 className="text-[18px] font-black uppercase leading-6">Events</h3>
       <p className="mt-1 text-[12px] text-[#777]">Add your event listings.</p>
 
@@ -64,7 +64,7 @@ export default function EventsTab() {
               type="checkbox"
               checked={selectedEventIds.includes(event.id)}
               onChange={() => toggleEvent(event.id)}
-              aria-label={`Show ${event.title} on the clubsite`}
+              aria-label={`Show ${event.title} on the site`}
               className="h-[13px] w-[13px] shrink-0 accent-black"
             />
             <div className="relative h-[54px] w-[54px] shrink-0 overflow-hidden bg-[#eee]">
@@ -74,7 +74,7 @@ export default function EventsTab() {
             <button
               type="button"
               onClick={() => removeEvent(event.id)}
-              aria-label={`Remove ${event.title} from clubsite`}
+              aria-label={`Remove ${event.title} from site`}
               className="flex h-8 w-8 shrink-0 items-center justify-center text-[#ef4444] transition hover:bg-red-50"
             >
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
@@ -85,12 +85,12 @@ export default function EventsTab() {
         ))}
         {snapshot !== "" && events.length === 0 ? (
           <p className="py-8 text-center text-[12px] text-[#777]">
-            No published events yet. Create and publish an event to add it to your clubsite.
+            No published events yet. Create and publish an event to add it to your site.
           </p>
         ) : null}
         {events.length > 0 && visibleEvents.length === 0 ? (
           <p className="py-8 text-center text-[12px] text-[#777]">
-            No events selected. Select an event to show it on your clubsite.
+            No events selected. Select an event to show it on your site.
           </p>
         ) : null}
       </div>

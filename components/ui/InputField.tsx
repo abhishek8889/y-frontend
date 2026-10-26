@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
 type SharedProps = {
-  label?: string;
+  label?: ReactNode;
   labelClassName?: string;
   prefix?: ReactNode;
   suffix?: ReactNode;
@@ -37,6 +37,9 @@ export function InputField(props: InputFieldProps) {
   } = props;
   const inputId = id ?? ("name" in rest && typeof rest.name === "string" ? rest.name : undefined);
   const isTextarea = as === "textarea";
+  const inputType = !isTextarea && "type" in rest ? rest.type ?? "text" : "text";
+  // Univers packs password bullets tightly; system UI keeps clear spaced dots.
+  const isMaskedPassword = inputType === "password";
 
   return (
     <div className={`mb-0 ${wrapperClassName}`.trim()}>
@@ -68,8 +71,10 @@ export function InputField(props: InputFieldProps) {
             <input
               id={inputId}
               {...(rest as InputHTMLAttributes<HTMLInputElement>)}
-              type={"type" in rest ? rest.type ?? "text" : "text"}
-              className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+              type={inputType}
+              className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${
+                isMaskedPassword ? "tracking-[0.5em] placeholder:tracking-normal" : ""
+              } ${className}`.trim()}
             />
             {suffix ? <span className={`flex items-center ${suffixClassName}`}>{suffix}</span> : null}
           </>

@@ -5,6 +5,7 @@ export { DataTablePagination } from "./DataTablePagination";
 export type {
   DataTableColumn,
   DataTableEmptyState,
+  DataTableFeatures,
   DataTableFilter,
   DataTableFilterOption,
   DataTablePaginationState,

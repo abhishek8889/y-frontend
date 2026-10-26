@@ -58,7 +58,7 @@ export default function DetailsTab({
           selling tickets.
         </div>
       ) : null}
-      <h3 className="mb-6 text-[26px] font-black uppercase leading-none tracking-[-0.03em] text-black">
+      <h3 className="font-heading mb-6 text-[26px] font-bold uppercase leading-none tracking-[-0.03em] text-black">
         Details
       </h3>
 

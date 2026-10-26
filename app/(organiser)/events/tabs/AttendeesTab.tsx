@@ -41,7 +41,9 @@ export default function AttendeesTab({ eventTitle }: { eventTitle: string }) {
   return (
     <section className="pt-4" aria-label={`${eventTitle} attendees`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[22px] font-black uppercase leading-none text-black">Attendees</h3>
+        <h3 className="font-heading text-[26px] font-bold uppercase leading-none tracking-[-0.03em] text-black">
+          Attendees
+        </h3>
         <ExportButton
           fileName="event-attendees"
           headers={["Name", "Email", "Ticket", "Offer", "Price", "Ticket ID", "Check-in status", "Date & time"]}

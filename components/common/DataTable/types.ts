@@ -49,10 +49,28 @@ export type DataTableEmptyState = {
   onButtonClick?: () => void;
 };
 
+/**
+ * Toggle optional DataTable chrome. Defaults keep previous behaviour
+ * (search/filters/pagination show when their data props are provided).
+ */
+export type DataTableFeatures = {
+  /** Show search input when `search` prop is set. Default true. */
+  search?: boolean;
+  /** Show filter selects when `filters` prop is set. Default true. */
+  filters?: boolean;
+  /** Show pagination footer when `pagination` is set. Default true. */
+  pagination?: boolean;
+  /** Show per-page select inside pagination. Default true when `onPageSizeChange` is set. */
+  pageSize?: boolean;
+};
+
 export type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowId?: (row: T, index: number) => string | number;
+
+  /** Feature toggles for search / filters / pagination / per_page. */
+  features?: DataTableFeatures;
 
   /** Toolbar */
   search?: {

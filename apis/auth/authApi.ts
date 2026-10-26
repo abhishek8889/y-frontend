@@ -8,6 +8,55 @@ export type LoginRequest = {
   password: string;
 };
 
+export type RegisterOrganiserRequest = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  /** Dial code, e.g. "+44" */
+  country_code: string;
+  country: string;
+  password: string;
+  confirm_password: string;
+  org_organiser_name: string;
+  org_name: string;
+  org_email: string;
+  /** Org dial code, e.g. "+44" */
+  org_country_calling_code: string;
+  /** ISO country code, e.g. "GB", "IN", "US" */
+  org_country_code: string;
+  org_phone: string;
+  org_country: string;
+  org_city: string;
+  org_address1: string;
+  org_postal_code: string;
+  org_address2?: string;
+  org_website?: string;
+  org_logo?: string;
+};
+
+export type RegisterOrganiserResponse = {
+  success?: boolean;
+  message?: string;
+  data?: unknown;
+};
+
+export type VerifyOrganiserEmailRequest = {
+  email: string;
+  otp: string;
+};
+
+export type VerifyOrganiserEmailResponse = {
+  success?: boolean;
+  message?: string;
+  data?: {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    user: AuthUser;
+  };
+};
+
 export type LoginResponse = {
   success: boolean;
   message: string;
@@ -49,6 +98,10 @@ export type AboutMeOrganisation = {
 
 export type AboutMeUser = AuthUser & {
   organisation_approve_status?: boolean;
+  /** false = owner still needs to create a Stripe Connect account. */
+  stripe_connect_account_created?: boolean;
+  /** e.g. "pending" | "complete" — incomplete means resume onboarding. */
+  connect_onboarding_status?: string | null;
   permissions?: PermissionMap;
   /** Flat organisation name when API does not nest `organisation`. */
   organisation_name?: string | null;
@@ -83,6 +136,37 @@ export type ProfileResponse = {
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    registerOrganiser: build.mutation<RegisterOrganiserResponse, RegisterOrganiserRequest>({
+      query: (body) => ({
+        url: "organiser/register",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          success: true,
+          error: true,
+        });
+      },
+    }),
+    verifyOrganiserEmail: build.mutation<
+      VerifyOrganiserEmailResponse,
+      VerifyOrganiserEmailRequest
+    >({
+      query: (body) => ({
+        url: "organiser/verify-email",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Auth"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, {
+          success: true,
+          error: true,
+        });
+      },
+    }),
     login: build.mutation<LoginResponse, LoginRequest>({
       query: (body) => ({
         url: "organisation/login",
@@ -154,6 +238,8 @@ export const authApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useRegisterOrganiserMutation,
+  useVerifyOrganiserEmailMutation,
   useLoginMutation,
   usePlatformLoginMutation,
   useSendPublicLoginOtpMutation,

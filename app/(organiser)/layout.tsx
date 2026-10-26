@@ -1,3 +1,5 @@
+import { OrganiserApprovalGate } from "@/components/auth/OrganiserApprovalGate";
+
 export default function OrganiserLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <OrganiserApprovalGate>{children}</OrganiserApprovalGate>;
 }

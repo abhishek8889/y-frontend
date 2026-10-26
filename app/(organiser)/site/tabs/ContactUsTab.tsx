@@ -24,12 +24,14 @@ type ContactField = {
 type ContactDraft = {
   title: string;
   subtitle: string;
+  deliveryEmail: string;
   fields: ContactField[];
 };
 
 const initialContactDraft: ContactDraft = {
   title: "",
   subtitle: "",
+  deliveryEmail: "",
   fields: defaultContactFields.map((field) => ({ ...field })),
 };
 
@@ -76,10 +78,12 @@ export default function ContactUsTab() {
     fields: initialContactDraft.fields.map((field) => ({ ...field })),
   }));
   const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
 
-  function updateText(field: "title" | "subtitle", value: string) {
+  function updateText(field: "title" | "subtitle" | "deliveryEmail", value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
     setNotice("");
+    setError("");
   }
 
   function toggleField(fieldId: ContactField["id"], setting: "included" | "required") {
@@ -99,14 +103,21 @@ export default function ContactUsTab() {
 
   function saveContactPage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const deliveryEmail = draft.deliveryEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(deliveryEmail)) {
+      setError("Enter a valid email where contact form submissions should be delivered.");
+      return;
+    }
     const nextSaved = {
       ...draft,
       title: draft.title.trim(),
       subtitle: draft.subtitle.trim(),
+      deliveryEmail,
       fields: draft.fields.map((field) => ({ ...field })),
     };
     setDraft(nextSaved);
     setSavedDraft(nextSaved);
+    setError("");
     setNotice("Contact page saved.");
   }
 
@@ -152,6 +163,21 @@ export default function ContactUsTab() {
             className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
           />
         </div>
+        <div className="lg:col-span-2 lg:max-w-[50%] lg:pr-1.5">
+          <InputField
+            id="contact-delivery-email"
+            type="email"
+            required
+            label="Delivery email *"
+            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
+            value={draft.deliveryEmail}
+            onChange={(event) => updateText("deliveryEmail", event.target.value)}
+            placeholder="Where contact form submissions are sent"
+            density="compact"
+            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
+            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
+          />
+        </div>
       </div>
 
       <fieldset className="mt-5">
@@ -187,6 +213,12 @@ export default function ContactUsTab() {
           ))}
         </div>
       </fieldset>
+
+      {error ? (
+        <p role="alert" className="mt-3 text-[11px] text-red-600">
+          {error}
+        </p>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
         {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}

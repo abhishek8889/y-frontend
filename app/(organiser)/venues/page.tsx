@@ -177,7 +177,7 @@ export default function VenuesPage() {
     () => [
       {
         id: "total",
-        label: "Total venues",
+        label: "Total Venues",
         value: overview?.total_venue ?? 0,
       },
       {
@@ -191,7 +191,8 @@ export default function VenuesPage() {
         label: "Inactive",
         value: overview?.inactive_venue ?? 0,
         indicatorColor: "#ff3a3a",
-      }
+      },
+
     ],
     [overview?.active_venue, overview?.inactive_venue, overview?.total_venue],
   );
@@ -304,57 +305,65 @@ export default function VenuesPage() {
     () => [
       {
         id: "name",
-        header: "Venue",
+        header: "VENUE",
         accessorKey: "name",
         cell: ({ row }) => {
           const imageUrl = getVenueImageUrl(row);
           return (
-            <div className="flex items-center gap-3 pr-3">
+            <div className="flex min-w-[180px] items-center gap-3 pr-2 sm:gap-5 sm:pr-3">
               <div
-                className="h-[52px] w-[80px] border border-black/80 bg-cover bg-center bg-[#dfe9dc]"
+                className="h-[64px] w-[64px] shrink-0 rounded-[6px] bg-cover bg-center bg-[#d9d9d9] sm:h-[90px] sm:w-[90px]"
                 style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined}
                 role="img"
                 aria-label={row.name}
               />
-              <span className="text-[14px] font-medium leading-[18px] text-black">{row.name}</span>
+              <span className="min-w-0 text-[14px] font-normal leading-5 text-black">{row.name}</span>
             </div>
           );
         },
       },
       {
         id: "location",
-        header: "Location",
-        cell: ({ row }) => formatVenueLocation(row),
+        header: "LOCATION",
+        cell: ({ row }) => (
+          <span className="block max-w-[180px] text-[14px] font-normal leading-5 text-black">
+            {formatVenueLocation(row)}
+          </span>
+        ),
       },
       {
         id: "type",
-        header: "Venue Type",
-        cell: ({ row }) => row.venue_type?.name || "—",
+        header: "VENUE TYPE",
+        cell: ({ row }) => (
+          <span className="text-[14px] font-normal leading-5 text-black">
+            {row.venue_type?.name || "—"}
+          </span>
+        ),
       },
       {
         id: "capacity",
-        header: "Capacity",
+        header: "CAPACITY",
         cell: ({ row }) => (
-          <span className="whitespace-pre-line text-[13px] leading-[18px] text-black">
+          <span className="whitespace-pre-line text-[14px] font-normal leading-5 text-black">
             {formatVenueCapacity(row)}
           </span>
         ),
       },
       {
         id: "status",
-        header: "Status",
+        header: "STATUS",
         cell: ({ row }) => (
           <StatusBadge
             status={row.status}
-            className="text-[12px] tracking-[0.12em]"
+            className="font-heading gap-[9px] text-[14px] font-bold leading-5 tracking-normal"
           />
         ),
       },
       {
         id: "actions",
-        header: "Action",
-        align: "right",
-        headerClassName: "text-right",
+        header: "ACTION",
+        align: "center",
+        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}
@@ -395,13 +404,13 @@ export default function VenuesPage() {
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-      <div className="min-h-full bg-[#fff] p-5 md:p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-[26px] font-bold uppercase leading-[32px] tracking-[-0.05em] text-black md:text-[32px]">
-              VENUES
+      <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col gap-[11px]">
+            <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
+              Venues
             </h1>
-            <p className="mt-1 text-[14px] font-normal leading-[20px] text-black/60">
+            <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
               Manage and organize all your venues
             </p>
           </div>
@@ -409,19 +418,28 @@ export default function VenuesPage() {
           <Button
             type="button"
             onClick={() => router.push("/venues/create")}
-            className="inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition hover:opacity-90"
+            className="inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90"
           >
-            + CREATE VENUE
+            <span aria-hidden className="text-[18px] leading-none">
+              +
+            </span>
+            CREATE VENUE
           </Button>
         </div>
 
-        <div className="space-y-7 py-5">
-          <GridCard items={overviewItems} columns={3} />
+        <div className="mt-[26px] space-y-7">
+          <GridCard items={overviewItems} />
 
           <DataTable
             columns={columns}
             data={venues}
             getRowId={(row) => row.id}
+            features={{
+              search: true,
+              filters: true,
+              pagination: true,
+              pageSize: true,
+            }}
             search={{
               value: search,
               onChange: (value) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SelectField } from "@/components/ui/SelectField";
 import type { DataTableFilter } from "./types";
 
@@ -13,57 +13,135 @@ type DataTableToolbarProps = {
   filters?: DataTableFilter[];
   onFilterChange?: (key: string, value: string) => void;
   toolbarExtra?: ReactNode;
+  enableSearch?: boolean;
+  enableFilters?: boolean;
 };
+
+function SearchClearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 export function DataTableToolbar({
   search,
   filters = [],
   onFilterChange,
   toolbarExtra,
+  enableSearch = true,
+  enableFilters = true,
 }: DataTableToolbarProps) {
-  const hasSearch = Boolean(search);
-  const hasFilters = filters.length > 0;
+  const hasSearch = enableSearch && Boolean(search);
+  const hasFilters = enableFilters && filters.length > 0;
+  const [searchFocused, setSearchFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   if (!hasSearch && !hasFilters && !toolbarExtra) return null;
 
+  function dismissSearchFocus() {
+    setSearchFocused(false);
+    inputRef.current?.blur();
+  }
+
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-      {hasSearch ? (
-        <label className="flex h-[34px] min-w-0 flex-1 items-center gap-2 border-b border-black/55 px-2 text-black/60 focus-within:border-black">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <input
-            type="search"
-            value={search?.value ?? ""}
-            onChange={(event) => search?.onChange(event.target.value)}
-            placeholder={search?.placeholder ?? "Search"}
-            aria-label={search?.placeholder ?? "Search"}
-            className="min-w-0 flex-1 bg-transparent text-[14px] uppercase text-black placeholder:text-[#888] focus:outline-none"
-          />
-        </label>
+    <>
+      {hasSearch && searchFocused ? (
+        <button
+          type="button"
+          aria-label="Dismiss search"
+          className="fixed inset-0 z-[45] cursor-default bg-black/40"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            dismissSearchFocus();
+          }}
+        />
       ) : null}
 
-      {(hasFilters || toolbarExtra) && (
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {filters.map((filter) => (
-            <SelectField
-              key={filter.key}
-              name={filter.key}
-              aria-label={filter.label ?? filter.key}
-              value={filter.value ?? "all"}
-              options={filter.options ?? []}
-              onChange={(event) => onFilterChange?.(filter.key, event.target.value)}
-              density="compact"
-              wrapperClassName="!gap-0 w-full sm:w-auto"
-              containerClassName="!h-[40px] min-w-[120px]"
-              className={`!h-[40px] !rounded-none !border-black !px-2 !pr-9 w-full min-w-[120px] text-[14px] font-normal uppercase sm:w-auto ${filter.className ?? ""}`.trim()}
+      <div className="datatable-toolbar relative z-[50] flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-5">
+        {hasSearch ? (
+          <label
+            className={`flex h-11 min-w-0 flex-1 items-center gap-2.5 border-b border-black bg-white px-4 text-[#666] transition ${
+              searchFocused ? "relative z-[50] text-black shadow-[0_0_0_1px_black]" : "focus-within:text-black"
+            }`}
+          >
+            <button
+              type="button"
+              aria-label="Search"
+              tabIndex={-1}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                dismissSearchFocus();
+              }}
+              className="flex shrink-0 cursor-pointer items-center justify-center text-current"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.6" />
+                <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={search?.value ?? ""}
+              onChange={(event) => search?.onChange(event.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === "Escape") {
+                  event.preventDefault();
+                  dismissSearchFocus();
+                }
+              }}
+              placeholder={search?.placeholder ?? "SEARCH"}
+              aria-label={search?.placeholder ?? "Search"}
+              className="min-w-0 flex-1 bg-transparent text-[14px] font-normal uppercase leading-5 text-black placeholder:text-[#666] focus:outline-none"
             />
-          ))}
-          {toolbarExtra}
-        </div>
-      )}
-    </div>
+            {search?.value ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  search.onChange("");
+                  dismissSearchFocus();
+                }}
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center text-black/55 transition hover:text-black"
+              >
+                <SearchClearIcon />
+              </button>
+            ) : null}
+          </label>
+        ) : null}
+
+        {(hasFilters || toolbarExtra) && (
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+            {hasFilters
+              ? filters.map((filter) => (
+                  <SelectField
+                    key={filter.key}
+                    name={filter.key}
+                    aria-label={filter.label ?? filter.key}
+                    value={filter.value ?? "all"}
+                    options={filter.options ?? []}
+                    onChange={(event) => onFilterChange?.(filter.key, event.target.value)}
+                    density="compact"
+                    wrapperClassName="!gap-0 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px]"
+                    containerClassName="!h-11 !rounded-none !border-black"
+                    className={`!h-11 !rounded-none !border-black w-full text-[14px] font-normal uppercase text-black ${filter.className ?? ""}`.trim()}
+                  />
+                ))
+              : null}
+            {toolbarExtra}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

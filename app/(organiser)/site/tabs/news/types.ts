@@ -1,10 +1,9 @@
 export type NewsRecord = {
   id: string;
   title: string;
-  excerpt: string;
-  content: string;
+  excerptHtml: string;
+  contentHtml: string;
   imageDataUrl: string;
-  publishDate: string;
-  publishTime: string;
+  publishAt: string;
   author: string;
 };

@@ -22,6 +22,7 @@ import IconCard, {
 } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
 import { resolvePostLoginUrl, setAuthSession } from "@/lib/api/authStorage";
+import { isOrganisationPendingApproval } from "@/lib/auth/organisationApproval";
 import { buildSurfaceUrl, getHostSurface, type AppSurface } from "@/lib/hosts";
 import { AuthScope } from "@/lib/auth/scopes";
 import { getUserScope } from "@/lib/auth/roles";
@@ -167,6 +168,15 @@ export default function LoginPage() {
     }
 
     setAuthSession(token, user);
+
+    // organisation/login: unapproved organisers stay signed in on under-review.
+    if (isOrganisationPendingApproval(user)) {
+      window.location.assign(
+        buildSurfaceUrl("organiser", "/account-under-review", window.location.host),
+      );
+      return;
+    }
+
     const nextPath = new URLSearchParams(window.location.search).get("next");
     // Public OTP may return organisation/platform scope for multi-workspace users;
     // stay on the public site and let the account menu link to other hosts.
@@ -301,18 +311,19 @@ export default function LoginPage() {
       <AuthPage
         title={title}
         subtitle={subtitle}
+        contentClassName="sm:!pt-[70px]"
         footer={
           isPlatformLogin ? null : (
-            <p className="text-center text-[16px] leading-[24px] text-black">
+            <p className="text-center text-[16px] leading-6 text-black">
               No account yet?{" "}
-              <a href="/signup" className="font-bold uppercase">
-                SIGN UP
+              <a href="/signup" className="font-heading text-[14px]">
+                Sign up
               </a>
             </p>
           )
         }
       >
-          <form className="space-y-[22px]" onSubmit={handlePasswordLogin}>
+          <form className="flex flex-col gap-[22px]" onSubmit={handlePasswordLogin}>
             <InputField
               label="Email"
               type="email"
@@ -322,7 +333,7 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              containerClassName="mb-[22px]"
+              className="!px-5"
             />
 
             <InputField
@@ -334,12 +345,13 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
+              className="!px-5"
               suffix={
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((value) => !value)}
-                  className="flex h-[20px] w-[20px] items-center justify-center text-black/70 transition hover:text-black"
+                  className="flex h-5 w-5 items-center justify-center text-black/70 transition hover:text-black"
                 >
                   <IconCard
                     name={showPassword ? EYE_OFF_ICON : EYE_OPEN_ICON}
@@ -350,23 +362,19 @@ export default function LoginPage() {
             />
 
             {!isPlatformLogin ? (
-              <div className="mb-0 pb-[40px] pt-[12px]">
-                <button
-                  type="button"
-                  onClick={() => setModalState("reset")}
-                  className="cursor-pointer text-left text-[16px] font-bold leading-[24px] text-black underline-offset-2 hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            ) : (
-              <div className="h-[40px]" />
-            )}
+              <button
+                type="button"
+                onClick={() => setModalState("reset")}
+                className="w-fit cursor-pointer text-left text-[16px] font-heading leading-6 text-black"
+              >
+                Forgot Password?
+              </button>
+            ) : null}
 
             <button
               type="submit"
               disabled={isBusy}
-              className="flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-bold uppercase tracking-[0.04em] text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1 flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isPasswordLoading ? "Signing in..." : "Continue"}
             </button>
@@ -406,15 +414,15 @@ export default function LoginPage() {
       ) : null}
 
       {modalState && modalState !== "public-otp" ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="relative w-full max-w-[500px] rounded-[4px] bg-white p-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+        <div className="auth-site fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="relative w-full max-w-[500px] rounded-[4px] bg-white px-5 pb-[30px] pt-10 shadow-[0_35px_90px_rgba(0,0,0,0.28)] sm:px-10 sm:pt-7">
             <button
               type="button"
               aria-label="Close modal"
               onClick={() => setModalState(null)}
-              className="absolute right-[14px] top-[14px] flex h-[24px] w-[24px] items-center justify-center text-[20px] leading-none text-black/70 hover:text-black"
+              className="absolute right-5 top-5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-[5px] border border-[#e5e5e5] bg-white"
             >
-              <IconCard name={CLOSE_ICON} className="h-6 w-6" />
+              <IconCard name={CLOSE_ICON} className="h-3.5 w-3.5" />
             </button>
 
             {modalState === "reset" ? (
@@ -451,22 +459,22 @@ export default function LoginPage() {
 
             {modalState === "verify" ? (
               <>
-                <div className="mx-auto flex h-[40px] w-[40px] items-center justify-center rounded-[8px] bg-black text-white">
-                  <IconCard name={EMAIL_SENT_ICON} className="h-[22px] w-[22px]" />
+                <div className="mx-auto flex h-[52px] w-[52px] items-center justify-center rounded-[10px] bg-black text-white">
+                  <IconCard name={EMAIL_SENT_ICON} className="h-8 w-8" />
                 </div>
 
-                <h2 className="mt-[30px] text-center text-[24px] font-bold uppercase leading-[38px] tracking-[0.02em] text-black">
+                <h2 className="font-heading mt-[30px] text-center text-[24px] leading-[38px] text-black">
                   Verify your email
                 </h2>
 
-                <p className="mt-[10px] text-center text-[16px] font-normal leading-[24px] text-black/100">
+                <p className="mt-2.5 text-center text-[16px] font-normal leading-6 text-black">
                   We&apos;ve sent you a verification code to user@gmail.com
                   <br />
                   Enter it below to verify your email address.
                 </p>
 
-                <div className="mt-[22px] border-t border-[#E5E5E5] pt-[22px]">
-                  <div className="grid grid-cols-6 gap-[10px]">
+                <div className="mt-[30px] border-t border-[#E5E5E5] pt-[27px]">
+                  <div className="mx-auto grid max-w-[420px] grid-cols-6 gap-[10px] sm:gap-[18px]">
                     {verificationCode.map((digit, index) => (
                       <input
                         key={index}
@@ -479,22 +487,22 @@ export default function LoginPage() {
                         value={digit}
                         onChange={(event) => handleCodeChange(index, event.target.value)}
                         onKeyDown={(event) => handleKeyDown(index, event)}
-                        className="h-[54px] w-[54px] rounded-[4px] border border-[#B7B7B7] bg-white text-center text-[24px] font-normal leading-[44px] text-black outline-none focus:border-black"
+                        className="aspect-square h-auto w-full max-h-[54px] border border-[#A9A9A9] bg-white text-center text-[24px] font-normal leading-[44px] text-black outline-none focus:border-black sm:text-[30px]"
                         aria-label={`Verification code character ${index + 1}`}
                       />
                     ))}
                   </div>
                 </div>
 
-                <p className="mt-[19px] text-center text-[16px] font-normal leading-[24px] text-black">
+                <p className="mt-5 text-center text-[16px] font-normal leading-6 text-black">
                   Didn&apos;t get your code?{" "}
-                  <button type="button" className="font-bold underline underline-offset-2">
+                  <button type="button" className="font-heading cursor-pointer">
                     Send a new code
                   </button>
                 </p>
 
-                <div className="mt-[30px] flex items-start gap-[10px] rounded-[4px] border border-[#E5E5E5] bg-[#F4F4F4] px-[22px] py-[12px] text-left text-[13px] font-normal leading-[18px] text-black/80">
-                  <IconCard name={INFO_ICON} className="mt-[2px] h-4 w-4 shrink-0 text-[#7A7A7A]" />
+                <div className="mt-[30px] flex items-start gap-2.5 rounded-[4px] border border-[#e5e5e5] bg-[#F5F5F5] px-[22px] py-3 text-left text-[14px] font-normal leading-5 text-black/80">
+                  <IconCard name={INFO_ICON} className="mt-0.5 h-4 w-4 shrink-0 text-[#949494]" />
                   <span>
                     The code expires in 10 minutes. If you don&apos;t see the email, check your spam
                     folder or use the resend option above.
@@ -504,7 +512,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setModalState("create")}
-                  className="mt-[28px] flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-bold uppercase tracking-[0.04em] text-white"
+                  className="mt-[30px] flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase tracking-[0.02em] text-white"
                 >
                   Verify &amp; continue
                 </button>

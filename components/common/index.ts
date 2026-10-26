@@ -8,6 +8,7 @@ export type {
   DataTableColumn,
   DataTableEmptyState,
   DataTableEmptyProps,
+  DataTableFeatures,
   DataTableFilter,
   DataTableFilterOption,
   DataTablePaginationState,
@@ -31,4 +32,4 @@ export type { YourlistAlertProps, YourlistAlertVariant } from "./YourlistAlert";
 export { StatusBadge } from "./StatusBadge";
 
 export { Breadcrumb } from "./Breadcrumb";
-export type { BreadcrumbItem } from "./Breadcrumb";
+export type { BreadcrumbItem, BreadcrumbVariant } from "./Breadcrumb";

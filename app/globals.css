@@ -58,6 +58,67 @@ body {
   text-transform: uppercase;
 }
 
+/* Organiser auth screens share the same type rules as the public site headings. */
+.auth-site {
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 400;
+}
+
+.auth-site :is(h1, h2, h3, h4, h5, h6),
+.auth-site .font-heading,
+.auth-site label {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.auth-site .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 48px;
+}
+
+.auth-site .PhoneInputCountry {
+  margin-right: 0;
+  padding: 0 10px;
+  border-right: 1px solid #000;
+  height: 100%;
+}
+
+.auth-site .PhoneInputInput {
+  flex: 1;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0 20px;
+  font-size: 14px;
+  color: #000;
+  outline: none;
+}
+
+.auth-site .PhoneInputInput::placeholder {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/*
+ * Univers packs password bullets into a near-solid line.
+ * System UI + letter-spacing keeps each masked character readable.
+ */
+.auth-site input[type="password"],
+input[type="password"] {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 16px !important;
+  letter-spacing: 0.45em;
+}
+
+.auth-site input[type="password"]::placeholder,
+input[type="password"]::placeholder {
+  letter-spacing: normal;
+  font-size: 14px !important;
+  font-family: var(--font-univers), sans-serif;
+}
+
 .public-site :is(h1, h2, h3, h4, h5, h6, summary),
 .public-site .font-heading {
   font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
@@ -138,4 +199,53 @@ textarea {
   .event-gallery-track {
     animation: none;
   }
+}
+
+/* ── Organiser dashboard (Figma: Hednesford Town) ── */
+.organiser-dashboard {
+  --od-border: #000000;
+  --od-bg: #fafbfc;
+  --od-muted: #6f6e69;
+  --od-label: #aaaaac;
+  --od-danger: #ff383c;
+  --od-sidebar-width: 250px;
+  --od-header-height: 45px;
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 400;
+  color: var(--black);
+}
+
+.organiser-dashboard .font-heading,
+.organiser-dashboard__content h1 {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.organiser-dashboard__sidebar {
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: var(--od-border);
+}
+
+.organiser-dashboard__header {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: var(--od-border);
+}
+
+.organiser-dashboard__search {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: var(--od-border);
+}
+
+.organiser-grid-card {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--od-border);
+}
+
+.organiser-modal__panel {
+  box-shadow: 0 20px 50px rgba(55, 69, 87, 0.1);
 }

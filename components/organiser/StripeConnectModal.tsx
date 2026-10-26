@@ -1,44 +1,182 @@
+"use client";
+
+import Image from "next/image";
+import { OrganiserModal } from "@/components/organiser/OrganiserModal";
+
+export type StripeConnectModalVariant =
+  | "connect"
+  | "incomplete"
+  | "success"
+  | "failed";
+
 type StripeConnectModalProps = {
+  open?: boolean;
+  variant?: StripeConnectModalVariant;
   onConnect?: () => void;
+  onClose?: () => void;
+  onPrimary?: () => void;
+  /** Disables the primary CTA while a Stripe request is in flight. */
+  isBusy?: boolean;
 };
 
-export function StripeConnectModal({ onConnect }: StripeConnectModalProps) {
+const copy: Record<
+  StripeConnectModalVariant,
+  {
+    titleId: string;
+    title: string;
+    paragraphs: string[];
+    primaryLabel: string;
+    busyLabel: string;
+    footnote: string;
+    showClose: boolean;
+  }
+> = {
+  connect: {
+    titleId: "stripe-connect-title",
+    title: "Connect your stripe account",
+    paragraphs: [
+      "To start selling tickets and receive payments for your events, you need to connect your Stripe account to Y.",
+      "This securely connects your business to Stripe and allows Y to process customer payments and manage your event payouts.",
+    ],
+    primaryLabel: "Connect stripe account",
+    busyLabel: "Connecting...",
+    footnote: "You'll be redirected to Stripe to complete your\nbusiness and payment setup.",
+    showClose: false,
+  },
+  incomplete: {
+    titleId: "stripe-incomplete-title",
+    title: "Complete your stripe onboarding",
+    paragraphs: [
+      "Your Stripe onboarding is not completed yet.",
+      "Finish setting up your connected account so you can sell tickets, receive payments, and manage payouts for your events.",
+    ],
+    primaryLabel: "Complete onboarding",
+    busyLabel: "Opening Stripe...",
+    footnote: "You'll be redirected to Stripe to finish your account setup.",
+    showClose: false,
+  },
+  success: {
+    titleId: "stripe-success-title",
+    title: "Stripe account connected",
+    paragraphs: [
+      "Your Stripe account has been successfully connected.",
+      "You can now sell tickets, receive customer payments, and manage payouts for your events.",
+    ],
+    primaryLabel: "Go to dashboard",
+    busyLabel: "Go to dashboard",
+    footnote: "Your account is ready to receive payments.",
+    showClose: true,
+  },
+  failed: {
+    titleId: "stripe-failed-title",
+    title: "Stripe connection failed",
+    paragraphs: [
+      "We couldn’t connect your Stripe account.",
+      "Something went wrong while completing your Stripe setup. Please try again to connect your account.",
+    ],
+    primaryLabel: "Try again",
+    busyLabel: "Connecting...",
+    footnote: "No payment setup has been completed yet.",
+    showClose: true,
+  },
+};
+
+function StripeWordmark() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#000000B2] px-4 py-8 backdrop-blur-[1px]">
-      <div className="w-full max-w-[500px] rounded-[4px] border border-black/10 bg-[#f5f5f3] px-7 py-8 shadow-[0_0_0_1px_rgba(0,0,0,0.04)] md:px-10 md:py-10">
-        <div className="mt-2 flex justify-center">
-          <div className="text-[52px] font-black leading-none tracking-[-0.06em] text-[#6d67fd]">stripe</div>
-        </div>
+    <Image
+      src="/organiser/stripe-logo.png"
+      alt="Stripe"
+      width={112}
+      height={47}
+      className="mx-auto h-[47px] w-[112px] object-contain"
+      priority
+    />
+  );
+}
 
-        <h2 className="mt-[17px] text-center text-[22px] font-black uppercase leading-[38px] tracking-[1px] text-black">
-          Connect your Stripe account
-        </h2>
+function StatusMark({ variant }: { variant: StripeConnectModalVariant }) {
+  if (variant === "success") {
+    return (
+      <Image
+        src="/organiser/stripe-success-check.png"
+        alt=""
+        width={80}
+        height={80}
+        className="mx-auto mt-4 h-20 w-20 object-contain"
+        aria-hidden
+      />
+    );
+  }
 
-        <div className="mt-[18px] space-y-5 text-center text-[16px] font-normal leading-[24px] text-black">
-          <p>
-            To start selling tickets and receive payments for your events, you need to connect your Stripe
-            account to Y.
-          </p>
-          <p>
-            This securely connects your business to Stripe and allows Y to process customer payments and
-            manage your event payouts.
-          </p>
-        </div>
+  if (variant === "failed" || variant === "incomplete") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/organiser/stripe-fail-warning.svg"
+        alt=""
+        width={89}
+        height={89}
+        className="mx-auto mt-3 h-[89px] w-[89px] object-contain"
+        aria-hidden
+      />
+    );
+  }
 
-        <div className="mt-[40px]">
-          <button
-            type="button"
-            onClick={onConnect}
-            className="flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-bold uppercase leading-[24px] tracking-[0.04em] text-white transition hover:opacity-90"
-          >
-            Connect Stripe account
-          </button>
-        </div>
+  return null;
+}
 
-        <p className="mt-[13px] text-center text-[14px] leading-[18px] text-[#000000CC]">
-          You&apos;ll be redirected to Stripe to complete your business and payment setup.
-        </p>
+/**
+ * Stripe Connect / incomplete / success / failed modals for the organiser dashboard.
+ * Uses shared `OrganiserModal` chrome; only inner content changes by `variant`.
+ */
+export function StripeConnectModal({
+  open = true,
+  variant = "connect",
+  onConnect,
+  onClose,
+  onPrimary,
+  isBusy = false,
+}: StripeConnectModalProps) {
+  const content = copy[variant];
+  const handlePrimary = onPrimary ?? onConnect;
+  const primaryLabel = isBusy ? content.busyLabel : content.primaryLabel;
+
+  return (
+    <OrganiserModal
+      open={open}
+      titleId={content.titleId}
+      showClose={content.showClose && !isBusy}
+      onClose={isBusy ? undefined : onClose}
+      panelClassName="px-10 pb-8 pt-[61px]"
+    >
+      <StripeWordmark />
+      <StatusMark variant={variant} />
+
+      <h2
+        id={content.titleId}
+        className="font-heading mt-[18px] text-center text-[20px] leading-[38px] text-black"
+      >
+        {content.title}
+      </h2>
+
+      <div className="mt-2 space-y-2 text-center text-[16px] font-normal leading-6 text-black">
+        {content.paragraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </div>
-    </div>
+
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={handlePrimary}
+        className="mt-10 flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] bg-black px-4 text-[14px] font-normal uppercase leading-6 text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {primaryLabel}
+      </button>
+
+      <p className="mt-[13px] whitespace-pre-line text-center text-[14px] font-normal leading-[18px] text-black/80">
+        {content.footnote}
+      </p>
+    </OrganiserModal>
   );
 }

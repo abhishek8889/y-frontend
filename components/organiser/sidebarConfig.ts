@@ -58,7 +58,7 @@ export const organisationSidebarConfig: OrganisationSidebarItem[] = [
   {
     key: "org_clubsites",
     label: getOrganisationModuleLabel("org_clubsites"),
-    path: "/clubsite",
+    path: "/site",
     icon: CLUBSITE_ICON,
     requiredPermission: "org_clubsites.read",
   },

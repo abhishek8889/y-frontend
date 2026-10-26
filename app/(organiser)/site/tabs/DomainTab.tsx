@@ -28,7 +28,7 @@ export default function DomainTab({
     onConnected(domain);
     setDomainInput(domain);
     setDomainError("");
-    setFormNotice(`Domain ${domain} saved. Complete your DNS setup to bring your clubsite live.`);
+    setFormNotice(`Domain ${domain} saved. Complete your DNS setup to bring your site live.`);
   }
 
   return (
@@ -39,15 +39,15 @@ export default function DomainTab({
         <path d="M89 62 110 99a7 7 0 0 1-6 10H62a7 7 0 0 1-6-10l21-37a7 7 0 0 1 12 0Z" fill="white" stroke="currentColor" strokeWidth="4" />
         <path d="M83 76v12m0 6v.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
       </svg>
-      <h3 className="mt-8 text-[22px] font-black uppercase text-black">Clubsite not live yet</h3>
+      <h3 className="mt-8 text-[22px] font-black uppercase text-black">Site not live yet</h3>
       <p className="mt-5 max-w-[440px] text-center text-[14px] leading-[20px] text-[#666666]">
-        Your clubsite needs a connected domain before it can go live.
+        Your site needs a connected domain before it can go live.
         <br className="hidden sm:block" /> Once configured, customers will be able to access it.
       </p>
       <form onSubmit={connectDomain} className="mt-6 w-full max-w-[600px]">
         <div className="flex h-[40px] justify-between items-center gap-1 rounded-[6px] border border-black/80 p-[4px]">
           <InputField
-            id="clubsite-domain"
+            id="site-domain"
             type="text"
             value={domainInput}
             onChange={(event) => {

@@ -50,6 +50,8 @@ const baseQueryWithAuth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuery
     "platform/login",
     "public/send-login-otp",
     "public/verify-login-otp",
+    "organiser/register",
+    "organiser/verify-email",
   ];
   const isAuthRequest = authRequestPrefixes.some(
     (prefix) => requestUrl === prefix || requestUrl.startsWith(`${prefix}?`),
@@ -94,6 +96,7 @@ export const baseApi = createApi({
     "Customers",
     "Roles",
     "RolePermissions",
+    "StaffMembers",
     "PublicEvents",
     "Wishlist",
     "MyOrders",

@@ -2,12 +2,12 @@
 
 import type { GridCardColumns, GridCardItem, GridCardProps } from "./types";
 
-const columnClassMap: Record<GridCardColumns, string> = {
-  2: "xl:grid-cols-2",
-  3: "xl:grid-cols-3",
-  4: "xl:grid-cols-4",
-  5: "xl:grid-cols-5",
-};
+const MAX_COLUMNS = 5;
+
+function resolveColumnCount(itemCount: number, columns?: GridCardColumns): number {
+  if (columns) return Math.min(columns, MAX_COLUMNS);
+  return Math.min(Math.max(itemCount, 1), MAX_COLUMNS);
+}
 
 function GridCardCell({
   item,
@@ -18,7 +18,7 @@ function GridCardCell({
 }) {
   return (
     <div
-      className={`flex min-h-[82px] flex-col justify-center border border-black/100 bg-white p-[18px] ${className}`.trim()}
+      className={`organiser-grid-card flex min-h-[87px] min-w-0 flex-1 flex-col justify-center border border-black bg-white p-[18px] ${className}`.trim()}
     >
       <div className="flex items-start gap-3">
         {item.icon ? (
@@ -28,7 +28,7 @@ function GridCardCell({
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <p className="font-heading flex items-center gap-2 text-[14px] leading-[20px] tracking-[0.5px] text-[#AAAAAC]">
+          <p className="font-heading flex items-center gap-2 text-[14px] leading-[19.6px] text-[#aaaaac]">
             {item.indicatorColor ? (
               <span
                 className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
@@ -39,12 +39,12 @@ function GridCardCell({
             <span className="min-w-0">{item.label}</span>
           </p>
 
-          <p className="mt-[6px] text-[22px] font-normal leading-[24px] tracking-[-0.05em] text-black">
+          <p className="mt-[6px] text-[22px] font-bold uppercase leading-[24.2px] text-black">
             {item.value}
           </p>
 
           {item.description != null && item.description !== "" ? (
-            <p className="mt-[10px] text-[14px] font-normal leading-[20px] text-[#9B9994]">
+            <p className="mt-[10px] text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
               {item.description}
             </p>
           ) : null}
@@ -55,21 +55,21 @@ function GridCardCell({
 }
 
 /**
- * Overview metrics grid.
- * Pass a config array of items (label / value / optional description / icon),
- * same structural idea as Offthetree `listItems` + GridCard.
+ * Overview metrics row.
+ * Cards share the row equally (max 5). Omit `columns` to size from `items.length`.
  */
 export function GridCard({
   items,
-  columns = 3,
+  columns,
   isLoading = false,
   emptyMessage = "No overview data available.",
   className = "",
   itemClassName = "",
 }: GridCardProps) {
-  const gridClass = [
-    "grid gap-4 md:grid-cols-2 md:gap-6",
-    columnClassMap[columns],
+  const visibleItems = items.slice(0, MAX_COLUMNS);
+  const columnCount = resolveColumnCount(visibleItems.length, columns);
+  const rowClass = [
+    "organiser-grid-card-row flex w-full flex-col gap-2.5 md:flex-row md:items-stretch",
     className,
   ]
     .filter(Boolean)
@@ -77,11 +77,11 @@ export function GridCard({
 
   if (isLoading) {
     return (
-      <div className={gridClass} aria-busy="true" aria-live="polite">
-        {Array.from({ length: columns }, (_, index) => (
+      <div className={rowClass} aria-busy="true" aria-live="polite">
+        {Array.from({ length: columnCount }, (_, index) => (
           <div
             key={`grid-card-skeleton-${index}`}
-            className={`min-h-[82px] animate-pulse border border-black/10 bg-black/[0.03] p-[18px] ${itemClassName}`.trim()}
+            className={`min-h-[87px] min-w-0 flex-1 animate-pulse border border-black/10 bg-black/[0.03] p-[18px] ${itemClassName}`.trim()}
           >
             <div className="h-3 w-24 bg-black/10" />
             <div className="mt-3 h-6 w-16 bg-black/10" />
@@ -93,15 +93,15 @@ export function GridCard({
 
   if (!items.length) {
     return (
-      <div className="border border-black/100 px-4 py-8 text-center text-[13px] text-black/50">
+      <div className="border border-black px-4 py-8 text-center text-[13px] text-black/50">
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className={gridClass}>
-      {items.map((item, index) => (
+    <div className={rowClass}>
+      {visibleItems.map((item, index) => (
         <GridCardCell
           key={item.id ?? `${String(item.label)}-${index}`}
           item={item}

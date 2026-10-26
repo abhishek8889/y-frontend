@@ -11,7 +11,7 @@ import {
   type EventLifecycleStatus,
   type OrganisationEvent,
 } from "@/apis/events/eventsApi";
-import { StatusBadge, WarningAlertIcon, YourlistAlert } from "@/components/common";
+import { WarningAlertIcon, YourlistAlert } from "@/components/common";
 import {
   EVENT_LIST_FILTER_DEFAULTS,
   EventFilterButton,
@@ -28,17 +28,29 @@ import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 import { Button } from "@/components/ui/Button";
 import { SelectField } from "@/components/ui/SelectField";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { EventListCard } from "@/components/organiser/events/EventListCard";
 import { formatDateTime } from "@/lib/events/formatDateTime";
 import { formatStatusLabel } from "@/lib/ui/statusColors";
 import { EventImage } from "./EventImage";
 import AttendeesTab from "./tabs/AttendeesTab";
 import DetailsTab from "./tabs/DetailsTab";
 import OrdersTab from "./tabs/OrdersTab";
+import OverviewTab from "./tabs/OverviewTab";
+import RefundsTab from "./tabs/RefundsTab";
 import ReportsTab from "./tabs/ReportsTab";
-import ScanEntryTab from "./tabs/ScanEntryTab";
 import TicketsTab from "./tabs/TicketsTab";
 
-const eventTabs = ["Details", "Tickets", "Orders", "Attendees", "Scan / Entry", "Reports"];
+const eventTabs = [
+  "Overview",
+  "Details",
+  "Products",
+  "Orders",
+  "Refunds",
+  "Attendees",
+  "Reports",
+] as const;
+
+type EventTab = (typeof eventTabs)[number];
 const EVENTS_PAGE_SIZE = 10;
 
 const EVENT_STATUS_OPTIONS: { value: EventLifecycleStatus; label: string }[] = [
@@ -87,9 +99,12 @@ function CreateEventButton({
     <Button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition hover:opacity-90 ${className}`.trim()}
+      className={`inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90 ${className}`.trim()}
     >
-      + CREATE EVENT
+      <span aria-hidden className="text-[18px] leading-none">
+        +
+      </span>
+      CREATE EVENT
     </Button>
   );
 }
@@ -100,7 +115,7 @@ export default function EventsPage() {
   const [filters, setFilters] = useState<EventListFilterValues>(EVENT_LIST_FILTER_DEFAULTS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeEventId, setActiveEventId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("Details");
+  const [activeTab, setActiveTab] = useState<EventTab>("Overview");
   const [listCursor, setListCursor] = useState<string | undefined>(undefined);
   const [events, setEvents] = useState<OrganisationEvent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -333,27 +348,27 @@ export default function EventsPage() {
   if (isEmpty && !hasListQuery) {
     return (
       <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-        <div className="flex min-h-[calc(100vh-72px)] flex-col bg-white p-5 md:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-[26px] font-bold uppercase leading-[32px] tracking-[-0.05em] text-black md:text-[32px]">
-                EVENTS
+        <div className="flex min-h-[calc(100vh-72px)] flex-col bg-white p-5 md:p-6 md:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex flex-col gap-[11px]">
+              <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
+                Events
               </h1>
-              <p className="mt-1 text-[14px] font-normal leading-[20px] text-black/60">
+              <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
                 Create, manage and organize all your events.
               </p>
             </div>
             <CreateEventButton onClick={goToCreate} />
           </div>
 
-          <div className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-            <h2 className="text-[22px] font-bold uppercase leading-[28px] tracking-[-0.03em] text-black sm:text-[28px] sm:leading-[34px]">
-              NO EVENTS YET
+          <div className="mx-auto flex min-h-[280px] w-full max-w-[322px] flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center sm:min-h-[320px]">
+            <h2 className="font-heading text-[22px] font-bold uppercase leading-none text-black">
+              No Events Yet
             </h2>
-            <p className="mt-2 max-w-[360px] text-[14px] font-normal leading-[20px] text-black/55 sm:text-[15px] sm:leading-[22px]">
+            <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
               Create your first event and sell tickets.
             </p>
-            <CreateEventButton onClick={goToCreate} className="mt-6" />
+            <CreateEventButton onClick={goToCreate} className="mt-1" />
           </div>
         </div>
       </DashboardShell>
@@ -364,17 +379,17 @@ export default function EventsPage() {
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       <div className="min-h-full bg-white">
         <div className="grid min-h-[calc(100vh-72px)] lg:grid-cols-[420px_minmax(0,1fr)]">
-          <aside className="border-b border-black/30 p-5 lg:border-b-0 lg:border-r lg:p-6">
+          <aside className="border-b border-black p-5 lg:border-b-0 lg:border-r lg:p-6">
             <div>
-              <h1 className="text-[26px] font-black uppercase leading-[1.1] tracking-[-0.04em] text-black">
+              <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
                 Events
               </h1>
-              <p className="mt-[10px] text-[14px] leading-[19.6px] text-[#6F6E69]">
+              <p className="mt-[11px] text-[14px] leading-[19.6px] text-[#6f6e69]">
                 Create, manage and organize all your events.
               </p>
             </div>
 
-            <CreateEventButton onClick={goToCreate} className="mt-4" />
+            <CreateEventButton onClick={goToCreate} className="mt-5" />
 
             {searchAndFilterControls}
 
@@ -406,40 +421,14 @@ export default function EventsPage() {
                 </div>
               ) : null}
 
-              {events.map((event) => {
-                const isActive = activeEvent?.id === event.id;
-                const bannerUrl = getBannerUrl(event);
-
-                return (
-                  <button
-                    type="button"
-                    key={event.id}
-                    onClick={() => setActiveEventId(event.id)}
-                    aria-pressed={isActive}
-                    className={`block w-full border p-3 text-left transition ${
-                      isActive ? "border-black bg-black/[0.025]" : "border-transparent hover:border-black/35"
-                    }`}
-                  >
-                    <EventImage src={bannerUrl} alt={event.name} />
-                    <span className="mt-[10px] block text-[16px] font-bold uppercase leading-none text-black">
-                      {event.name}
-                    </span>
-                    <span className="my-[10px] flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[14px] leading-[14px] text-[#666666]">
-                      <span>{event.category?.name || "Uncategorised"}</span>
-                      {event.status ? (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <StatusBadge status={event.status} className="text-[14px] leading-[14px]" />
-                        </>
-                      ) : null}
-                    </span>
-                    <span className="block text-[14px] leading-none text-black">
-                      {formatDateTime(event.starts_at)}
-                      {event.ends_at ? ` - ${formatDateTime(event.ends_at)}` : ""}
-                    </span>
-                  </button>
-                );
-              })}
+              {events.map((event) => (
+                <EventListCard
+                  key={event.id}
+                  event={event}
+                  selected={activeEvent?.id === event.id}
+                  onSelect={() => setActiveEventId(event.id)}
+                />
+              ))}
 
               <div ref={loadMoreSentinelRef} className="h-1 w-full" aria-hidden="true" />
 
@@ -460,24 +449,18 @@ export default function EventsPage() {
           <section className="min-w-0 p-5 md:p-7">
             {activeEvent ? (
               <div key={activeEvent.id}>
-                <header className="flex flex-wrap items-center gap-4 border-b border-black/30 pb-5">
-                  <div className="w-[112px] shrink-0">
+                <header className="flex flex-wrap items-start gap-4 border-b border-black pb-5">
+                  <div className="w-[90px] shrink-0 sm:w-[112px]">
                     <EventImage src={getBannerUrl(activeEvent)} alt={activeEvent.name} />
                   </div>
                   <div className="min-w-[180px] flex-1">
-                    <h2 className="text-[26px] font-black uppercase leading-[24px] text-black">
+                    <h2 className="font-heading text-[22px] font-bold uppercase leading-none text-black sm:text-[26px]">
                       {activeEvent.name}
                     </h2>
-                    <p className="my-[10px] flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[14px] text-[#6F6E69]">
-                      <span>{activeEvent.category?.name || "Uncategorised"}</span>
-                      {activeEvent.status ? (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <StatusBadge status={activeEvent.status} className="text-[14px]" />
-                        </>
-                      ) : null}
+                    <p className="mt-2 text-[14px] leading-5 text-[#6F6E69]">
+                      {activeEvent.category?.name || "Uncategorised"}
                     </p>
-                    <p className="text-[14px] leading-[18px] text-black/80">
+                    <p className="mt-2 text-[14px] leading-5 text-black">
                       {formatDateTime(activeEvent.starts_at)}
                       {activeEvent.ends_at ? ` - ${formatDateTime(activeEvent.ends_at)}` : ""}
                       {activeEvent.venue?.name ? `  •  ${activeEvent.venue.name}` : ""}
@@ -495,15 +478,15 @@ export default function EventsPage() {
                       options={EVENT_STATUS_OPTIONS}
                       density="compact"
                       wrapperClassName="!gap-0"
-                      containerClassName="!h-[34px] min-w-[140px] !rounded-[3px] !border-black/55"
-                      className="!rounded-[3px] !border-black/55 !px-2 !pr-9 !text-[10px] !font-bold uppercase"
+                      containerClassName="!h-[34px] min-w-[120px] !rounded-[3px] !border-black"
+                      className="!h-[34px] !rounded-[3px] !border-black text-[12px] font-normal uppercase"
                     />
                     <Button
                       type="button"
                       onClick={() =>
                         router.push(`/events/create?mode=edit&id=${activeEvent.id}`)
                       }
-                      className="h-[34px] min-w-[74px] rounded-[3px] border border-black/55 bg-white px-3 text-[10px] font-bold uppercase text-black hover:bg-black hover:text-white"
+                      className="h-[34px] min-w-[74px] cursor-pointer rounded-[3px] border border-black bg-white px-3 text-[12px] font-normal uppercase text-black transition hover:bg-black hover:text-white"
                     >
                       Edit
                     </Button>
@@ -513,17 +496,17 @@ export default function EventsPage() {
                 <nav
                   aria-label="Event management"
                   role="tablist"
-                  className="mt-4 flex gap-6 overflow-x-auto border-b border-black/10"
+                  className="mt-4 flex gap-4 overflow-x-auto border-b border-black [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
                 >
                   {eventTabs.map((tab) => (
                     <button
                       type="button"
                       key={tab}
-                      id={`event-tab-${tab.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                      id={`event-tab-${tab.toLowerCase()}`}
                       role="tab"
                       aria-selected={activeTab === tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`shrink-0 cursor-pointer border-b-2 px-2 pb-2 pt-1 text-[16px] font-bold uppercase tracking-[0.03em] transition ${
+                      className={`font-heading shrink-0 cursor-pointer border-b-2 px-1 pb-2.5 pt-1 text-[13px] font-bold uppercase leading-5 transition sm:px-2 sm:text-[14px] ${
                         activeTab === tab
                           ? "border-black text-black"
                           : "border-transparent text-[#949494] hover:text-black"
@@ -535,14 +518,20 @@ export default function EventsPage() {
                 </nav>
 
                 <div
-                  id={`event-panel-${activeTab.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                  id={`event-panel-${activeTab.toLowerCase()}`}
                   role="tabpanel"
-                  aria-labelledby={`event-tab-${activeTab.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+                  aria-labelledby={`event-tab-${activeTab.toLowerCase()}`}
                 >
+                  {activeTab === "Overview" ? (
+                    <OverviewTab
+                      event={activeEvent}
+                      onViewAllOrders={() => setActiveTab("Orders")}
+                    />
+                  ) : null}
                   {activeTab === "Details" ? (
                     <DetailsTab event={activeEvent} hasTickets={hasTickets} />
                   ) : null}
-                  {activeTab === "Tickets" ? (
+                  {activeTab === "Products" ? (
                     <TicketsTab
                       eventId={activeEvent.id}
                       eventTitle={activeEvent.name}
@@ -550,11 +539,9 @@ export default function EventsPage() {
                     />
                   ) : null}
                   {activeTab === "Orders" ? <OrdersTab eventTitle={activeEvent.name} /> : null}
+                  {activeTab === "Refunds" ? <RefundsTab eventTitle={activeEvent.name} /> : null}
                   {activeTab === "Attendees" ? (
                     <AttendeesTab eventTitle={activeEvent.name} />
-                  ) : null}
-                  {activeTab === "Scan / Entry" ? (
-                    <ScanEntryTab eventTitle={activeEvent.name} />
                   ) : null}
                   {activeTab === "Reports" ? <ReportsTab eventTitle={activeEvent.name} /> : null}
                 </div>

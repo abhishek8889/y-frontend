@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { useGetAboutMeQuery } from "@/apis/auth/authApi";
-import IconCard, { NOTIFICATION_ICON } from "@/components/ui/IconCard";
+import IconCard, { CHEVRON_DOWN_ICON, NOTIFICATION_ICON } from "@/components/ui/IconCard";
 import hednesfordTownLogo from "@/assets/Hednesford-town.png";
 
 type DashboardHeaderProps = {
   /** Optional override; defaults to organisation name from about-me. */
   title?: string;
-  /** Optional override; defaults to owner name from about-me. */
+  /** Optional override; defaults to owner first name from about-me. */
   userName?: string;
 };
 
@@ -23,23 +23,13 @@ function resolveOrganisationName(user: {
   return "";
 }
 
-function resolveOwnerName(user: {
+function resolveOwnerFirstName(user: {
   first_name?: string | null;
-  last_name?: string | null;
   email?: string | null;
 } | null | undefined) {
-  const fullName = [user?.first_name, user?.last_name]
-    .map((part) => part?.trim())
-    .filter(Boolean)
-    .join(" ");
-  if (fullName) return fullName;
+  const first = user?.first_name?.trim();
+  if (first) return first;
   return user?.email?.trim() || "";
-}
-
-function ownerInitial(name: string) {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  return trimmed.charAt(0).toUpperCase();
 }
 
 export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
@@ -47,15 +37,15 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
   const user = data?.data?.user;
 
   const organisationName = title?.trim() || resolveOrganisationName(user);
-  const ownerName = userName?.trim() || resolveOwnerName(user);
+  const ownerName = userName?.trim() || resolveOwnerFirstName(user);
   const organisationLogo = user?.organisation?.logo || user?.organisation?.profile_image || null;
   const displayOrganisation = organisationName || (isLoading ? "" : "Organisation");
   const displayOwner = ownerName || (isLoading ? "" : "Owner");
 
   return (
-    <header className="flex h-[45px] items-center justify-between border-b border-[#000000] bg-[#fff] px-5 md:px-6">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-black/70 text-[10px] font-bold text-black/80">
+    <header className="organiser-dashboard__header flex h-[45px] items-center justify-between border-b border-black bg-white px-5 md:px-8">
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="relative h-5 w-5 shrink-0 overflow-hidden">
           {organisationLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -69,31 +59,34 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
               alt={displayOrganisation || "Organisation logo"}
               width={20}
               height={20}
+              className="h-5 w-5 object-cover"
             />
           )}
         </div>
-        <span className="truncate text-[18px] font-black uppercase tracking-[0.02em] text-black">
+        <span className="truncate text-[13.333px] font-bold uppercase leading-5 text-black">
           {displayOrganisation}
         </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4">
+      <div className="flex shrink-0 items-center gap-5">
         <button
           type="button"
           aria-label="Notifications"
-          className="flex h-8 w-8 items-center justify-center text-black/80 transition hover:text-black"
+          className="relative flex h-7 w-7 cursor-pointer items-center justify-center text-black transition hover:opacity-80"
         >
-          <IconCard name={NOTIFICATION_ICON} className="h-4 w-4" />
+          <IconCard name={NOTIFICATION_ICON} className="h-7 w-7" />
         </button>
 
-        <div className="flex min-w-0 items-center gap-2 border-l border-black/30 pl-4">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-black/60 text-[9px] font-bold text-black/80">
-            {ownerInitial(displayOwner)}
-          </div>
-          <span className="max-w-[160px] truncate text-[13px] font-medium uppercase tracking-[0.12em] text-black">
+        <button
+          type="button"
+          className="flex cursor-pointer items-center gap-2.5 text-black"
+          aria-label="Account menu"
+        >
+          <span className="max-w-[140px] truncate text-[14px] font-normal leading-5 text-black">
             {displayOwner}
           </span>
-        </div>
+          <IconCard name={CHEVRON_DOWN_ICON} className="h-4 w-4 shrink-0" />
+        </button>
       </div>
     </header>
   );

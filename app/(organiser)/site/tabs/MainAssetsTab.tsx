@@ -114,7 +114,7 @@ export default function MainAssetsTab() {
         ] as const).map((asset) => (
           <div key={asset.id}>
             <label className="mb-1 block text-[14px] font-bold uppercase">{asset.label}</label>
-            <label htmlFor={`clubsite-${asset.id}-upload`} className="flex min-h-[142px] cursor-pointer items-center gap-4 border border-dashed border-black/65 p-3.5 transition hover:bg-black/[0.025] sm:gap-5 sm:px-4">
+            <label htmlFor={`site-${asset.id}-upload`} className="flex min-h-[142px] cursor-pointer items-center gap-4 border border-dashed border-black/65 p-3.5 transition hover:bg-black/[0.025] sm:gap-5 sm:px-4">
               <span className="flex h-[112px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-[#f4f4f4]">
                 {asset.value ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -129,7 +129,7 @@ export default function MainAssetsTab() {
                 <span className="mt-2 block text-[14px] leading-4 text-black font-normal">PNG or SVG · max 2MB<br />(Min 200x200px)</span>
               </span>
               <input
-                id={`clubsite-${asset.id}-upload`}
+                id={`site-${asset.id}-upload`}
                 type="file"
                 accept=".png,.svg,image/png,image/svg+xml"
                 className="sr-only"

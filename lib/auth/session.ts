@@ -14,6 +14,8 @@ export type AuthUser = {
   organisation_id: number | null;
   /** Present on organisation/platform password login; often absent on customer OTP. */
   permissions?: PermissionMap;
+  /** false = awaiting superadmin approval; block organiser dashboard. */
+  organisation_approve_status?: boolean;
 } & AuthUserLike;
 
 export function parseAuthUserCookie(raw: string | undefined): AuthUser | null {

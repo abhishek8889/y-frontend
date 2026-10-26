@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { GridCard, type GridCardItem } from "@/components/common";
 import { MonthFilter } from "./TabControls";
 
 const revenueByDay = [680, 270, 420, 950, 510, 190, 790, 420, 870, 420, 110, 210, 40, 550, 420, 90, 660, 420, 860, 950, 420, 210, 670, 420, 190, 220, 420, 210, 420, 420];
@@ -19,11 +20,11 @@ const salesByTicket = [
   { ticket: "Complimentary", offers: 3, sold: 132, gross: 75, refund: 75, net: 75 },
 ];
 
-const summary = [
-  { label: "Tickets sold", value: "120/220" },
-  { label: "Revenue", value: "$1,247" },
-  { label: "Attendance", value: "96" },
-  { label: "Remaining check in", value: "80" },
+const summary: GridCardItem[] = [
+  { id: "tickets-sold", label: "Tickets sold", value: "120/220" },
+  { id: "revenue", label: "Revenue", value: "£1,247" },
+  { id: "attendance", label: "Attendance", value: "96" },
+  { id: "remaining-check-in", label: "Remaining check in", value: "80" },
 ];
 
 export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
@@ -45,17 +46,14 @@ export default function ReportsTab({ eventTitle }: { eventTitle: string }) {
   return (
     <section className="pt-4" aria-label={`${eventTitle} reports`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[26px] font-black uppercase leading-none text-black">Report</h3>
+        <h3 className="font-heading text-[26px] font-bold uppercase leading-none tracking-[-0.03em] text-black">
+          Report
+        </h3>
         <MonthFilter value={month} onChange={setMonth} />
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {summary.map((item) => (
-          <article key={item.label} className="border border-black/65 p-[18px]">
-            <h4 className="text-[14px] font-bold uppercase text-[#AAAAAC]">{item.label}</h4>
-            <p className="mt-1 text-[22px] leading-[24px] font-bold leading-none text-black">{item.value}</p>
-          </article>
-        ))}
+      <div className="mb-4">
+        <GridCard items={summary} columns={4} />
       </div>
 
       <section className="border border-black/65 p-4" aria-label="Revenue overview chart">

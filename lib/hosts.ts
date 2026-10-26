@@ -4,14 +4,30 @@ import { getPrimaryScope, type AuthUserLike } from "@/lib/auth/roles";
 export type AppSurface = "public" | "organiser" | "superadmin";
 
 /**
- * Env values are subdomain prefixes (e.g. `app`, `admin`), not full hostnames.
- * Full hosts are built as `{prefix}.{baseDomain}` from the current request host.
+ * Env:
+ * - `NEXT_PUBLIC_APP_HOST` / `NEXT_PUBLIC_ADMIN_HOST` — subdomain prefixes only (`app`, `admin`)
+ * - `NEXT_PUBLIC_DOMAIN` — public base host, optional port (`localhost:3000`, `yourlist.com`)
+ *
+ * Full surface hosts are `{prefix}.{NEXT_PUBLIC_DOMAIN}` (e.g. `app.localhost:3000`).
+ * When domain env is unset, base is derived from the current request host.
  */
 const APP_PREFIX = (process.env.NEXT_PUBLIC_APP_HOST ?? "app").split(".")[0] || "app";
 const ADMIN_PREFIX = (process.env.NEXT_PUBLIC_ADMIN_HOST ?? "admin").split(".")[0] || "admin";
+const CONFIGURED_DOMAIN = (process.env.NEXT_PUBLIC_DOMAIN ?? "").trim();
 
 export function getHostname(hostHeader: string) {
   return hostHeader.toLowerCase().split(":")[0] || "localhost";
+}
+
+function splitHostPort(hostHeader: string) {
+  const normalized = hostHeader.trim().toLowerCase();
+  if (!normalized) return { hostname: "localhost", port: "" };
+
+  const [hostname, ...portParts] = normalized.split(":");
+  return {
+    hostname: hostname || "localhost",
+    port: portParts.join(":"),
+  };
 }
 
 /** Apex / public domain from any product host (strips app./admin./www.). */
@@ -22,6 +38,24 @@ export function getBaseDomain(hostHeader: string) {
   if (host.startsWith(`${ADMIN_PREFIX}.`)) return host.slice(ADMIN_PREFIX.length + 1);
   if (host.startsWith("www.")) return host.slice(4);
   return host;
+}
+
+/**
+ * Public base host (+ optional port) used to build app/admin URLs.
+ * Prefers `NEXT_PUBLIC_DOMAIN` over deriving from the current request host.
+ */
+export function getPublicDomain(currentHostHeader?: string) {
+  if (CONFIGURED_DOMAIN) {
+    const { hostname, port } = splitHostPort(CONFIGURED_DOMAIN);
+    return port ? `${hostname}:${port}` : hostname;
+  }
+
+  const fallbackHost =
+    currentHostHeader ??
+    (typeof window !== "undefined" ? window.location.host : "localhost");
+  const base = getBaseDomain(fallbackHost);
+  const { port } = splitHostPort(fallbackHost);
+  return port ? `${base}:${port}` : base;
 }
 
 export function getHostSurface(hostHeader: string): AppSurface {
@@ -56,6 +90,7 @@ export const surfacePaths = {
     "/events",
     "/venues",
     "/customers",
+    "/site",
     "/clubsite",
     "/roles",
     "/staff",
@@ -84,31 +119,28 @@ export function defaultPathForSurface(surface: AppSurface) {
 }
 
 export function getSurfaceHost(surface: AppSurface, currentHostHeader?: string) {
-  const fallbackHost =
-    currentHostHeader ??
-    (typeof window !== "undefined" ? window.location.host : "localhost");
-  const base = getBaseDomain(fallbackHost);
+  const publicDomain = getPublicDomain(currentHostHeader);
+  const { hostname: base, port } = splitHostPort(publicDomain);
 
-  if (surface === "organiser") return `${APP_PREFIX}.${base}`;
-  if (surface === "superadmin") return `${ADMIN_PREFIX}.${base}`;
-  return base;
+  let host = base;
+  if (surface === "organiser") host = `${APP_PREFIX}.${base}`;
+  if (surface === "superadmin") host = `${ADMIN_PREFIX}.${base}`;
+
+  return port ? `${host}:${port}` : host;
 }
 
-/** Build an absolute URL on the correct product host (keeps current port in local/dev). */
+/** Build an absolute URL on the correct product host (`{prefix}.{NEXT_PUBLIC_DOMAIN}`). */
 export function buildSurfaceUrl(
   surface: AppSurface,
   pathname: string,
   currentHostHeader?: string,
 ) {
-  const fallbackHost =
-    currentHostHeader ??
-    (typeof window !== "undefined" ? window.location.host : "localhost");
-  const targetHost = getSurfaceHost(surface, fallbackHost);
-  const port = fallbackHost.includes(":") ? fallbackHost.split(":")[1] : "";
+  const hostWithPort = getSurfaceHost(surface, currentHostHeader);
+  const hostname = getHostname(hostWithPort);
   const isLocalHost =
-    targetHost === "localhost" ||
-    targetHost.endsWith(".localhost") ||
-    targetHost === "127.0.0.1";
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname === "127.0.0.1";
 
   const protocol =
     typeof window !== "undefined"
@@ -117,7 +149,6 @@ export function buildSurfaceUrl(
         ? "http:"
         : "https:";
 
-  const hostWithPort = port && isLocalHost ? `${targetHost}:${port}` : targetHost;
   return `${protocol}//${hostWithPort}${pathname}`;
 }
 

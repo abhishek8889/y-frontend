@@ -11,6 +11,7 @@ export function DataTable<T>({
   columns,
   data,
   getRowId,
+  features,
   search,
   filters,
   onFilterChange,
@@ -30,6 +31,11 @@ export function DataTable<T>({
   className = "",
   bodyHeightClassName = "lg:h-[min(480px,calc(100vh-420px))]",
 }: DataTableProps<T>) {
+  const enableSearch = features?.search ?? true;
+  const enableFilters = features?.filters ?? true;
+  const enablePagination = features?.pagination ?? true;
+  const enablePageSize = features?.pageSize ?? true;
+
   const isEmpty = !isError && !isLoading && data.length === 0;
 
   function handleSort(columnId: string, sortable?: boolean) {
@@ -47,33 +53,38 @@ export function DataTable<T>({
   }
 
   const scrollAreaClass = [
-    "overflow-x-auto",
+    "overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
     bodyHeightClassName === false ? "" : `${bodyHeightClassName} lg:overflow-y-auto`,
   ]
     .filter(Boolean)
     .join(" ");
 
+  const showPagination =
+    enablePagination && Boolean(pagination && onPageChange) && !isEmpty;
+
   return (
-    <div className={`space-y-4 ${className}`.trim()}>
+    <div className={`datatable space-y-5 ${className}`.trim()}>
       <DataTableToolbar
         search={search}
         filters={filters}
         onFilterChange={onFilterChange}
         toolbarExtra={toolbarExtra}
+        enableSearch={enableSearch}
+        enableFilters={enableFilters}
       />
 
       <div className="bg-white">
         <div className={scrollAreaClass}>
-          <table className="w-full min-w-full border-collapse text-left">
+          <table className="w-full min-w-[720px] border-collapse text-left md:min-w-[900px]">
             <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-black/20 text-[14px] text-black">
+              <tr className="border-b border-black text-[14px] text-black">
                 {columns.map((column) => {
                   const isSorted = sorting?.id === column.id;
                   return (
                     <th
                       key={column.id}
                       scope="col"
-                      className={`font-heading bg-white px-3 py-4 text-[14px] text-black ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
+                      className={`font-heading whitespace-nowrap bg-white px-2 py-3 text-[12px] font-bold uppercase leading-none text-black sm:px-3 sm:py-[12.8px] sm:text-[14px] ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button
@@ -137,7 +148,7 @@ export function DataTable<T>({
                   const rowKey = getRowId?.(row, rowIndex) ?? rowIndex;
 
                   return (
-                    <tr key={rowKey} className="text-[16px] text-black">
+                    <tr key={rowKey} className="align-middle text-[14px] text-black">
                       {columns.map((column) => {
                         const value = getNestedValue(row, column.accessorKey);
                         const content = column.cell
@@ -147,7 +158,7 @@ export function DataTable<T>({
                         return (
                           <td
                             key={column.id}
-                            className={`px-2.5 py-4 text-[16px] leading-[20px] text-black ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
+                            className={`px-2 py-4 text-[14px] leading-5 text-black sm:px-3 sm:py-5 ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
                           >
                             {content}
                           </td>
@@ -160,7 +171,7 @@ export function DataTable<T>({
           </table>
         </div>
 
-        {pagination && onPageChange && !isEmpty ? (
+        {showPagination && pagination && onPageChange ? (
           <DataTablePagination
             page={pagination.page}
             pageSize={pagination.pageSize}
@@ -168,6 +179,7 @@ export function DataTable<T>({
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
             pageSizeOptions={pageSizeOptions}
+            enablePageSize={enablePageSize}
           />
         ) : null}
       </div>

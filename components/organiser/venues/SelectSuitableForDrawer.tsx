@@ -22,6 +22,9 @@ type SelectSuitableForDrawerProps = {
   onOptionDeleted?: (optionId: number) => void;
 };
 
+const FIELD_LABEL =
+  "font-heading text-[14px] font-bold uppercase leading-none tracking-normal text-black";
+
 function isCustomOption(option: VenueSuitableForOption) {
   return option.organisation_id != null;
 }
@@ -48,18 +51,35 @@ function SuitableForLogo() {
 function DeleteOptionIcon({ busy }: { busy?: boolean }) {
   if (busy) {
     return (
-      <span className="inline-block h-5 w-5 animate-pulse rounded-full border-2 border-black/40 border-t-transparent" />
+      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-black/25 border-t-black" />
     );
   }
 
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M4 7h16M9 7V5h6v2m-7 0v12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7M10 11v6M14 11v6"
+        d="M5 7h14"
         stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="1.5"
         strokeLinecap="round"
+      />
+      <path
+        d="M9.5 7V5.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V7"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M18 7v11.2c0 1-.8 1.8-1.8 1.8H7.8c-1 0-1.8-.8-1.8-1.8V7"
+        stroke="currentColor"
+        strokeWidth="1.5"
         strokeLinejoin="round"
+      />
+      <path
+        d="M10 11v5.5M14 11v5.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -162,15 +182,15 @@ export function SelectSuitableForDrawer({
     >
       <div className="space-y-6">
         <div>
-          <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+          <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             {sortedOptions.map((option) => {
               const checked = draftIds.includes(option.id);
               const canDelete = isCustomOption(option);
               const isDeleting = deletingOptionId === option.id;
 
               return (
-                <div key={option.id} className="flex min-w-0 items-center gap-2">
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-[15px] text-black">
+                <div key={option.id} className="flex min-w-0 items-center gap-1.5">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-[14px] font-normal leading-5 text-black">
                     <input
                       type="checkbox"
                       checked={checked}
@@ -187,7 +207,7 @@ export function SelectSuitableForDrawer({
                       aria-label={`Delete ${option.name}`}
                       disabled={deletingOptionId != null}
                       onClick={() => void handleDeleteCustom(option)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] text-black/70 transition hover:bg-black/5 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[4px] text-[#6f6e69] transition hover:bg-black/5 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <DeleteOptionIcon busy={isDeleting} />
                     </button>
@@ -197,27 +217,27 @@ export function SelectSuitableForDrawer({
             })}
           </div>
           {sortedOptions.length === 0 ? (
-            <p className="text-[14px] text-black/55">No suitable-for options available yet.</p>
+            <p className="text-[14px] font-normal text-[#6f6e69]">
+              No suitable-for options available yet.
+            </p>
           ) : null}
         </div>
 
-        <div className="border-t border-black/30 pt-5">
-          <h3 className="text-[16px] font-bold uppercase tracking-[0.04em] text-black">
-            Add Custom Option
-          </h3>
-          <p className="mt-1 text-[14px] leading-[20px] text-[#6E6B69]">
+        <div className="border-t border-black pt-5">
+          <h3 className={FIELD_LABEL}>Add Custom Option</h3>
+          <p className="mt-1.5 text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
             Add any additional option that is not listed above.
           </p>
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
             <div className="min-w-0 flex-1">
               <InputField
                 name="customSuitableForName"
                 value={customName}
                 onChange={(event) => setCustomName(event.target.value)}
                 placeholder="Enter option name (e.g. Film Screenings)"
-                className="text-[14px] placeholder:text-black/45"
-                containerClassName="rounded-[4px] border-black"
+                className="px-4 text-[14px] placeholder:text-[#666]"
+                containerClassName="h-11 rounded-[4px] border-black"
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -230,7 +250,7 @@ export function SelectSuitableForDrawer({
               type="button"
               disabled={isCreating || deletingOptionId != null}
               onClick={() => void handleAddCustom()}
-              className="h-[48px] shrink-0 rounded-[4px] border border-black bg-white px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-black disabled:opacity-60"
+              className="inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-white px-4 text-[14px] font-normal uppercase leading-none text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCreating ? "Adding..." : "+ Add"}
             </Button>

@@ -7,16 +7,6 @@ export type DataTableEmptyProps = DataTableEmptyState & {
   className?: string;
 };
 
-function EmptyTableIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M3 9h18M9 9v11M15 9v11" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 14.5h2.5M13.5 14.5H16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export function DataTableEmpty({
   title,
   subtitle,
@@ -29,23 +19,18 @@ export function DataTableEmpty({
 
   return (
     <div
-      className={`mx-auto flex min-h-[280px] w-full max-w-[480px] flex-col items-center justify-center px-4 py-12 text-center sm:min-h-[320px] ${className}`.trim()}
+      className={`mx-auto flex min-h-[280px] w-full max-w-[322px] flex-col items-center justify-center gap-3 px-4 py-12 text-center sm:min-h-[320px] ${className}`.trim()}
       role="status"
     >
-      <div className="mb-4 flex h-14 w-14 items-center justify-center border border-black/20 bg-[#F5F5F5] text-black/55">
-        <EmptyTableIcon />
-      </div>
-      <h3 className="font-heading text-[20px] leading-6 tracking-[-0.02em] text-black sm:text-[22px]">
-        {title}
-      </h3>
+      <h3 className="font-heading text-[22px] leading-none text-black">{title}</h3>
       {subtitle ? (
-        <p className="mt-2 max-w-[360px] text-[14px] leading-5 text-[#777]">{subtitle}</p>
+        <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">{subtitle}</p>
       ) : null}
       {showCta ? (
         <Button
           type="button"
           onClick={onButtonClick}
-          className="mt-5 inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[3px] border border-black bg-black px-4 text-[14px] font-normal uppercase text-white transition hover:bg-white hover:text-black"
+          className="mt-1 inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90"
         >
           {buttonLabel}
         </Button>

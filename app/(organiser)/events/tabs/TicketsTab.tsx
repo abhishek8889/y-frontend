@@ -209,23 +209,38 @@ function TicketDialogFrame({
         role="dialog"
         aria-modal="true"
         aria-labelledby="ticket-dialog-title"
-        className="flex max-h-[calc(100dvh-16px)] h-[min(716px,calc(100dvh-16px))] w-full max-w-[640px] flex-col bg-white shadow-xl"
+        className="flex max-h-[calc(100dvh-24px)] h-[min(680px,calc(100dvh-24px))] w-full max-w-[560px] flex-col overflow-hidden rounded-[4px] border border-black bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.08)]"
       >
-        <header className="flex shrink-0 items-center justify-between border-b border-black/70 p-5">
-          <div className="flex min-w-0 items-center gap-[10px]">
-            <span className="h-11 w-11 rounded shrink-0 bg-black" aria-hidden="true" />
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-black px-5 py-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] bg-black text-white"
+              aria-hidden="true"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 8h16v10H4V8Zm3-4h10v3H7V4Z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
             <div className="min-w-0">
-              <h3 id="ticket-dialog-title" className="truncate text-[18px] font-black uppercase leading-[26px] text-black">
+              <h3
+                id="ticket-dialog-title"
+                className="font-heading truncate text-[18px] font-bold uppercase leading-[26px] text-black"
+              >
                 {title}
               </h3>
-              <p className="text-[14px] leading-[20px] text-[#6E6B69]">{subtitle}</p>
+              <p className="mt-1 text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">{subtitle}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="cursor-pointer ml-3 flex h-7 w-7 shrink-0 items-center justify-center text-[18px] leading-none text-black hover:text-black/60"
+            className="ml-3 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center text-[24px] leading-none text-black transition hover:bg-black/5"
           >
             ×
           </button>
@@ -796,7 +811,9 @@ export default function TicketsTab({
   return (
     <div className="pt-4">
       <div className="mb-[27px] flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-[26px] font-black uppercase leading-[24px] tracking-[-0.03em] text-black">Tickets</h3>
+        <h3 className="font-heading text-[22px] font-bold uppercase leading-none tracking-[-0.03em] text-black sm:text-[26px]">
+          Products
+        </h3>
         <Button
           type="button"
           onClick={() => setDialog({ type: "ticket" })}

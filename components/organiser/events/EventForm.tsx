@@ -290,26 +290,29 @@ export function EventForm({ mode, eventId }: EventFormProps) {
 
   return (
     <div>
-      <div className="sticky top-0 z-20 mt-[27px] bg-white">
-        <div className="overflow-hidden border-b border-black/30">
-          <nav className="flex flex-wrap gap-5 md:gap-8">
-            {sectionTabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <a
-                  key={tab.id}
-                  href={`#${tab.id}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center border-b-[2px] px-4 py-[10px] text-[14px] font-bold uppercase leading-[20px] tracking-normal text-[#949494] transition ${
-                    isActive ? "border-black text-black" : "border-transparent hover:text-black"
-                  }`}
-                >
-                  {tab.label}
-                </a>
-              );
-            })}
-          </nav>
-        </div>
+      <div className="sticky top-0 z-20 -mx-5 mt-5 border-b border-black bg-white px-5 md:-mx-8 md:mt-[27px] md:px-8">
+        <nav
+          aria-label="Event form sections"
+          className="-mb-px flex gap-4 overflow-x-auto [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
+        >
+          {sectionTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <a
+                key={tab.id}
+                href={`#${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                className={`font-heading inline-flex shrink-0 items-center border-b px-3 py-2.5 text-[13px] font-bold uppercase leading-5 transition sm:px-4 sm:text-[14px] ${
+                  isActive
+                    ? "border-black text-black"
+                    : "border-transparent text-[#949494] hover:text-black"
+                }`}
+              >
+                {tab.label}
+              </a>
+            );
+          })}
+        </nav>
       </div>
 
       <div className="space-y-10 pb-12 pt-8">

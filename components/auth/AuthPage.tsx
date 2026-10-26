@@ -8,33 +8,41 @@ interface AuthPageProps {
   subtitle: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Extra top padding for shorter forms like login. */
+  contentClassName?: string;
 }
 
-export function AuthPage({ title, subtitle, children, footer }: AuthPageProps) {
+export function AuthPage({
+  title,
+  subtitle,
+  children,
+  footer,
+  contentClassName = "",
+}: AuthPageProps) {
   return (
-    <main className="grid min-h-screen lg:grid-cols-[0.96fr_1.04fr]">
+    <main className="auth-site grid min-h-screen bg-white text-black lg:grid-cols-2">
       <section className="flex min-h-screen flex-col bg-white">
         <AuthHeader />
 
-        <div className="mx-auto flex w-full max-w-[33rem] flex-1 flex-col px-[20px] pt-8 sm:px-[40px] sm:pt-10">
-          <h1 className="text-[32px] font-bold uppercase leading-[38px] tracking-[0px] text-black">
+        <div
+          className={`mx-auto flex w-full max-w-[452px] flex-1 flex-col px-5 pt-8 sm:px-0 sm:pt-12 ${contentClassName}`.trim()}
+        >
+          <h1 className="font-heading text-[28px] leading-[34px] text-[#161616] sm:text-[32px] sm:leading-[38px]">
             {title}
           </h1>
-          <p className="mt-[6px] text-[14px] font-normal leading-[24px] text-black/100">
-            {subtitle}
-          </p>
+          <p className="mt-1.5 text-[14px] font-normal leading-6 text-black">{subtitle}</p>
 
-          <div className="mt-6">{children}</div>
+          <div className="mt-6 pb-10 sm:mt-8">{children}</div>
         </div>
 
         {footer ? (
-          <div className="mt-[57px] w-full border-t border-black py-[30px]">
+          <div className="mt-auto w-full border-t border-black py-[30px]">
             {footer}
           </div>
         ) : null}
       </section>
 
-      <div className="lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
+      <div className="hidden lg:block lg:sticky lg:top-0 lg:h-screen lg:overflow-hidden">
         <AuthHero />
       </div>
     </main>

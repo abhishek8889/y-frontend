@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AUTH_TOKEN_KEY, AUTH_USER_KEY } from "@/lib/auth/constants";
+import {
+  isOrganisationApproved,
+  isOrganisationPendingApproval,
+} from "@/lib/auth/organisationApproval";
 import { canAccessSurface, getPrimaryScope } from "@/lib/auth/roles";
 import { parseAuthUserCookie } from "@/lib/auth/session";
 import {
@@ -47,6 +51,7 @@ export function proxy(request: NextRequest) {
         pathname.startsWith("/events") ||
         pathname.startsWith("/venues") ||
         pathname.startsWith("/customers") ||
+        pathname.startsWith("/site") ||
         pathname.startsWith("/clubsite") ||
         pathname.startsWith("/roles") ||
         pathname.startsWith("/staff") ||
@@ -69,8 +74,24 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Already signed into this workspace → skip auth screens
+  const isUnderReviewPath =
+    pathname === "/account-under-review" || pathname.startsWith("/account-under-review/");
+
+  // Already signed into this workspace → skip auth screens (except under-review while pending).
   if (isAuthPath(pathname) && isAuthenticated && canAccessSurface(surface, user)) {
+    if (isUnderReviewPath) {
+      // Approved organisers should not stay on under-review.
+      if (isOrganisationApproved(user)) {
+        return redirectTo(request, "/dashboard");
+      }
+      // Pending (or status unknown) — allow the under-review page.
+      return NextResponse.next();
+    }
+
+    if (isOrganisationPendingApproval(user)) {
+      return redirectTo(request, "/account-under-review");
+    }
+
     const nextParam = request.nextUrl.searchParams.get("next");
     const destination = isSafeNextPath(nextParam)
       ? nextParam
@@ -97,6 +118,11 @@ export function proxy(request: NextRequest) {
     const homeSurface = getSurfaceForScope(scope);
     const homePath = defaultPathForSurface(homeSurface);
     return redirectTo(request, buildSurfaceUrl(homeSurface, homePath, hostHeader));
+  }
+
+  // Live cookie status: keep unapproved organisers off dashboard routes.
+  if (surface === "organiser" && isOrganisationPendingApproval(user)) {
+    return redirectTo(request, "/account-under-review");
   }
 
   return NextResponse.next();
