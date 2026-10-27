@@ -3,6 +3,8 @@ import Link from "next/link";
 export type BreadcrumbItem = {
   label: string;
   href?: string;
+  /** Prefer over href when staying on the same client view (e.g. list ↔ detail). */
+  onClick?: () => void;
 };
 
 export type BreadcrumbVariant = "bar" | "dashboard";
@@ -49,7 +51,15 @@ export function Breadcrumb({
                   /
                 </span>
               ) : null}
-              {item.href && !isLast ? (
+              {item.onClick && !isLast ? (
+                <button
+                  type="button"
+                  onClick={item.onClick}
+                  className="truncate text-black transition hover:opacity-60"
+                >
+                  {item.label}
+                </button>
+              ) : item.href && !isLast ? (
                 <Link
                   href={item.href}
                   className="truncate text-black transition hover:opacity-60"

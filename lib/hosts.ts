@@ -82,7 +82,6 @@ export const surfacePaths = {
     "/account",
     "/orders",
     "/wishlist",
-    "/settings",
     ...authPaths,
   ],
   organiser: [

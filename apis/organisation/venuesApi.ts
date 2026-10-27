@@ -29,6 +29,9 @@ export type VenueImage = {
   url: string;
   alt_text: string | null;
   sort_order: number;
+  /** `image` | `video` — used for list/form media preview. */
+  media_type?: "image" | "video" | string | null;
+  mime?: string | null;
 };
 
 export type VenueContact = {

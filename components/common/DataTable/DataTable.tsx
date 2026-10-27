@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { DataTableEmpty } from "./DataTableEmpty";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
@@ -30,6 +30,7 @@ export function DataTable<T>({
   loadingMessage = "Loading...",
   className = "",
   bodyHeightClassName = "lg:h-[min(480px,calc(100vh-420px))]",
+  headerBackground,
 }: DataTableProps<T>) {
   const enableSearch = features?.search ?? true;
   const enableFilters = features?.filters ?? true;
@@ -63,7 +64,7 @@ export function DataTable<T>({
     enablePagination && Boolean(pagination && onPageChange) && !isEmpty;
 
   return (
-    <div className={`datatable space-y-5 ${className}`.trim()}>
+    <div className={`datatable datatable-box ${className}`.trim()}>
       <DataTableToolbar
         search={search}
         filters={filters}
@@ -75,16 +76,23 @@ export function DataTable<T>({
 
       <div className="bg-white">
         <div className={scrollAreaClass}>
-          <table className="w-full min-w-[720px] border-collapse text-left md:min-w-[900px]">
-            <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-black text-[14px] text-black">
+          <table
+            className="datatable-table"
+            style={
+              headerBackground
+                ? ({ "--od-datatable-header-bg": headerBackground } as CSSProperties)
+                : undefined
+            }
+          >
+            <thead className="sticky top-0 z-10">
+              <tr>
                 {columns.map((column) => {
                   const isSorted = sorting?.id === column.id;
                   return (
                     <th
                       key={column.id}
                       scope="col"
-                      className={`font-heading whitespace-nowrap bg-white px-2 py-3 text-[12px] font-bold uppercase leading-none text-black sm:px-3 sm:py-[12.8px] sm:text-[14px] ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
+                      className={`datatable-column-title ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button
@@ -106,12 +114,12 @@ export function DataTable<T>({
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-black/20">
+            <tbody>
               {isError ? (
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-3 py-10 text-center text-[12px] text-[#d32f2f]"
+                    className="datatable-column-value text-center text-[#d32f2f]"
                   >
                     {errorMessage}
                   </td>
@@ -122,7 +130,7 @@ export function DataTable<T>({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-3 py-10 text-center text-[12px] text-black/55"
+                    className="datatable-column-value text-center text-black/55"
                   >
                     {loadingMessage}
                   </td>
@@ -131,7 +139,7 @@ export function DataTable<T>({
 
               {isEmpty ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-3">
+                  <td colSpan={columns.length} className="datatable-column-value">
                     <DataTableEmpty
                       title={emptyState?.title ?? emptyMessage}
                       subtitle={emptyState?.subtitle}
@@ -148,7 +156,7 @@ export function DataTable<T>({
                   const rowKey = getRowId?.(row, rowIndex) ?? rowIndex;
 
                   return (
-                    <tr key={rowKey} className="align-middle text-[14px] text-black">
+                    <tr key={rowKey}>
                       {columns.map((column) => {
                         const value = getNestedValue(row, column.accessorKey);
                         const content = column.cell
@@ -158,7 +166,7 @@ export function DataTable<T>({
                         return (
                           <td
                             key={column.id}
-                            className={`px-2 py-4 text-[14px] leading-5 text-black sm:px-3 sm:py-5 ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
+                            className={`datatable-column-value ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
                           >
                             {content}
                           </td>

@@ -213,68 +213,44 @@ export default function RolesPage() {
     () => [
       {
         id: "name",
-        header: "ROLE NAME",
+        header: "Role name",
         accessorKey: "name",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[14px] font-normal leading-5 text-black">
-            {row.name}
-          </span>
-        ),
       },
       {
         id: "description",
-        header: "DESCRIPTION",
+        header: "Description",
         cell: ({ row }) => (
-          <span className="block max-w-[280px] text-[14px] font-normal leading-5 text-black">
-            {row.description || "—"}
-          </span>
+          <span className="datatable-desc-cell">{row.description || "—"}</span>
         ),
       },
       {
         id: "staffMembers",
-        header: "STAFF MEMBER",
-        cell: ({ row }) => (
-          <span className="text-[14px] font-normal leading-5 text-black">{row.staffMembers}</span>
-        ),
+        header: "Staff member",
+        cell: ({ row }) => String(row.staffMembers),
       },
       {
         id: "permissions",
-        header: "PERMISSIONS",
-        cell: ({ row }) => (
-          <span className="text-[14px] font-normal leading-5 text-black">{row.permissions}</span>
-        ),
+        header: "Permissions",
+        cell: ({ row }) => String(row.permissions),
       },
       {
         id: "status",
-        header: "STATUS",
-        cell: ({ row }) => (
-          <StatusBadge
-            status={row.status}
-            className="font-heading gap-[9px] text-[14px] font-bold leading-5 tracking-normal"
-          />
-        ),
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
       },
       {
         id: "created",
-        header: "CREATED",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[14px] font-normal leading-5 text-black">
-            {row.created}
-          </span>
-        ),
+        header: "Created",
+        accessorKey: "created",
       },
       {
         id: "updated",
-        header: "LAST UPDATED",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[14px] font-normal leading-5 text-black">
-            {row.updated}
-          </span>
-        ),
+        header: "Last updated",
+        accessorKey: "updated",
       },
       {
         id: "actions",
-        header: "ACTION",
+        header: "Action",
         align: "center",
         headerClassName: "text-center",
         cell: ({ row }) => (
@@ -293,13 +269,11 @@ export default function RolesPage() {
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-      <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-[11px]">
-            <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
-              Roles &amp; Permission
-            </h1>
-            <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
+      <div className="page-content">
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1 className="page-title">Roles &amp; Permission</h1>
+            <p className="page-subtitle">
               Create roles and assign permissions to control what staff members can access and do.
             </p>
           </div>
@@ -307,12 +281,12 @@ export default function RolesPage() {
           <Button
             type="button"
             onClick={openCreateDrawer}
-            className="inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90"
+            className="page-primary-button-action"
           >
             <span aria-hidden className="text-[18px] leading-none">
               +
             </span>
-            CREATE ROLE
+            Create role
           </Button>
         </div>
 
@@ -333,7 +307,7 @@ export default function RolesPage() {
                 setSearch(value);
                 resetCursorAndPage();
               },
-              placeholder: "SEARCH",
+              placeholder: "Search..",
             }}
             filters={[
               {
@@ -370,14 +344,15 @@ export default function RolesPage() {
             isError={isError}
             errorMessage="Unable to load roles."
             emptyState={{
-              title: hasListFilters ? "NO ROLES FOUND" : "NO ROLES YET",
+              title: hasListFilters ? "No roles found" : "No roles yet",
               subtitle: hasListFilters
                 ? "Try adjusting your search or filters."
                 : "Create a role to control what staff members can access and do.",
               showButton: !hasListFilters,
-              buttonLabel: "+ CREATE ROLE",
+              buttonLabel: "+ Create role",
               onButtonClick: openCreateDrawer,
             }}
+            bodyHeightClassName={false}
           />
         </div>
       </div>

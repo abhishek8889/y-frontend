@@ -56,7 +56,7 @@ export function SelectField({
       {label ? (
         <label
           htmlFor={selectId}
-          className={`text-[16px] font-bold uppercase leading-[24px] text-black ${labelClassName}`.trim()}
+          className={`input-heading text-[14px] font-normal capitalize leading-normal text-[#6f6e69] ${labelClassName}`.trim()}
         >
           {label}
         </label>
@@ -74,7 +74,7 @@ export function SelectField({
         disabled={disabled}
         required={required}
         className={className}
-        containerClassName={containerClassName}
+        containerClassName={`input-box ${density === "compact" ? "input-box-compact" : ""} ${containerClassName}`.trim()}
         aria-label={ariaLabel ?? label}
         onChange={onChange}
         onOpenChange={onOpenChange}

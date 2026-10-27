@@ -53,62 +53,63 @@ export default function EventsTab() {
   }
 
   return (
-    <section className="mt-4" aria-label="Site event listings">
-      <h3 className="text-[18px] font-black uppercase leading-6">Events</h3>
-      <p className="mt-1 text-[12px] text-[#777]">Add your event listings.</p>
+    <section className="site-tab" aria-label="Site event listings">
+      <h3 className="site-tab-title">Events</h3>
+      <p className="site-tab-subtitle">Add your event listings.</p>
 
-      <div className="mt-4 space-y-3">
+      <div className="site-event-list">
         {visibleEvents.map((event) => (
-          <article key={event.id} className="flex min-h-[58px] items-center gap-4">
+          <article key={event.id} className="site-event-row">
             <input
               type="checkbox"
               checked={selectedEventIds.includes(event.id)}
               onChange={() => toggleEvent(event.id)}
               aria-label={`Show ${event.title} on the site`}
-              className="h-[13px] w-[13px] shrink-0 accent-black"
             />
-            <div className="relative h-[54px] w-[54px] shrink-0 overflow-hidden bg-[#eee]">
+            <div className="site-event-thumb">
               <Image src={eventCoverImage} alt="" fill sizes="54px" className="object-cover" />
             </div>
-            <p className="min-w-0 flex-1 text-[16px] text-black">{event.title}</p>
+            <p className="site-event-title">{event.title}</p>
             <button
               type="button"
               onClick={() => removeEvent(event.id)}
               aria-label={`Remove ${event.title} from site`}
-              className="flex h-8 w-8 shrink-0 items-center justify-center text-[#ef4444] transition hover:bg-red-50"
+              className="site-event-remove"
             >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-                <path d="M4.5 6h11m-9.5 0 .6 10h6.8L14 6M8 6V4h4v2m-3 3v4m2-4v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path
+                  d="M4.5 6h11m-9.5 0 .6 10h6.8L14 6M8 6V4h4v2m-3 3v4m2-4v4"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </article>
         ))}
         {snapshot !== "" && events.length === 0 ? (
-          <p className="py-8 text-center text-[12px] text-[#777]">
+          <p className="site-empty-message">
             No published events yet. Create and publish an event to add it to your site.
           </p>
         ) : null}
         {events.length > 0 && visibleEvents.length === 0 ? (
-          <p className="py-8 text-center text-[12px] text-[#777]">
+          <p className="site-empty-message">
             No events selected. Select an event to show it on your site.
           </p>
         ) : null}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-        {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}
-        <button
-          type="button"
-          onClick={cancelChanges}
-          className="h-[35px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white"
-        >
+      <div className="site-form-actions">
+        {notice ? (
+          <p role="status" className="site-notice">
+            {notice}
+          </p>
+        ) : null}
+        <button type="button" onClick={cancelChanges} className="form-footer-btn form-footer-btn-secondary">
           Cancel
         </button>
-        <button
-          type="button"
-          onClick={saveEvents}
-          className="h-[35px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black"
-        >
+        <button type="button" onClick={saveEvents} className="form-footer-btn form-footer-btn-primary">
           Save
         </button>
       </div>

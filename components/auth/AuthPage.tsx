@@ -27,10 +27,8 @@ export function AuthPage({
         <div
           className={`mx-auto flex w-full max-w-[452px] flex-1 flex-col px-5 pt-8 sm:px-0 sm:pt-12 ${contentClassName}`.trim()}
         >
-          <h1 className="font-heading text-[28px] leading-[34px] text-[#161616] sm:text-[32px] sm:leading-[38px]">
-            {title}
-          </h1>
-          <p className="mt-1.5 text-[14px] font-normal leading-6 text-black">{subtitle}</p>
+          <h1 className="auth-title">{title}</h1>
+          <p className="auth-subtitle">{subtitle}</p>
 
           <div className="mt-6 pb-10 sm:mt-8">{children}</div>
         </div>

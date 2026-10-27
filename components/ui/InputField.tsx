@@ -46,15 +46,19 @@ export function InputField(props: InputFieldProps) {
       {label ? (
         <label
           htmlFor={inputId}
-          className={`mb-[6px] block shrink-0 text-[16px] font-bold uppercase leading-[24px] tracking-[0px] text-black ${labelClassName}`.trim()}
+          className={`input-heading mb-[6px] block shrink-0 text-[14px] font-normal capitalize leading-normal tracking-[0px] text-[#6f6e69] ${labelClassName}`.trim()}
         >
           {label}
         </label>
       ) : null}
 
       <div
-        className={`flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
-          isTextarea ? "min-h-[140px] p-0" : density === "compact" ? "h-10 items-center" : "h-[48px] items-center"
+        className={`input-box flex rounded-[4px] border border-black bg-white transition focus-within:ring-1 focus-within:ring-black ${
+          isTextarea
+            ? "input-box-textarea min-h-[140px] p-0"
+            : density === "compact"
+              ? "input-box-compact h-10 items-center"
+              : "h-[41px] items-center"
         } ${containerClassName}`.trim()}
       >
         {prefix ? <span className={`flex items-center ${prefixClassName}`}>{prefix}</span> : null}
@@ -64,7 +68,7 @@ export function InputField(props: InputFieldProps) {
             id={inputId}
             rows={"rows" in rest ? rest.rows ?? 4 : 4}
             {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
-            className={`w-full resize-none border-0 bg-transparent px-5 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${className}`.trim()}
+            className={`w-full resize-none border-0 bg-transparent px-4 py-3 text-[14px] font-normal leading-[20px] text-black placeholder:text-black focus:outline-none ${className}`.trim()}
           />
         ) : (
           <>
@@ -72,7 +76,7 @@ export function InputField(props: InputFieldProps) {
               id={inputId}
               {...(rest as InputHTMLAttributes<HTMLInputElement>)}
               type={inputType}
-              className={`h-full w-full border-0 bg-transparent px-5 text-[14px] font-normal leading-[20px] text-black placeholder:text-black/60 focus:outline-none ${
+              className={`h-full w-full border-0 bg-transparent px-4 text-[14px] font-normal leading-[20px] text-black placeholder:text-black focus:outline-none ${
                 isMaskedPassword ? "tracking-[0.5em] placeholder:tracking-normal" : ""
               } ${className}`.trim()}
             />

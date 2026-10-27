@@ -58,7 +58,7 @@ function getInitialDraft(item: NewsRecord | null): NewsDraft {
 
 function ImagePlaceholder() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-8 w-8 text-[#d7d7d7]">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="site-upload-preview-icon">
       <rect x="3" y="3" width="42" height="42" rx="4" fill="currentColor" />
       <path d="m9 34 9-10 6 6 5-5 10 9H9Z" fill="white" />
       <circle cx="17" cy="16" r="3" fill="white" />
@@ -137,74 +137,62 @@ export default function NewsForm({ initialNews, onSave, onCancel }: NewsFormProp
   }
 
   return (
-    <form onSubmit={saveForm} className="mt-4">
-      <div className="mb-4">
-        <h3 className="text-[18px] font-black uppercase leading-6">News</h3>
-        <p className="mt-1 text-[12px] text-[#777]">
+    <form onSubmit={saveForm} className="site-tab">
+      <div>
+        <h3 className="site-tab-title">News</h3>
+        <p className="site-tab-subtitle">
           Create and manage news, announcements and updates for your website.
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.96fr)]">
-        <div className="space-y-4">
+      <div className="site-news-form-grid">
+        <div className="site-news-form-fields">
           <InputField
             id="news-title"
             label="News title *"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            labelClassName="input-heading"
             required
             value={draft.title}
             onChange={(event) => updateDraft("title", event.target.value)}
             placeholder="Enter headline"
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px]"
           />
           <InputField
             id="news-publish-at"
             type="datetime-local"
             label="Publish date and time *"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            labelClassName="input-heading"
             required
             value={draft.publishAt}
             onChange={(event) => updateDraft("publishAt", event.target.value)}
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px]"
           />
           <InputField
             id="news-author"
             label="Author *"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+            labelClassName="input-heading"
             required
             value={draft.author}
             onChange={(event) => updateDraft("author", event.target.value)}
             placeholder="Enter name"
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px]"
           />
         </div>
 
         <div>
-          <label
-            htmlFor="news-image"
-            className="flex h-full min-h-[220px] cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 px-5 py-6 text-center transition hover:bg-black/[0.025]"
-          >
+          <label htmlFor="news-image" className="form-upload-box site-upload-box-sm">
             {draft.imageDataUrl ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={draft.imageDataUrl}
                   alt="News image preview"
-                  className="mb-2 max-h-[112px] max-w-full object-contain"
+                  className="site-upload-thumb site-upload-thumb-lg"
                 />
-                <span className="text-[11px] font-bold">Change image</span>
+                <span className="site-upload-filename">Change image</span>
               </>
             ) : (
               <>
                 <ImagePlaceholder />
-                <span className="mt-2 text-[16px] font-bold text-black">Add Image</span>
-                <span className="mt-2 max-w-[280px] text-[14px] leading-[15px] text-[#999]">
+                <span className="site-upload-title">Add Image</span>
+                <span className="form-upload-hint">
                   Upload a nice image that represents your brand. JPG or PNG, under 5MB.
                 </span>
               </>
@@ -218,17 +206,18 @@ export default function NewsForm({ initialNews, onSave, onCancel }: NewsFormProp
             />
           </label>
           {imageError ? (
-            <p role="alert" className="mt-1 text-[11px] text-red-600">
+            <p role="alert" className="site-error">
               {imageError}
             </p>
           ) : null}
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="site-news-editors">
         <RichTextEditor
           id="news-short-description"
           label="Short description *"
+          labelClassName="input-heading"
           valueHtml={draft.excerptHtml}
           placeholder="Write a short description…"
           onChangeHtml={(html) => updateDraft("excerptHtml", html)}
@@ -237,6 +226,7 @@ export default function NewsForm({ initialNews, onSave, onCancel }: NewsFormProp
         <RichTextEditor
           id="news-detailed-description"
           label="Detailed description *"
+          labelClassName="input-heading"
           valueHtml={draft.contentHtml}
           placeholder="Write the full news article…"
           onChangeHtml={(html) => updateDraft("contentHtml", html)}
@@ -245,23 +235,16 @@ export default function NewsForm({ initialNews, onSave, onCancel }: NewsFormProp
       </div>
 
       {formError ? (
-        <p role="alert" className="mt-3 text-[11px] text-red-600">
+        <p role="alert" className="site-error">
           {formError}
         </p>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="h-[40px] min-w-[90px] cursor-pointer rounded-[3px] border border-black/70 px-4 text-[12px] uppercase hover:bg-black hover:text-white"
-        >
+      <div className="site-form-actions">
+        <button type="button" onClick={onCancel} className="form-footer-btn form-footer-btn-secondary">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="h-[40px] min-w-[78px] cursor-pointer rounded-[3px] border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black"
-        >
+        <button type="submit" className="form-footer-btn form-footer-btn-primary">
           Save
         </button>
       </div>

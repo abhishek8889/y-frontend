@@ -2,7 +2,7 @@
 
 import type { GridCardColumns, GridCardItem, GridCardProps } from "./types";
 
-const MAX_COLUMNS = 5;
+const MAX_COLUMNS = 6;
 
 function resolveColumnCount(itemCount: number, columns?: GridCardColumns): number {
   if (columns) return Math.min(columns, MAX_COLUMNS);
@@ -18,7 +18,7 @@ function GridCardCell({
 }) {
   return (
     <div
-      className={`organiser-grid-card flex min-h-[87px] min-w-0 flex-1 flex-col justify-center border border-black bg-white p-[18px] ${className}`.trim()}
+      className={`organiser-grid-card gridcard-box ${className}`.trim()}
     >
       <div className="flex items-start gap-3">
         {item.icon ? (
@@ -28,7 +28,7 @@ function GridCardCell({
         ) : null}
 
         <div className="min-w-0 flex-1">
-          <p className="font-heading flex items-center gap-2 text-[14px] leading-[19.6px] text-[#aaaaac]">
+          <p className="gridcard-title">
             {item.indicatorColor ? (
               <span
                 className="inline-block h-[7px] w-[7px] shrink-0 rounded-full"
@@ -39,14 +39,10 @@ function GridCardCell({
             <span className="min-w-0">{item.label}</span>
           </p>
 
-          <p className="mt-[6px] text-[22px] font-bold uppercase leading-[24.2px] text-black">
-            {item.value}
-          </p>
+          <p className="gridcard-value">{item.value}</p>
 
           {item.description != null && item.description !== "" ? (
-            <p className="mt-[10px] text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
-              {item.description}
-            </p>
+            <div className="gridcard-description">{item.description}</div>
           ) : null}
         </div>
       </div>
@@ -81,7 +77,7 @@ export function GridCard({
         {Array.from({ length: columnCount }, (_, index) => (
           <div
             key={`grid-card-skeleton-${index}`}
-            className={`min-h-[87px] min-w-0 flex-1 animate-pulse border border-black/10 bg-black/[0.03] p-[18px] ${itemClassName}`.trim()}
+            className={`gridcard-box min-h-[87px] min-w-0 flex-1 animate-pulse border border-black/10 bg-black/[0.03] p-[18px] ${itemClassName}`.trim()}
           >
             <div className="h-3 w-24 bg-black/10" />
             <div className="mt-3 h-6 w-16 bg-black/10" />

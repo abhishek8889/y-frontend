@@ -208,12 +208,12 @@ export default function StaffPage() {
     () => [
       {
         id: "name",
-        header: "NAME",
+        header: "Name",
         cell: ({ row }) => (
-          <span className="flex min-w-[160px] items-center gap-2.5">
+          <span className="staff-name-cell">
             <span
               aria-hidden="true"
-              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e5e7eb] text-[10px] font-bold text-[#3f4754]"
+              className="staff-avatar"
               style={
                 row.avatarUrl
                   ? {
@@ -226,48 +226,33 @@ export default function StaffPage() {
             >
               {row.avatarUrl ? null : initials(row.name)}
             </span>
-            <span className="text-[14px] font-normal leading-5 text-black">{row.name}</span>
+            <span>{row.name}</span>
           </span>
         ),
       },
       {
         id: "email",
-        header: "EMAIL",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[14px] font-normal leading-5 text-black">
-            {row.email}
-          </span>
-        ),
+        header: "Email",
+        accessorKey: "email",
       },
       {
         id: "role",
-        header: "ROLE ASSIGNED",
-        cell: ({ row }) => (
-          <span className="text-[14px] font-normal leading-5 text-black">{row.role}</span>
-        ),
+        header: "Role assigned",
+        accessorKey: "role",
       },
       {
         id: "status",
-        header: "STATUS",
-        cell: ({ row }) => (
-          <StatusBadge
-            status={row.status}
-            className="font-heading gap-[9px] text-[14px] font-bold leading-5 tracking-normal"
-          />
-        ),
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
       },
       {
         id: "joined",
-        header: "JOINED",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[14px] font-normal leading-5 text-black">
-            {row.joined}
-          </span>
-        ),
+        header: "Joined",
+        accessorKey: "joined",
       },
       {
         id: "actions",
-        header: "ACTION",
+        header: "Action",
         align: "center",
         headerClassName: "text-center",
         cell: ({ row }) => (
@@ -286,13 +271,11 @@ export default function StaffPage() {
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-      <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-[11px]">
-            <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
-              Staff
-            </h1>
-            <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
+      <div className="page-content">
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1 className="page-title">Staff</h1>
+            <p className="page-subtitle">
               Invite and manage staff members. Assign roles to control what they can access and do.
             </p>
           </div>
@@ -300,12 +283,12 @@ export default function StaffPage() {
           <Button
             type="button"
             onClick={openCreateDrawer}
-            className="inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90"
+            className="page-primary-button-action"
           >
             <span aria-hidden className="text-[18px] leading-none">
               +
             </span>
-            ADD STAFF MEMBER
+            Add staff member
           </Button>
         </div>
 
@@ -326,7 +309,7 @@ export default function StaffPage() {
                 setSearch(value);
                 resetCursorAndPage();
               },
-              placeholder: "SEARCH",
+              placeholder: "Search..",
             }}
             filters={[
               {
@@ -363,14 +346,15 @@ export default function StaffPage() {
             isError={isError}
             errorMessage="Unable to load staff members."
             emptyState={{
-              title: hasListFilters ? "NO STAFF FOUND" : "NO STAFF YET",
+              title: hasListFilters ? "No staff found" : "No staff yet",
               subtitle: hasListFilters
                 ? "Try adjusting your search or filters."
                 : "Add a staff member and assign roles to get started.",
               showButton: !hasListFilters,
-              buttonLabel: "+ ADD STAFF MEMBER",
+              buttonLabel: "+ Add staff member",
               onButtonClick: openCreateDrawer,
             }}
+            bodyHeightClassName={false}
           />
         </div>
       </div>

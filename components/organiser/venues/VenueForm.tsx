@@ -11,15 +11,18 @@ import {
   useGetVenueTypesQuery,
   useUpdateVenueMutation,
 } from "@/apis/organisation/venuesApi";
+import { RichTextEditor } from "@/components/common";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
 import { appToast } from "@/lib/ui/toast";
+import { FormSectionTabs } from "@/components/organiser/FormSectionTabs";
 import { SelectFacilitiesDrawer } from "@/components/organiser/venues/SelectFacilitiesDrawer";
 import { SelectSuitableForDrawer } from "@/components/organiser/venues/SelectSuitableForDrawer";
 import {
   buildVenuePayload,
   createEmptyVenueFormValues,
+  isVenueVideoMedia,
   mapVenueToFormValues,
   validateVenueForm,
   type VenueFormImage,
@@ -37,25 +40,13 @@ const sectionTabs = [
   { id: "private-hire", label: "Private Hire" },
 ];
 
-const FIELD_LABEL =
-  "font-heading !text-[14px] !leading-none !tracking-normal text-black";
-
-const SECTION_TITLE =
-  "font-heading text-[18px] font-bold uppercase leading-none text-black sm:text-[22px]";
-
-const PRIMARY_ACTION_BTN =
-  "inline-flex h-[34px] cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90";
-
-const FOOTER_BTN_BASE =
-  "inline-flex h-auto min-w-0 flex-1 cursor-pointer items-center justify-center rounded-[4px] border border-black px-6 py-3.5 text-[12px] font-normal uppercase leading-none transition sm:min-w-[120px] sm:flex-none sm:px-9";
-
 /** Match sticky tab strip height so hash/scroll landing does not leave previous fields visible. */
 const SECTION_SCROLL_MT = "scroll-mt-[44px]";
 
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-5 border-b border-black pb-3">
-      <h2 className={SECTION_TITLE}>{children}</h2>
+    <div className="section-heading">
+      <h2 className="section-title">{children}</h2>
     </div>
   );
 }
@@ -128,13 +119,36 @@ function UploadPlaceholder({ uploading }: { uploading?: boolean }) {
           />
         </svg>
       </div>
-      <p className="font-heading text-[14px] font-bold uppercase leading-none text-black">
-        {uploading ? "Uploading..." : "Drag and drop image file here"}
+      <p className="input-heading mb-0 text-center">
+        {uploading ? "Uploading..." : "Drag and drop image or video here"}
       </p>
-      <p className="mt-2 text-[12px] font-light leading-4 text-[#939393] opacity-80">
-        PNG, JPG, up to 10MB
-      </p>
+      <p className="form-upload-hint">PNG, JPG, MP4, MOV up to 10MB</p>
     </>
+  );
+}
+
+function VenueMediaPreview({
+  media,
+  className = "",
+}: {
+  media: VenueFormImage;
+  className?: string;
+}) {
+  if (isVenueVideoMedia(media)) {
+    return (
+      <video
+        src={media.url}
+        className={className}
+        controls
+        playsInline
+        preload="metadata"
+      />
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={media.url} alt="" className={className} />
   );
 }
 
@@ -227,10 +241,13 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
     setUploadingBanner(true);
     try {
       const result = await uploadMedia({ file, context: "venue-banner" }).unwrap();
+      const mime = result.data.mime ?? file.type ?? null;
       patchValues({
         banner: {
           path: result.data.path,
           url: result.data.url,
+          mime,
+          media_type: mime?.startsWith("video/") || file.type.startsWith("video/") ? "video" : "image",
         },
       });
     } catch {
@@ -259,9 +276,12 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
       const uploaded: VenueFormImage[] = [];
       for (const file of selected) {
         const result = await uploadMedia({ file, context: "venue-gallery" }).unwrap();
+        const mime = result.data.mime ?? file.type ?? null;
         uploaded.push({
           path: result.data.path,
           url: result.data.url,
+          mime,
+          media_type: mime?.startsWith("video/") || file.type.startsWith("video/") ? "video" : "image",
         });
       }
       setValues((current) => ({
@@ -331,34 +351,14 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
 
   return (
     <>
-      <div
-        ref={tabsBarRef}
-        className="sticky top-0 z-20 -mx-5 mt-5 border-b border-black bg-white px-5 md:-mx-8 md:px-8"
-      >
-        <nav
-          aria-label="Venue form sections"
-          className="-mb-px flex gap-4 overflow-x-auto overscroll-x-contain pb-0 [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
-        >
-          {sectionTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => scrollToSection(tab.id)}
-                className={`font-heading inline-flex shrink-0 cursor-pointer items-center border-b px-3 py-2.5 text-[13px] font-bold uppercase leading-5 transition sm:px-4 sm:text-[14px] ${
-                  isActive
-                    ? "border-black text-black"
-                    : "border-transparent text-[#949494] hover:text-black"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      <FormSectionTabs
+        barRef={tabsBarRef}
+        tabs={sectionTabs}
+        activeTabId={activeTab}
+        ariaLabel="Venue form sections"
+        mode="button"
+        onTabSelect={scrollToSection}
+      />
 
       <div className="venue-create-form space-y-8 pb-8 pt-6 sm:pb-12">
         <section id="basic-information" className={SECTION_SCROLL_MT}>
@@ -368,18 +368,18 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
             <div className="flex flex-col gap-5 lg:col-span-2 xl:col-span-1">
               <InputField
                 label="Venue Name"
-                labelClassName={FIELD_LABEL}
+                labelClassName="input-heading"
                 name="venueName"
                 value={values.name}
                 onChange={(event) => patchValues({ name: event.target.value })}
                 placeholder="e.g. Keys corners"
-                className="px-4 text-[14px] placeholder:text-[#666]"
+                className="px-4"
                 containerClassName="rounded-[4px] border-black"
               />
 
               <SelectField
                 label="Venue Type"
-                labelClassName={FIELD_LABEL}
+                labelClassName="input-heading"
                 name="venueType"
                 value={values.venue_type_id}
                 onChange={(event) => patchValues({ venue_type_id: event.target.value })}
@@ -387,30 +387,29 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
                 className="h-[46px] rounded-[4px] border-black px-4 text-[14px]"
               />
 
-              <InputField
-                as="textarea"
+              <RichTextEditor
+                id="venue-description"
                 label="Venue Description"
-                labelClassName={FIELD_LABEL}
-                name="venueDescription"
-                rows={4}
-                value={values.description}
-                onChange={(event) => patchValues({ description: event.target.value })}
+                labelClassName="input-heading mb-2"
+                valueHtml={values.description}
+                onChangeHtml={(html) => patchValues({ description: html })}
                 placeholder="Enter an optional brief overview description of the venue and its historical significance..."
-                className="px-4 text-[14px] placeholder:text-[#666]"
-                containerClassName="min-h-[140px] rounded-[4px] border-black"
+                minHeightClassName="min-h-[140px]"
               />
             </div>
 
             <div className="flex min-h-0 flex-col xl:h-full">
-              <p className={`mb-2 shrink-0 ${FIELD_LABEL}`}>Venue Banner Image / Videos</p>
-              <div className="relative min-h-[200px] flex-1 overflow-hidden rounded-[4px] border border-dashed border-black bg-white sm:min-h-[220px] xl:min-h-0">
+              <p className="input-heading mb-2 shrink-0">Venue Banner Image / Videos</p>
+              <div className="form-upload-box xl:min-h-0">
                 {values.banner?.url ? (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={values.banner.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <VenueMediaPreview
+                      media={values.banner}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                     <button
                       type="button"
-                      aria-label="Remove banner image"
+                      aria-label="Remove banner media"
                       onClick={() => patchValues({ banner: null })}
                       className="absolute right-2 top-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-[16px] leading-none text-black shadow"
                     >
@@ -439,12 +438,12 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
             </div>
 
             <div className="flex min-h-0 flex-col xl:h-full">
-              <p className={`mb-2 shrink-0 ${FIELD_LABEL}`}>Add Gallery Images / Videos</p>
+              <p className="input-heading mb-2 shrink-0">Add Gallery Images / Videos</p>
               <div className="flex min-h-[200px] flex-1 flex-col gap-2 sm:min-h-[220px] xl:min-h-0">
                 <label
                   htmlFor="venue-gallery-upload"
                   className={[
-                    "flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[4px] border border-dashed border-black bg-white px-3 text-center",
+                    "form-upload-box cursor-pointer px-3",
                     values.gallery.length > 0
                       ? "h-1/2 min-h-[110px] xl:min-h-0"
                       : "min-h-[200px] flex-1 sm:min-h-[220px] xl:min-h-0",
@@ -474,18 +473,20 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
                           key={`${image.path}-${index}`}
                           className="relative h-full w-[30%] min-w-[88px] shrink-0 overflow-hidden rounded-[4px] border border-black/20 bg-black/5"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image.url} alt="" className="h-full w-full object-cover" />
+                          <VenueMediaPreview
+                            media={image}
+                            className="h-full w-full object-cover"
+                          />
                           <button
                             type="button"
-                            aria-label={`Remove gallery image ${index + 1}`}
+                            aria-label={`Remove gallery media ${index + 1}`}
                             onClick={() =>
                               setValues((current) => ({
                                 ...current,
                                 gallery: current.gallery.filter((_, itemIndex) => itemIndex !== index),
                               }))
                             }
-                            className="absolute right-1 top-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[12px] leading-none text-black shadow"
+                            className="absolute right-1 top-1 z-10 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[12px] leading-none text-black shadow"
                           >
                             ×
                           </button>
@@ -505,73 +506,73 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
             <InputField
               label="Address Line 1"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="addressLine1"
               value={values.address_line_1}
               onChange={(event) => patchValues({ address_line_1: event.target.value })}
               placeholder="e.g. Keys Park Road"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Address Line 2"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="addressLine2"
               value={values.address_line_2}
               onChange={(event) => patchValues({ address_line_2: event.target.value })}
               placeholder="e.g. Hednesford"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="City / Town"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="cityTown"
               value={values.city}
               onChange={(event) => patchValues({ city: event.target.value })}
               placeholder="e.g. Cannock"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="County / State"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="countyState"
               value={values.state}
               onChange={(event) => patchValues({ state: event.target.value })}
               placeholder="e.g. Staffordshire"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Postcode"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="postcode"
               value={values.postal_code}
               onChange={(event) => patchValues({ postal_code: event.target.value })}
               placeholder="e.g. WS12 2DZ"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Country"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="country"
               value={values.country}
               onChange={(event) => patchValues({ country: event.target.value })}
               placeholder="e.g. United Kingdom"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <div className="sm:col-span-2">
               <InputField
                 label="Google Map URL"
-                labelClassName={FIELD_LABEL}
+                labelClassName="input-heading"
                 name="googleMapUrl"
                 value={values.google_maps_url}
                 onChange={(event) => patchValues({ google_maps_url: event.target.value })}
                 placeholder="e.g. https://maps.app.goo.gl/Ah4kdZb3nvaF/TPA"
-                className="px-4 text-[14px] placeholder:text-[#666]"
+                className="px-4"
                 containerClassName="rounded-[4px] border-black"
               />
             </div>
@@ -584,43 +585,43 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
             <InputField
               label="Contact Name"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="contactName"
               value={values.contact_name}
               onChange={(event) => patchValues({ contact_name: event.target.value })}
               placeholder="e.g. John Smith"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Email Address"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="emailAddress"
               type="email"
               value={values.contact_email}
               onChange={(event) => patchValues({ contact_email: event.target.value })}
               placeholder="e.g. office@hednesfordtownfc.com"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Phone"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="phone"
               value={values.contact_phone}
               onChange={(event) => patchValues({ contact_phone: event.target.value })}
               placeholder="e.g. +44 1543 422870"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Website"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="website"
               value={values.contact_website}
               onChange={(event) => patchValues({ contact_website: event.target.value })}
               placeholder="e.g. www.website.com"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
           </div>
@@ -632,32 +633,32 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
             <InputField
               label="Maximum Capacity"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="maximumCapacity"
               value={values.maximum_capacity}
               onChange={(event) => patchValues({ maximum_capacity: event.target.value })}
               placeholder="e.g. 6039"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Standing Capacity"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="standingCapacity"
               value={values.standing_capacity}
               onChange={(event) => patchValues({ standing_capacity: event.target.value })}
               placeholder="e.g. 5000"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
             <InputField
               label="Seated Capacity"
-              labelClassName={FIELD_LABEL}
+              labelClassName="input-heading"
               name="seatedCapacity"
               value={values.seated_capacity}
               onChange={(event) => patchValues({ seated_capacity: event.target.value })}
               placeholder="e.g. 1039"
-              className="px-4 text-[14px] placeholder:text-[#666]"
+              className="px-4"
               containerClassName="rounded-[4px] border-black"
             />
           </div>
@@ -668,15 +669,15 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
 
           <div className="space-y-8">
             <div>
-              <h3 className={`mb-1 ${FIELD_LABEL}`}>Facilities Available</h3>
-              <p className="text-[14px] font-normal leading-5 text-[#666]">
+              <h3 className="input-heading mb-1">Facilities Available</h3>
+              <p className="form-helper-text mt-1 text-[14px] leading-5">
                 Add facilities available at your venue that helps customers know more about the space.
               </p>
 
               <Button
                 type="button"
                 onClick={() => setIsFacilitiesDrawerOpen(true)}
-                className={`mt-3 ${PRIMARY_ACTION_BTN}`}
+                className="page-primary-button-action mt-3 h-[34px]"
               >
                 <span aria-hidden className="text-[16px] leading-none">
                   +
@@ -711,10 +712,10 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
             </div>
 
             <div>
-              <h3 className={`mb-4 ${FIELD_LABEL}`}>Accessibility Audit</h3>
+              <h3 className="input-heading mb-4">Accessibility Audit</h3>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <p className={`mb-3 ${FIELD_LABEL}`}>Accessible Entrance</p>
+                  <p className="input-heading mb-3">Accessible Entrance</p>
                   <YesNoRadios
                     name="accessibleEntrance"
                     value={values.accessible_entrance}
@@ -722,7 +723,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
                   />
                 </div>
                 <div>
-                  <p className={`mb-3 ${FIELD_LABEL}`}>Accessible Toilets</p>
+                  <p className="input-heading mb-3">Accessible Toilets</p>
                   <YesNoRadios
                     name="accessibleToilets"
                     value={values.accessible_toilet}
@@ -730,7 +731,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
                   />
                 </div>
                 <div>
-                  <p className={`mb-3 ${FIELD_LABEL}`}>Wheelchair Access</p>
+                  <p className="input-heading mb-3">Wheelchair Access</p>
                   <YesNoRadios
                     name="wheelchairAccess"
                     value={values.wheelchair_access}
@@ -745,42 +746,33 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
         <section id="detailed-logistics" className={SECTION_SCROLL_MT}>
           <SectionHeading>06 / Detailed Logistics</SectionHeading>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-            <InputField
-              as="textarea"
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 2xl:gap-6">
+            <RichTextEditor
+              id="venue-parking-information"
               label="Parking Information"
-              labelClassName={FIELD_LABEL}
-              name="parkingInformation"
-              rows={4}
-              value={values.parking_information}
-              onChange={(event) => patchValues({ parking_information: event.target.value })}
+              labelClassName="input-heading mb-2"
+              valueHtml={values.parking_information}
+              onChangeHtml={(html) => patchValues({ parking_information: html })}
               placeholder="Provide parking guidelines, spaces count, prices..."
-              className="px-4 text-[14px] placeholder:text-[#666]"
-              containerClassName="min-h-[113px] rounded-[4px] border-black"
+              minHeightClassName="min-h-[113px]"
             />
-            <InputField
-              as="textarea"
+            <RichTextEditor
+              id="venue-public-transport-information"
               label="Public Transport Information"
-              labelClassName={FIELD_LABEL}
-              name="publicTransportInformation"
-              rows={4}
-              value={values.public_transport_information}
-              onChange={(event) => patchValues({ public_transport_information: event.target.value })}
+              labelClassName="input-heading mb-2"
+              valueHtml={values.public_transport_information}
+              onChangeHtml={(html) => patchValues({ public_transport_information: html })}
               placeholder="Bus routes, closest train stations..."
-              className="px-4 text-[14px] placeholder:text-[#666]"
-              containerClassName="min-h-[113px] rounded-[4px] border-black"
+              minHeightClassName="min-h-[113px]"
             />
-            <InputField
-              as="textarea"
+            <RichTextEditor
+              id="venue-travel-information"
               label="Travel Information"
-              labelClassName={FIELD_LABEL}
-              name="travelInformation"
-              rows={4}
-              value={values.travel_information}
-              onChange={(event) => patchValues({ travel_information: event.target.value })}
+              labelClassName="input-heading mb-2"
+              valueHtml={values.travel_information}
+              onChangeHtml={(html) => patchValues({ travel_information: html })}
               placeholder="General driving routes, local landmarks..."
-              className="px-4 text-[14px] placeholder:text-[#666]"
-              containerClassName="min-h-[113px] rounded-[4px] border-black"
+              minHeightClassName="min-h-[113px]"
             />
           </div>
         </section>
@@ -790,7 +782,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
 
           <div className="space-y-6">
             <div>
-              <p className={`mb-3 ${FIELD_LABEL}`}>Private Hire Available</p>
+              <p className="input-heading mb-3">Private Hire Available</p>
               <YesNoRadios
                 name="privateHire"
                 value={values.is_private_hire_available}
@@ -799,15 +791,15 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
             </div>
 
             <div>
-              <p className={FIELD_LABEL}>Suitable For Events Like</p>
-              <p className="mt-1 text-[14px] font-normal leading-5 text-[#666]">
+              <p className="input-heading">Suitable For Events Like</p>
+              <p className="form-helper-text mt-1 text-[14px] leading-5">
                 Choose what this venue is suitable for so customers can find the right space.
               </p>
 
               <Button
                 type="button"
                 onClick={() => setIsSuitableForDrawerOpen(true)}
-                className={`mt-3 ${PRIMARY_ACTION_BTN}`}
+                className="page-primary-button-action mt-3 h-[34px]"
               >
                 <span aria-hidden className="text-[16px] leading-none">
                   +
@@ -844,17 +836,14 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
               ) : null}
             </div>
 
-            <InputField
-              as="textarea"
+            <RichTextEditor
+              id="venue-private-hire-description"
               label="Private Hire Description"
-              labelClassName={FIELD_LABEL}
-              name="privateHireDescription"
-              rows={4}
-              value={values.private_hire_description}
-              onChange={(event) => patchValues({ private_hire_description: event.target.value })}
+              labelClassName="input-heading mb-2"
+              valueHtml={values.private_hire_description}
+              onChangeHtml={(html) => patchValues({ private_hire_description: html })}
               placeholder="Describe fees, hourly rates, catering terms..."
-              className="px-4 text-[14px] placeholder:text-[#666]"
-              containerClassName="min-h-[95px] rounded-[4px] border-black"
+              minHeightClassName="min-h-[95px]"
             />
           </div>
         </section>
@@ -863,7 +852,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           <SectionHeading>08 / Venue Status</SectionHeading>
 
           <div>
-            <p className={`mb-3 ${FIELD_LABEL}`}>
+            <p className="input-heading mb-3">
               Status <span className="text-[11px] font-normal">*</span>
             </p>
             <div className="flex flex-wrap items-center gap-x-10 gap-y-3 sm:gap-x-[60px]">
@@ -892,11 +881,11 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
         </section>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-5 flex flex-col gap-3 border-t border-black bg-white px-5 py-4 sm:-mx-8 sm:flex-row sm:items-center sm:justify-end sm:gap-4 sm:px-8">
+      <div className="form-footer-bar -mx-5 sm:-mx-8 sm:px-8">
         <Button
           type="button"
           onClick={() => router.push("/venues")}
-          className={`${FOOTER_BTN_BASE} bg-white text-black hover:bg-black hover:text-white`}
+          className="form-footer-btn form-footer-btn-secondary"
         >
           Cancel
         </Button>
@@ -904,7 +893,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           type="button"
           disabled={!canSubmit}
           onClick={() => void submitForm("draft")}
-          className={`${FOOTER_BTN_BASE} bg-white text-black hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black`}
+          className="form-footer-btn form-footer-btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
         >
           Draft
         </Button>
@@ -912,7 +901,7 @@ export function VenueForm({ mode, venueId }: VenueFormProps) {
           type="button"
           disabled={!canSubmit}
           onClick={() => void submitForm(values.status === "inactive" ? "inactive" : "active")}
-          className={`${FOOTER_BTN_BASE} bg-black text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+          className="form-footer-btn form-footer-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving ? "Saving..." : isEdit ? "Save Changes" : "Publish"}
         </Button>

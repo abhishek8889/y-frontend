@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { OrganiserModal } from "@/components/organiser/OrganiserModal";
+import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
 import AboutUsTab from "./tabs/AboutUsTab";
@@ -60,30 +62,25 @@ function writeStoredSite(site: SiteRecord | null) {
 
 function SiteEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <section
-      aria-label="Site empty state"
-      className="flex min-h-[min(70vh,620px)] flex-col items-center justify-center px-6 text-center"
-    >
-      <div className="flex h-16 w-16 items-center justify-center rounded-[8px] border border-black/40 bg-black/[0.03]">
-        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" className="h-8 w-8 text-black">
+    <section aria-label="Site empty state" className="site-create-empty">
+      <div className="site-create-empty-icon">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true" width="32" height="32">
           <rect x="4" y="7" width="24" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
           <path d="M4 12h24M12 7v18" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       </div>
-      <h1 className="mt-5 text-[28px] font-black uppercase leading-7 text-black">No site yet</h1>
-      <p className="mt-2 max-w-[420px] text-[14px] leading-5 text-[#6F6E69]">
+      <h1 className="site-create-empty-title">No site yet</h1>
+      <p className="site-create-empty-copy">
         Create your branded site to manage domain, branding, hero, events, news, and contact pages.
       </p>
-      <button
-        type="button"
-        onClick={onCreate}
-        className="mt-5 inline-flex h-[44px] items-center gap-2 rounded-[3px] border border-black bg-black px-5 text-[13px] uppercase text-white transition hover:bg-white hover:text-black"
-      >
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="h-3.5 w-3.5">
-          <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        Create New Site
-      </button>
+      <div className="site-create-empty-action">
+        <Button type="button" onClick={onCreate} className="page-primary-button-action">
+          <span aria-hidden className="text-[18px] leading-none">
+            +
+          </span>
+          Create New Site
+        </Button>
+      </div>
     </section>
   );
 }
@@ -106,8 +103,6 @@ function CreateSiteDialog({
     setError("");
   }, [open]);
 
-  if (!open) return null;
-
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = name.trim();
@@ -119,42 +114,29 @@ function CreateSiteDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") onClose();
-      }}
+    <OrganiserModal
+      open={open}
+      onClose={onClose}
+      showClose
+      titleId="create-site-title"
+      panelClassName="max-w-[520px]"
     >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-site-title"
-        className="w-full max-w-[520px] border border-black/70 bg-white shadow-xl"
-      >
-        <header className="flex items-center justify-between border-b border-black/60 px-5 py-4">
+      <div className="site-create-modal">
+        <header className="site-create-modal-header">
           <div>
-            <h2 id="create-site-title" className="text-[18px] font-black uppercase leading-6">
+            <h2 id="create-site-title" className="site-create-modal-title">
               Create New Site
             </h2>
-            <p className="mt-1 text-[13px] text-[#777]">Name your site, then set up each section.</p>
+            <p className="site-create-modal-subtitle">
+              Name your site, then set up each section.
+            </p>
           </div>
-          <button
-            type="button"
-            aria-label="Close create site"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center text-[22px] leading-none hover:bg-black/5"
-          >
-            ×
-          </button>
         </header>
-        <form onSubmit={submit} className="space-y-5 px-5 py-5">
+        <form onSubmit={submit} className="site-create-modal-body">
           <InputField
             id="site-name"
             label="Site name *"
-            labelClassName="!text-[14px] !mb-[6px]"
+            labelClassName="input-heading"
             required
             value={name}
             onChange={(event) => {
@@ -162,32 +144,60 @@ function CreateSiteDialog({
               setError("");
             }}
             placeholder="e.g. Hednesford Town"
-            density="compact"
-            containerClassName="!h-[42px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px] normal-case"
           />
           {error ? (
-            <p role="alert" className="text-[12px] text-red-600">
+            <p role="alert" className="site-error">
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-[40px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[12px] uppercase hover:bg-black hover:text-white"
-            >
+          <div className="site-create-modal-footer">
+            <Button type="button" onClick={onClose} className="form-footer-btn form-footer-btn-secondary">
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="h-[40px] min-w-[112px] rounded-[3px] border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black"
-            >
+            </Button>
+            <Button type="submit" className="form-footer-btn form-footer-btn-primary">
               Create Site
-            </button>
+            </Button>
           </div>
         </form>
-      </section>
+      </div>
+    </OrganiserModal>
+  );
+}
+
+function ConnectivityStatus({
+  connectedDomain,
+  detailed,
+}: {
+  connectedDomain: string;
+  detailed?: boolean;
+}) {
+  if (detailed) {
+    return (
+      <div className="site-connectivity">
+        <span className="site-connectivity-label">Status</span>
+        <span className="site-connectivity-divider" />
+        <span className="site-status-dot site-status-dot-ok" aria-hidden="true" />
+        <span className="site-connectivity-copy">
+          Connectivity Secured
+          <br />
+          <span className="site-connectivity-note">Global nameservers verified</span>
+        </span>
+        <span className="site-connectivity-active">● ACTIVE</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="site-connectivity">
+      <span className="site-connectivity-label">Status</span>
+      <span className="site-connectivity-divider" />
+      <span
+        className={`site-status-dot ${
+          connectedDomain ? "site-status-dot-warn" : "site-status-dot-bad"
+        }`}
+        aria-hidden="true"
+      />
+      <span>{connectedDomain ? "Domain setup pending" : "Website not live"}</span>
     </div>
   );
 }
@@ -228,30 +238,32 @@ export default function SitePage() {
 
   if (!ready) {
     return (
-      <DashboardShell header={<DashboardHeader userName="MARVIN" />} sidebar={<DashboardSidebar />}>
-        <main className="flex min-h-full items-center justify-center bg-white text-[13px] text-[#777]">
-          Loading site…
-        </main>
+      <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
+        <div className="site-loading">Loading site…</div>
       </DashboardShell>
     );
   }
 
   if (!site) {
     return (
-      <DashboardShell header={<DashboardHeader userName="MARVIN" />} sidebar={<DashboardSidebar />}>
-        <main className="min-h-full bg-white">
+      <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
+        <div className="page-content">
           <SiteEmptyState onCreate={() => setCreateOpen(true)} />
-          <CreateSiteDialog open={createOpen} onClose={() => setCreateOpen(false)} onCreate={createSite} />
-        </main>
+          <CreateSiteDialog
+            open={createOpen}
+            onClose={() => setCreateOpen(false)}
+            onCreate={createSite}
+          />
+        </div>
       </DashboardShell>
     );
   }
 
   return (
-    <DashboardShell header={<DashboardHeader userName="MARVIN" />} sidebar={<DashboardSidebar />}>
-      <main className="flex min-h-full bg-white">
-        <aside className="hidden w-[210px] shrink-0 border-r border-black/60 bg-white md:block" aria-label="Site sections">
-          <nav className="flex flex-col gap-1 px-4 py-5">
+    <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
+      <div className="site-workspace">
+        <aside className="site-sidebar" aria-label="Site sections">
+          <nav className="site-sidebar-nav">
             {siteSections.map((section) => (
               <button
                 key={section}
@@ -259,11 +271,11 @@ export default function SitePage() {
                 aria-current={activeSection === section ? "page" : undefined}
                 onClick={() => selectSection(section)}
                 className={[
-                  "h-[36px] cursor-pointer rounded-[3px] px-2 text-left text-[16px] transition",
-                  activeSection === section
-                    ? "border border-black/70 bg-white text-black"
-                    : "text-black/85 hover:bg-black/5",
-                ].join(" ")}
+                  "site-sidebar-item",
+                  activeSection === section ? "site-tab-active" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {section}
               </button>
@@ -271,26 +283,16 @@ export default function SitePage() {
           </nav>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/60 px-5 py-3 md:px-5">
+        <div className="site-main">
+          <header className="site-toolbar">
             <div>
-              <h1 className="text-[26px] font-black uppercase leading-6 text-black">Your Site</h1>
-              <p className="mt-1 text-[14px] text-[#6F6E69]">{site.name}</p>
+              <h1 className="site-toolbar-title">Your Site</h1>
+              <p className="site-toolbar-subtitle">{site.name}</p>
             </div>
             {isBrandingTab ? (
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="inline-flex h-[36px] items-center border border-black/50 px-3 text-[10px]">
-                  <span className="font-bold uppercase">Status</span>
-                  <span className="mx-3 h-5 border-l border-black/20" />
-                  <span className="mr-2 h-2 w-2 rounded-full bg-[#2dbb5a]" />
-                  <span className="leading-tight">
-                    Connectivity Secured
-                    <br />
-                    <span className="text-[9px] text-[#777]">Global nameservers verified</span>
-                  </span>
-                  <span className="ml-3 font-bold text-[#138a3d]">● ACTIVE</span>
-                </div>
-                <button
+              <div className="site-toolbar-actions">
+                <ConnectivityStatus connectedDomain={connectedDomain} detailed />
+                <Button
                   type="button"
                   onClick={() => {
                     setActiveSection("Domain");
@@ -301,30 +303,25 @@ export default function SitePage() {
                     );
                     setPageNotice("");
                   }}
-                  className="h-[34px] border border-black/70 bg-white px-3 text-[10px] uppercase hover:bg-black hover:text-white"
+                  className="page-secondary-button"
                 >
                   View DNS
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={() => setPageNotice("Connect a domain before previewing the site.")}
-                  className="h-[34px] border border-black bg-black px-3 text-[10px] uppercase text-white hover:bg-white hover:text-black"
+                  className="page-primary-button-action"
                 >
                   Preview website
-                </button>
+                </Button>
               </div>
             ) : (
-              <div className="inline-flex h-[36px] items-center border border-black/50 px-3 text-[10px]">
-                <span className="font-bold uppercase">Status</span>
-                <span className="mx-3 h-5 border-l border-black/20" />
-                <span className={`mr-2 h-2 w-2 rounded-full ${connectedDomain ? "bg-[#e7a600]" : "bg-[#f04444]"}`} />
-                <span>{connectedDomain ? "Domain setup pending" : "Website not live"}</span>
-              </div>
+              <ConnectivityStatus connectedDomain={connectedDomain} />
             )}
           </header>
 
           <section
-            className="min-w-0 flex-1 p-[24px]"
+            className="site-panel"
             aria-label={
               activeSection === "News"
                 ? "Site news"
@@ -333,21 +330,19 @@ export default function SitePage() {
                   : `Site ${activeSection}`
             }
           >
-            <div className="mb-4 block md:hidden">
+            <div className="site-mobile-nav">
               <SelectField
                 id="site-section-select"
                 aria-label="Site section"
+                labelClassName="input-heading"
                 value={activeSection}
                 onChange={(event) => selectSection(event.target.value as SiteSection)}
-                density="compact"
-                containerClassName="!h-9"
-                className="!rounded-[3px] !border-black/60 !px-2 !text-[12px]"
                 options={siteSections.map((section) => ({ value: section, label: section }))}
               />
             </div>
 
             {pageNotice ? (
-              <p role="status" className="mt-3 text-[11px] text-[#666]">
+              <p role="status" className="site-notice">
                 {pageNotice}
               </p>
             ) : null}
@@ -382,7 +377,7 @@ export default function SitePage() {
             </div>
           </section>
         </div>
-      </main>
+      </div>
     </DashboardShell>
   );
 }

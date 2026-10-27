@@ -7,7 +7,14 @@ import homeHeroImage from "@/assets/home-hero.jpg";
 import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
 import { EventCard } from "@/components/public/EventCard";
 import { PUBLIC_SEARCH_EVENT } from "@/components/public/PublicSiteHeader";
+import { SelectField } from "@/components/ui/SelectField";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
+
+const SORT_OPTIONS = [
+  { value: "featured", label: "Featured" },
+  { value: "oldest", label: "Oldest" },
+  { value: "name", label: "Name" },
+];
 
 function scrollToEvents() {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
@@ -160,22 +167,19 @@ export default function HomePage() {
               ? "Loading events…"
               : `${sortedEvents.length} Event${sortedEvents.length === 1 ? "" : "s"}`}
           </p>
-          <label className="relative flex items-center text-[11.6px] uppercase leading-[15.6px] tracking-[0.36px]">
-            Sort by
-            <select
-              aria-label="Sort events"
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
-              className="absolute inset-0 cursor-pointer opacity-0"
-            >
-              <option value="featured">Featured</option>
-              <option value="oldest">Oldest</option>
-              <option value="name">Name</option>
-            </select>
-            <span className="pointer-events-none inline-flex rotate-90">
-              <img src="/landing/sort-chevron.svg" width={28.37} height={28} alt="" />
-            </span>
-          </label>
+          <SelectField
+            name="eventSort"
+            aria-label="Sort events"
+            label="Sort by"
+            labelClassName="!mb-0 shrink-0 !text-[11.6px] !font-normal !uppercase !leading-[15.6px] !tracking-[0.36px]"
+            value={sortBy}
+            options={SORT_OPTIONS}
+            density="compact"
+            onChange={(event) => setSortBy(event.target.value)}
+            wrapperClassName="!flex-row !items-center !gap-2"
+            containerClassName="!h-[32px] min-w-[128px] !rounded-[3px] !border-black"
+            className="!h-[32px] !text-[11.6px] !uppercase !tracking-[0.36px]"
+          />
         </div>
 
         {isError ? (

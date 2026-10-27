@@ -12,10 +12,12 @@ import {
 } from "@/apis/events/eventsApi";
 import { useUploadMediaMutation } from "@/apis/media/mediaApi";
 import { useGetVenuesForEventsQuery } from "@/apis/organisation/venuesApi";
+import { FormSectionTabs } from "@/components/organiser/FormSectionTabs";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
 import { appToast } from "@/lib/ui/toast";
+import { isVenueVideoMedia } from "@/components/organiser/venues/venueFormHelpers";
 import {
   buildEventPayload,
   createEmptyEventFormValues,
@@ -52,8 +54,8 @@ type EventFormProps = {
 
 function FormSectionHeader({ title }: { title: string }) {
   return (
-    <div className="mb-10 flex items-center justify-between border-b border-black/100 pb-1">
-      <h2 className="text-[24px] font-black uppercase tracking-[-0.05em] text-black">{title}</h2>
+    <div className="section-heading mb-10">
+      <h2 className="section-title">{title}</h2>
     </div>
   );
 }
@@ -71,12 +73,10 @@ function UploadPlaceholder({ uploading }: { uploading?: boolean }) {
           />
         </svg>
       </div>
-      <p className="text-[14px] font-bold leading-none text-black">
-        {uploading ? "Uploading..." : "Drag and drop image file here"}
+      <p className="input-heading mb-0 text-center">
+        {uploading ? "Uploading..." : "Drag and drop image or video here"}
       </p>
-      <p className="mt-[15px] text-center text-[12px] font-light uppercase leading-[16px] text-[#939393]">
-        PNG, JPG, up to 10MB
-      </p>
+      <p className="form-upload-hint">PNG, JPG, MP4, MOV up to 10MB</p>
     </>
   );
 }
@@ -184,11 +184,15 @@ export function EventForm({ mode, eventId }: EventFormProps) {
     setUploadingBanner(true);
     try {
       const result = await uploadMedia({ file, context: "event-banner" }).unwrap();
+      const mime = result.data.mime ?? file.type ?? null;
       patchValues({
         banner: {
           path: result.data.path,
           url: result.data.url,
           alt_text: "banner",
+          mime,
+          media_type:
+            mime?.startsWith("video/") || file.type.startsWith("video/") ? "video" : "image",
         },
       });
     } catch {
@@ -217,10 +221,14 @@ export function EventForm({ mode, eventId }: EventFormProps) {
       const uploaded: EventFormImage[] = [];
       for (const file of selected) {
         const result = await uploadMedia({ file, context: "event-gallery" }).unwrap();
+        const mime = result.data.mime ?? file.type ?? null;
         uploaded.push({
           path: result.data.path,
           url: result.data.url,
           alt_text: "gallery",
+          mime,
+          media_type:
+            mime?.startsWith("video/") || file.type.startsWith("video/") ? "video" : "image",
         });
       }
       setValues((current) => ({
@@ -290,30 +298,13 @@ export function EventForm({ mode, eventId }: EventFormProps) {
 
   return (
     <div>
-      <div className="sticky top-0 z-20 -mx-5 mt-5 border-b border-black bg-white px-5 md:-mx-8 md:mt-[27px] md:px-8">
-        <nav
-          aria-label="Event form sections"
-          className="-mb-px flex gap-4 overflow-x-auto [scrollbar-width:none] sm:gap-6 [&::-webkit-scrollbar]:hidden"
-        >
-          {sectionTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <a
-                key={tab.id}
-                href={`#${tab.id}`}
-                onClick={() => setActiveTab(tab.id)}
-                className={`font-heading inline-flex shrink-0 items-center border-b px-3 py-2.5 text-[13px] font-bold uppercase leading-5 transition sm:px-4 sm:text-[14px] ${
-                  isActive
-                    ? "border-black text-black"
-                    : "border-transparent text-[#949494] hover:text-black"
-                }`}
-              >
-                {tab.label}
-              </a>
-            );
-          })}
-        </nav>
-      </div>
+      <FormSectionTabs
+        tabs={sectionTabs}
+        activeTabId={activeTab}
+        ariaLabel="Event form sections"
+        mode="anchor"
+        onTabSelect={setActiveTab}
+      />
 
       <div className="space-y-10 pb-12 pt-8">
         <section id="event-details" className="scroll-mt-24">
@@ -327,7 +318,6 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                 value={values.name}
                 onChange={(event) => patchValues({ name: event.target.value })}
                 placeholder="e.g. Keys Corner Comedy Night"
-                containerClassName="rounded-[4px] border-black"
               />
 
               <div className="space-y-3">
@@ -338,14 +328,13 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                   onChange={(event) => patchValues({ event_category_id: event.target.value })}
                   options={categoryOptions}
                   disabled={isLoadingCategories}
-                  className="h-[46px] rounded-[4px] border-black text-[14px]"
                 />
 
                 {!showCustomCategory ? (
                   <Button
                     type="button"
                     onClick={() => setShowCustomCategory(true)}
-                    className="h-[40px] w-full rounded-[4px] border border-black bg-white px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-black transition hover:bg-black/5 sm:w-auto"
+                    className="page-secondary-button w-full sm:w-auto"
                   >
                     + Create Custom Category
                   </Button>
@@ -358,7 +347,6 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                         value={customCategoryName}
                         onChange={(event) => setCustomCategoryName(event.target.value)}
                         placeholder="e.g. Esports Night"
-                        containerClassName="rounded-[4px] border-black"
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
                             event.preventDefault();
@@ -375,7 +363,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                           setShowCustomCategory(false);
                           setCustomCategoryName("");
                         }}
-                        className="h-[48px] rounded-[4px] border border-black bg-white px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-black disabled:opacity-60"
+                        className="form-footer-btn form-footer-btn-secondary disabled:opacity-60"
                       >
                         Cancel
                       </Button>
@@ -383,7 +371,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                         type="button"
                         disabled={isCreatingCategory}
                         onClick={() => void handleCreateCustomCategory()}
-                        className="h-[48px] rounded-[4px] border border-black bg-black px-4 text-[12px] font-bold uppercase tracking-[0.08em] text-white disabled:opacity-60"
+                        className="form-footer-btn form-footer-btn-primary disabled:opacity-60"
                       >
                         {isCreatingCategory ? "Saving..." : "Save"}
                       </Button>
@@ -400,23 +388,30 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                 value={values.description}
                 onChange={(event) => patchValues({ description: event.target.value })}
                 placeholder="Provide a detailed description of the event, scheduled performances, lineup, and custom rules..."
-                containerClassName="min-h-[140px] rounded-[4px] border-black"
               />
             </div>
 
             <div className="flex min-h-0 flex-col xl:h-full">
-              <p className="mb-2 shrink-0 text-[12px] font-bold uppercase tracking-[0.12em] text-black">
-                Featured Image / Video
-              </p>
-              <div className="relative min-h-[220px] flex-1 overflow-hidden rounded-[4px] border-[1.5px] border-dashed border-black/60 bg-white xl:min-h-0">
+              <p className="input-heading mb-2 shrink-0">Featured Image / Video</p>
+              <div className="form-upload-box xl:min-h-0">
                 {values.banner?.url ? (
                   <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={values.banner.url}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                    {isVenueVideoMedia(values.banner) ? (
+                      <video
+                        src={values.banner.url}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={values.banner.url}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
                     <button
                       type="button"
                       aria-label="Remove featured image"
@@ -448,14 +443,12 @@ export function EventForm({ mode, eventId }: EventFormProps) {
             </div>
 
             <div className="flex min-h-0 flex-col xl:h-full">
-              <p className="mb-2 shrink-0 text-[12px] font-bold uppercase tracking-[0.12em] text-black">
-                Add Multiple Event Images / Videos
-              </p>
+              <p className="input-heading mb-2 shrink-0">Add Multiple Event Images / Videos</p>
               <div className="flex min-h-[220px] flex-1 flex-col gap-2 xl:min-h-0">
                 <label
                   htmlFor="event-gallery-upload"
                   className={[
-                    "flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[4px] border-[1.5px] border-dashed border-black/60 bg-white px-3 text-center",
+                    "form-upload-box cursor-pointer px-3",
                     values.gallery.length > 0
                       ? "h-1/2 min-h-[110px] xl:min-h-0"
                       : "min-h-[220px] flex-1 xl:min-h-0",
@@ -485,18 +478,28 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                           key={`${image.path}-${index}`}
                           className="relative h-full w-[30%] min-w-[88px] shrink-0 overflow-hidden rounded-[4px] border border-black/20 bg-black/5"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={image.url} alt="" className="h-full w-full object-cover" />
+                          {isVenueVideoMedia(image) ? (
+                            <video
+                              src={image.url}
+                              className="h-full w-full object-cover"
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={image.url} alt="" className="h-full w-full object-cover" />
+                          )}
                           <button
                             type="button"
-                            aria-label={`Remove gallery image ${index + 1}`}
+                            aria-label={`Remove gallery media ${index + 1}`}
                             onClick={() =>
                               setValues((current) => ({
                                 ...current,
                                 gallery: current.gallery.filter((_, itemIndex) => itemIndex !== index),
                               }))
                             }
-                            className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[12px] leading-none text-black shadow"
+                            className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[12px] leading-none text-black shadow"
                           >
                             ×
                           </button>
@@ -521,7 +524,6 @@ export function EventForm({ mode, eventId }: EventFormProps) {
               onChange={(event) => handleVenueChange(event.target.value)}
               options={venueOptions}
               disabled={isLoadingVenues}
-              className="h-[46px] rounded-[4px] border-black text-[14px]"
             />
 
             <InputField
@@ -530,7 +532,6 @@ export function EventForm({ mode, eventId }: EventFormProps) {
               value={values.capacity}
               onChange={(event) => patchValues({ capacity: event.target.value })}
               placeholder="Enter number"
-              containerClassName="rounded-[4px] border-black"
             />
           </div>
         </section>
@@ -561,9 +562,9 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                 name="timezone"
                 value={values.timezone}
                 readOnly
-                containerClassName="rounded-[4px] border-black bg-black/[0.02]"
+                containerClassName="bg-black/[0.02]"
               />
-              <p className="mt-1 text-[12px] text-black/50">
+              <p className="form-helper-text">
                 Detected from your local region. Times are entered locally and sent to the API as UTC.
               </p>
             </div>
@@ -576,17 +577,16 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                 patchValues({ status: toEventLifecycleStatus(event.target.value) })
               }
               options={isEdit ? EDIT_STATUS_OPTIONS : CREATE_STATUS_OPTIONS}
-              className="h-[46px] rounded-[4px] border-black text-[14px]"
             />
           </div>
         </section>
       </div>
 
-      <div className="flex items-center justify-end gap-3 border-t border-black/30 pt-4">
+      <div className="form-footer-bar -mx-5 sm:-mx-8 sm:px-8">
         <Button
           type="button"
           onClick={() => router.push("/events")}
-          className="h-[42px] min-w-[120px] cursor-pointer rounded-[4px] border border-black bg-white px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-black"
+          className="form-footer-btn form-footer-btn-secondary"
         >
           Cancel
         </Button>
@@ -594,7 +594,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
           type="button"
           disabled={!canSubmit}
           onClick={() => void submitForm()}
-          className="h-[42px] min-w-[120px] cursor-pointer rounded-[4px] border border-black bg-black px-5 text-[12px] font-bold uppercase tracking-[0.12em] text-white disabled:opacity-50"
+          className="form-footer-btn form-footer-btn-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving ? "Saving..." : isEdit ? "Save" : "Create"}
         </Button>

@@ -218,7 +218,7 @@ export function ActionMenu<T>({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.04] text-[18px] leading-none text-black transition hover:bg-black/10"
+        className="flex size-[27px] items-center justify-center rounded-[5px] text-[16px] leading-none text-black transition hover:bg-black/[0.04]"
       >
         ⋮
       </button>

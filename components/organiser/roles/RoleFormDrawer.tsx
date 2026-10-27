@@ -36,7 +36,7 @@ function toNumericPermissionIds(
 
 function RoleLogo() {
   return (
-    <span className="flex h-10 w-10 items-center justify-center rounded-[4px] border border-black bg-white">
+    <span className="role-form-logo">
       <IconCard name={ROLES_PERMISSION_ICON} className="h-5 w-5" />
     </span>
   );
@@ -235,51 +235,53 @@ export function RoleFormDrawer({ isOpen, roleId, onClose, onSaved }: RoleFormDra
         void handleSubmit();
       }}
       isSubmitting={isSavingRole}
-      panelClassName="max-w-[640px]"
+      panelClassName="!max-w-[640px]"
     >
       {isEditDialogLoading ? (
-        <p className="py-6 text-[13px] text-black/55">Loading role details...</p>
+        <p className="role-form-state">Loading role details...</p>
       ) : null}
       {isEdit && isRoleDetailsError ? (
-        <p className="py-6 text-[13px] text-[#d32f2f]">Unable to load role details.</p>
+        <p className="role-form-state role-form-state-error">Unable to load role details.</p>
       ) : null}
 
       {!isEditDialogLoading && !(isEdit && isRoleDetailsError) ? (
-        <div className="space-y-4">
+        <div className="role-form">
           <InputField
             label="Role name *"
-            labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
             id="role-name"
             autoFocus
             required
             value={roleName}
             onChange={(event) => setRoleName(event.target.value)}
             placeholder="Enter role name"
-            density="compact"
+            labelClassName="input-heading"
           />
 
           <InputField
             as="textarea"
             label="Role description"
-            labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
             id="role-description"
             rows={3}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Provide a description of the role..."
+            labelClassName="input-heading"
+            containerClassName="role-form-textarea"
           />
 
           <div>
-            <h3 className="text-[14px] font-bold uppercase">Permissions</h3>
-            <div className="mt-2.5 space-y-2.5">
+            <h3 className="role-form-section-title">Permissions</h3>
+            <div className="role-permission-list">
               {isPermissionsLoading ? (
-                <p className="px-1 py-4 text-[13px] text-black/55">Loading permissions...</p>
+                <p className="role-form-state">Loading permissions...</p>
               ) : null}
               {isPermissionsError ? (
-                <p className="px-1 py-4 text-[13px] text-[#d32f2f]">Unable to load permissions.</p>
+                <p className="role-form-state role-form-state-error">
+                  Unable to load permissions.
+                </p>
               ) : null}
               {!isPermissionsLoading && !isPermissionsError && permissionGroups.length === 0 ? (
-                <p className="px-1 py-4 text-[13px] text-black/55">No permissions available.</p>
+                <p className="role-form-state">No permissions available.</p>
               ) : null}
               {!isPermissionsLoading && !isPermissionsError
                 ? permissionGroups.map((group) => {
@@ -292,11 +294,8 @@ export function RoleFormDrawer({ isOpen, roleId, onClose, onSaved }: RoleFormDra
                       groupPermissionIds.every((id) => selectedPermissions.includes(id));
 
                     return (
-                      <section
-                        key={group.module}
-                        className="overflow-hidden rounded-[4px] border border-black/60"
-                      >
-                        <div className="flex min-h-[48px] items-center gap-2 px-2.5 py-2">
+                      <section key={group.module} className="role-permission-group">
+                        <div className="role-permission-group-header">
                           <input
                             type="checkbox"
                             checked={groupChecked}
@@ -304,20 +303,17 @@ export function RoleFormDrawer({ isOpen, roleId, onClose, onSaved }: RoleFormDra
                               togglePermissionGroupSelection(group.module, groupPermissionIds)
                             }
                             aria-label={`Select all ${group.label} permissions`}
-                            className="h-[13px] w-[13px] shrink-0 accent-black"
                           />
                           <button
                             type="button"
                             onClick={() => togglePermissionGroup(group.module)}
                             aria-expanded={groupExpanded}
-                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                            className="role-permission-group-toggle"
                           >
                             <span className="min-w-0">
-                              <span className="block text-[16px] font-bold leading-5 text-[#111827]">
-                                {group.label}
-                              </span>
+                              <span className="role-permission-group-label">{group.label}</span>
                               {group.description ? (
-                                <span className="mt-0.5 block text-[14px] leading-4 text-[#6B7280]">
+                                <span className="role-permission-group-desc">
                                   {group.description}
                                 </span>
                               ) : null}
@@ -326,7 +322,9 @@ export function RoleFormDrawer({ isOpen, roleId, onClose, onSaved }: RoleFormDra
                               viewBox="0 0 20 20"
                               fill="none"
                               aria-hidden="true"
-                              className={`h-3 w-3 shrink-0 transition-transform ${groupExpanded ? "rotate-180" : ""}`}
+                              className={`role-permission-chevron ${
+                                groupExpanded ? "role-permission-chevron-open" : ""
+                              }`}
                             >
                               <path
                                 d="m5 7.5 5 5 5-5"
@@ -339,17 +337,13 @@ export function RoleFormDrawer({ isOpen, roleId, onClose, onSaved }: RoleFormDra
                           </button>
                         </div>
                         {groupExpanded ? (
-                          <div className="flex flex-wrap gap-x-4 gap-y-2 px-2.5 pb-2.5 pl-3 pt-[8px]">
+                          <div className="role-permission-items">
                             {group.permissions.map((permission) => (
-                              <label
-                                key={permission.id}
-                                className="inline-flex items-center gap-1.5 text-[14px] leading-5 text-[#111827]"
-                              >
+                              <label key={permission.id} className="role-permission-item">
                                 <input
                                   type="checkbox"
                                   checked={selectedPermissions.includes(permission.id)}
                                   onChange={() => togglePermission(permission.id)}
-                                  className="h-[13px] w-[13px] accent-black"
                                 />
                                 {permission.label}
                               </label>

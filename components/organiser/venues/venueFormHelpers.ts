@@ -1,11 +1,20 @@
 import type { Venue, VenuePayload } from "@/apis/organisation/venuesApi";
+import { isVideoMedia, type MediaLike } from "@/lib/media/isVideoMedia";
 
 export type VenueFormImage = {
   id?: number;
   path: string;
   url: string;
   alt_text?: string | null;
+  /** Present after upload / API; used to choose image vs video preview. */
+  mime?: string | null;
+  media_type?: "image" | "video" | string | null;
 };
+
+/** True when media_type/mime/URL indicates video. */
+export function isVenueVideoMedia(media: MediaLike | null | undefined) {
+  return isVideoMedia(media);
+}
 
 export type VenueFormValues = {
   name: string;
@@ -114,13 +123,22 @@ export function mapVenueToFormValues(venue: Venue): VenueFormValues {
     facility_ids: (venue.facilities ?? []).map((facility) => facility.id),
     suitable_for_option_ids: (venue.suitable_for_options ?? []).map((option) => option.id),
     banner: bannerImage
-      ? { id: bannerImage.id, path: bannerImage.path, url: bannerImage.url, alt_text: bannerImage.alt_text }
+      ? {
+          id: bannerImage.id,
+          path: bannerImage.path,
+          url: bannerImage.url,
+          alt_text: bannerImage.alt_text,
+          mime: bannerImage.mime ?? null,
+          media_type: bannerImage.media_type ?? null,
+        }
       : null,
     gallery: galleryImages.slice(0, 4).map((image) => ({
       id: image.id,
       path: image.path,
       url: image.url,
       alt_text: image.alt_text,
+      mime: image.mime ?? null,
+      media_type: image.media_type ?? null,
     })),
   };
 }
@@ -153,11 +171,23 @@ function hasAnyContact(values: VenueFormValues) {
   );
 }
 
+/** Treat empty / placeholder-only rich text as blank. */
+export function normalizeRichTextHtml(html: string | null | undefined) {
+  const trimmed = String(html ?? "").trim();
+  if (!trimmed) return null;
+  const textOnly = trimmed
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+  return textOnly ? trimmed : null;
+}
+
 function hasAnyLogistics(values: VenueFormValues) {
   return Boolean(
-    values.parking_information.trim() ||
-      values.public_transport_information.trim() ||
-      values.travel_information.trim(),
+    normalizeRichTextHtml(values.parking_information) ||
+      normalizeRichTextHtml(values.public_transport_information) ||
+      normalizeRichTextHtml(values.travel_information),
   );
 }
 
@@ -206,13 +236,13 @@ export function buildVenuePayload(
   const payload: VenuePayload = {
     name: values.name.trim(),
     venue_type_id: values.venue_type_id ? Number(values.venue_type_id) : null,
-    description: values.description.trim() || null,
+    description: normalizeRichTextHtml(values.description),
     maximum_capacity: parseOptionalInt(values.maximum_capacity),
     standing_capacity: parseOptionalInt(values.standing_capacity),
     seated_capacity: parseOptionalInt(values.seated_capacity),
     status: statusOverride ?? values.status,
     is_private_hire_available: values.is_private_hire_available,
-    private_hire_description: values.private_hire_description.trim() || null,
+    private_hire_description: normalizeRichTextHtml(values.private_hire_description),
     facility_ids: values.facility_ids,
     suitable_for_option_ids: values.suitable_for_option_ids,
     accessibility: {
@@ -246,9 +276,11 @@ export function buildVenuePayload(
 
   if (hasAnyLogistics(values)) {
     payload.logistics = {
-      parking_information: values.parking_information.trim() || null,
-      public_transport_information: values.public_transport_information.trim() || null,
-      travel_information: values.travel_information.trim() || null,
+      parking_information: normalizeRichTextHtml(values.parking_information),
+      public_transport_information: normalizeRichTextHtml(
+        values.public_transport_information,
+      ),
+      travel_information: normalizeRichTextHtml(values.travel_information),
     };
   }
 

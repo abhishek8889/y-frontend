@@ -42,6 +42,7 @@ export function DataTableToolbar({
   const hasFilters = enableFilters && filters.length > 0;
   const [searchFocused, setSearchFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchPlaceholder = search?.placeholder ?? "Search..";
 
   if (!hasSearch && !hasFilters && !toolbarExtra) return null;
 
@@ -64,11 +65,13 @@ export function DataTableToolbar({
         />
       ) : null}
 
-      <div className="datatable-toolbar relative z-[50] flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-5">
+      <div className="datatable-toolbar relative z-[50]">
         {hasSearch ? (
           <label
-            className={`flex h-11 min-w-0 flex-1 items-center gap-2.5 border-b border-black bg-white px-4 text-[#666] transition ${
-              searchFocused ? "relative z-[50] text-black shadow-[0_0_0_1px_black]" : "focus-within:text-black"
+            className={`datatable-search-bar ${
+              searchFocused
+                ? "relative z-[50] bg-white text-black shadow-[0_0_0_1px_black]"
+                : ""
             }`}
           >
             <button
@@ -99,9 +102,8 @@ export function DataTableToolbar({
                   dismissSearchFocus();
                 }
               }}
-              placeholder={search?.placeholder ?? "SEARCH"}
-              aria-label={search?.placeholder ?? "Search"}
-              className="min-w-0 flex-1 bg-transparent text-[14px] font-normal uppercase leading-5 text-black placeholder:text-[#666] focus:outline-none"
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
             />
             {search?.value ? (
               <button
@@ -132,9 +134,9 @@ export function DataTableToolbar({
                     options={filter.options ?? []}
                     onChange={(event) => onFilterChange?.(filter.key, event.target.value)}
                     density="compact"
-                    wrapperClassName="!gap-0 w-full sm:w-auto sm:min-w-[160px] lg:min-w-[200px]"
-                    containerClassName="!h-11 !rounded-none !border-black"
-                    className={`!h-11 !rounded-none !border-black w-full text-[14px] font-normal uppercase text-black ${filter.className ?? ""}`.trim()}
+                    wrapperClassName="datatable-filter-option !gap-0 w-full sm:w-auto"
+                    containerClassName="input-box input-box-compact"
+                    className={`w-full text-[12px] font-normal normal-case text-black ${filter.className ?? ""}`.trim()}
                   />
                 ))
               : null}

@@ -17,7 +17,7 @@ function useAssetPreview(asset: UploadedAsset | null) {
 
 function AssetPlaceholder() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-8 w-8 text-[#bdbdbd]">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="site-upload-preview-icon">
       <rect x="3" y="3" width="42" height="42" rx="4" fill="currentColor" />
       <path d="m9 34 9-10 6 6 5-5 10 9H9Z" fill="white" />
       <circle cx="17" cy="16" r="3" fill="white" />
@@ -88,45 +88,54 @@ export default function MainAssetsTab() {
   }
 
   return (
-    <form onSubmit={saveAssets} className="mt-4">
-      <div>
-        <InputField
-          id="microsite-name"
-          required
-          label="Microsite name"
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
-          value={microSiteName}
-          onChange={(event) => {
-            setMicroSiteName(event.target.value);
-            setNotice("");
-          }}
-          placeholder="e.g. United Sports Elite"
-          density="compact"
-          containerClassName="mt-1"
-          className="!px-3 !text-[11px] placeholder:!text-[#777]"
-        />
-      </div>
+    <form onSubmit={saveAssets} className="site-tab">
+      <InputField
+        id="microsite-name"
+        required
+        label="Microsite name"
+        labelClassName="input-heading"
+        value={microSiteName}
+        onChange={(event) => {
+          setMicroSiteName(event.target.value);
+          setNotice("");
+        }}
+        placeholder="e.g. United Sports Elite"
+      />
 
-      <div className="mt-3 grid gap-4 lg:grid-cols-2">
+      <div className="site-form-grid-2 site-assets-grid">
         {([
           { id: "logo", label: "Official logo", value: logo, hint: "Click to upload logo" },
           { id: "favicon", label: "Favicon", value: favicon, hint: "Click to upload favicon" },
         ] as const).map((asset) => (
           <div key={asset.id}>
-            <label className="mb-1 block text-[14px] font-bold uppercase">{asset.label}</label>
-            <label htmlFor={`site-${asset.id}-upload`} className="flex min-h-[142px] cursor-pointer items-center gap-4 border border-dashed border-black/65 p-3.5 transition hover:bg-black/[0.025] sm:gap-5 sm:px-4">
-              <span className="flex h-[112px] w-[112px] shrink-0 items-center justify-center overflow-hidden rounded-[3px] bg-[#f4f4f4]">
+            <label className="input-heading" htmlFor={`site-${asset.id}-upload`}>
+              {asset.label}
+            </label>
+            <label htmlFor={`site-${asset.id}-upload`} className="site-upload-inline">
+              <span className="site-upload-preview">
                 {asset.value ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={asset.value.url} alt={`${asset.label} preview`} className="h-full w-full object-contain p-2" />
-                ) : <AssetPlaceholder />}
+                  <img src={asset.value.url} alt={`${asset.label} preview`} />
+                ) : (
+                  <AssetPlaceholder />
+                )}
               </span>
-              <span className="min-w-0">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mb-2 h-6 w-6 text-black">
-                  <path d="M12 16V3m0 0L7 8m5-5 5 5M4 15v5h16v-5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <span className="site-upload-meta">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="site-upload-meta-icon">
+                  <path
+                    d="M12 16V3m0 0L7 8m5-5 5 5M4 15v5h16v-5"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
-                <span className="block text-[14px] font-bold uppercase">{asset.value?.name ?? asset.hint}</span>
-                <span className="mt-2 block text-[14px] leading-4 text-black font-normal">PNG or SVG · max 2MB<br />(Min 200x200px)</span>
+                <span className="site-upload-meta-title">{asset.value?.name ?? asset.hint}</span>
+                <span className="site-upload-meta-hint">
+                  PNG or SVG · max 2MB
+                  <br />
+                  (Min 200x200px)
+                </span>
               </span>
               <input
                 id={`site-${asset.id}-upload`}
@@ -136,15 +145,27 @@ export default function MainAssetsTab() {
                 onChange={(event) => handleUpload(event, asset.id)}
               />
             </label>
-            {errors[asset.id] ? <p role="alert" className="mt-1 text-[11px] text-red-600">{errors[asset.id]}</p> : null}
+            {errors[asset.id] ? (
+              <p role="alert" className="site-error">
+                {errors[asset.id]}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-        {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}
-        <button type="button" onClick={cancelChanges} className="cursor-pointer h-[40px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[10px] uppercase hover:bg-black hover:text-white">Cancel</button>
-        <button type="submit" className="cursor-pointer h-[40px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[10px] uppercase text-white hover:bg-white hover:text-black">Save</button>
+      <div className="site-form-actions">
+        {notice ? (
+          <p role="status" className="site-notice">
+            {notice}
+          </p>
+        ) : null}
+        <button type="button" onClick={cancelChanges} className="form-footer-btn form-footer-btn-secondary">
+          Cancel
+        </button>
+        <button type="submit" className="form-footer-btn form-footer-btn-primary">
+          Save
+        </button>
       </div>
     </form>
   );

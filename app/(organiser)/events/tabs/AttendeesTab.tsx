@@ -39,11 +39,12 @@ export default function AttendeesTab({ eventTitle }: { eventTitle: string }) {
   }), [attendees, search, statusFilter, ticketFilter]);
 
   return (
-    <section className="pt-4" aria-label={`${eventTitle} attendees`}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-heading text-[26px] font-bold uppercase leading-none tracking-[-0.03em] text-black">
-          Attendees
-        </h3>
+    <section className="pt-5" aria-label={`${eventTitle} attendees`}>
+      <div className="event-panel-header">
+        <div>
+          <h3 className="event-panel-title">Attendees</h3>
+          <p className="event-panel-subtitle">Check-in status and ticket holders for this event.</p>
+        </div>
         <ExportButton
           fileName="event-attendees"
           headers={["Name", "Email", "Ticket", "Offer", "Price", "Ticket ID", "Check-in status", "Date & time"]}
@@ -59,37 +60,37 @@ export default function AttendeesTab({ eventTitle }: { eventTitle: string }) {
       </div>
       {notice ? <ResultNotice onClose={() => setNotice("")}>{notice}</ResultNotice> : null}
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[880px] border-collapse text-left">
+      <div className="mt-4 overflow-x-auto">
+        <table className="datatable-table min-w-[880px]">
           <thead>
-            <tr className="border-y border-black text-[14px] font-bold uppercase text-black">
-              <th className="px-2.5 py-3.5">Name</th>
-              <th className="px-2.5 py-3.5">Ticket name</th>
-              <th className="px-2.5 py-3.5">Offer &amp; price</th>
-              <th className="px-2.5 py-3.5">Ticket ID</th>
-              <th className="px-2.5 py-3.5">Check-in status</th>
-              <th className="px-2.5 py-3.5">Date &amp; time</th>
-              <th className="w-16 px-2.5 py-3.5 text-center">Action</th>
+            <tr>
+              <th className="datatable-column-title">Name</th>
+              <th className="datatable-column-title">Ticket name</th>
+              <th className="datatable-column-title">Offer &amp; price</th>
+              <th className="datatable-column-title">Ticket ID</th>
+              <th className="datatable-column-title">Check-in status</th>
+              <th className="datatable-column-title">Date &amp; time</th>
+              <th className="datatable-column-title text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredAttendees.map((attendee) => (
-              <tr key={attendee.id} className="border-b border-black/75 text-[16px] text-black">
-                <td className="px-2.5 py-3.5">
+              <tr key={attendee.id}>
+                <td className="datatable-column-value">
                   <strong className="block font-bold">{attendee.name}</strong>
-                  <span className="text-[14px] text-[#777]">{attendee.email}</span>
+                  <span className="text-[12px] text-[#6f6e69]">{attendee.email}</span>
                 </td>
-                <td className="px-2.5 py-4">{attendee.ticket}</td>
-                <td className="px-2.5 py-4">{attendee.offer} - ${attendee.price.toFixed(2)}</td>
-                <td className="px-2.5 py-4">{attendee.ticketId}</td>
-                <td className="px-2.5 py-4">
-                  <span className={`inline-flex items-center gap-1.5 font-bold uppercase ${attendee.checkedIn ? "text-[#16B957]" : "text-[#E53935]"}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${attendee.checkedIn ? "bg-[#16B957]" : "bg-[#E53935]"}`} />
+                <td className="datatable-column-value">{attendee.ticket}</td>
+                <td className="datatable-column-value">{attendee.offer} - ${attendee.price.toFixed(2)}</td>
+                <td className="datatable-column-value">{attendee.ticketId}</td>
+                <td className="datatable-column-value">
+                  <span className={`datatable-status ${attendee.checkedIn ? "text-status-active" : "text-status-soldout"}`}>
+                    <span className={`h-[7px] w-[7px] shrink-0 rounded-full ${attendee.checkedIn ? "bg-status-active" : "bg-status-soldout"}`} aria-hidden />
                     {attendee.checkedIn ? "Checked in" : "Not checked in"}
                   </span>
                 </td>
-                <td className="px-2.5 py-4">{attendee.date || "-"}</td>
-                <td className="px-2.5 py-3.5">
+                <td className="datatable-column-value">{attendee.date || "—"}</td>
+                <td className="datatable-column-value text-center">
                   <RowActions
                     label={attendee.name}
                     actions={[attendee.checkedIn ? "Mark not checked in" : "Mark checked in", "Customer information"]}
@@ -105,7 +106,9 @@ export default function AttendeesTab({ eventTitle }: { eventTitle: string }) {
             ))}
           </tbody>
         </table>
-        {filteredAttendees.length === 0 ? <p className="py-10 text-center text-[13px] text-black/50">No attendees match these filters.</p> : null}
+        {filteredAttendees.length === 0 ? (
+          <p className="py-10 text-center text-[12px] text-black/50">No attendees match these filters.</p>
+        ) : null}
       </div>
     </section>
   );

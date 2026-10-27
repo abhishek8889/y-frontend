@@ -9,6 +9,8 @@ export type EventFormImage = {
   path: string;
   url: string;
   alt_text?: string | null;
+  mime?: string | null;
+  media_type?: "image" | "video" | string | null;
 };
 
 export type EventFormValues = {
@@ -172,6 +174,8 @@ export function mapEventToFormValues(event: OrganisationEvent): EventFormValues 
           path: bannerImage.path,
           url: bannerImage.url || "",
           alt_text: bannerImage.alt_text ?? null,
+          mime: bannerImage.mime ?? null,
+          media_type: bannerImage.media_type ?? null,
         }
       : null,
     gallery: galleryImages.map((image) => ({
@@ -179,6 +183,8 @@ export function mapEventToFormValues(event: OrganisationEvent): EventFormValues 
       path: image.path,
       url: image.url || "",
       alt_text: image.alt_text ?? null,
+      mime: image.mime ?? null,
+      media_type: image.media_type ?? null,
     })),
   };
 }

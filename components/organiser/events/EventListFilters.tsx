@@ -76,7 +76,6 @@ export function EventListFilters({
       <SelectField
         name="eventStatusFilter"
         label="Status"
-        labelClassName="!text-[12px] !mb-1 !leading-[16px]"
         value={values.status}
         onChange={(event) => onChange({ ...values, status: event.target.value })}
         options={statusOptions}
@@ -88,7 +87,6 @@ export function EventListFilters({
       <SelectField
         name="eventCategoryFilter"
         label="Event category"
-        labelClassName="!text-[12px] !mb-1 !leading-[16px]"
         value={values.eventCategoryId}
         onChange={(event) => onChange({ ...values, eventCategoryId: event.target.value })}
         options={[{ value: "all", label: "All categories" }, ...categoryOptions]}
@@ -98,7 +96,9 @@ export function EventListFilters({
       />
 
       <div>
-        <p className="mb-1 text-[12px] font-bold uppercase leading-[16px] text-black">Date range</p>
+        <p className="input-heading mb-1 text-[14px] font-normal capitalize leading-normal text-[#6f6e69]">
+          Date range
+        </p>
         <div className="grid grid-cols-2 gap-2">
           <InputField
             name="eventDateFrom"

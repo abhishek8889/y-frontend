@@ -3,28 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import eventCover from "@/assets/event-cover.jpg";
+import type { PublicEventImage } from "@/apis/public/publicEventsApi";
 import {
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
 } from "@/apis/public/publicEventsApi";
-import { Breadcrumb } from "@/components/common/Breadcrumb";
+import { Breadcrumb, MediaPlayer } from "@/components/common";
 import { EventTicketBooking } from "@/components/public/EventTicketBooking";
 import {
   formatUtcDateTime,
   formatTicketPriceRange,
-  getEventBannerUrl,
+  getEventBanner,
 } from "@/lib/events/publicEventFormat";
+import { isVideoMedia } from "@/lib/media/isVideoMedia";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 /** Header and breadcrumb are both 46px. Full-height gallery starts at the desktop split. */
-const GALLERY_FRAME =
-  "aspect-[4/5] h-auto min-h-0 sm:aspect-[3/2] lg:aspect-auto lg:h-[calc(100svh-92px)]";
+const GALLERY_VIEWPORT =
+  "relative overflow-y-auto overscroll-contain bg-white lg:sticky lg:top-0 lg:h-[calc(100svh-92px)]";
+const GALLERY_SLIDE =
+  "relative w-full shrink-0 snap-start aspect-[4/5] sm:aspect-[3/2] lg:aspect-auto lg:h-[calc(100svh-92px)]";
 
 function AccordionChevron() {
   return (
@@ -44,6 +48,64 @@ function AccordionChevron() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function buildEventGalleryMedia(images: PublicEventImage[] | null | undefined): PublicEventImage[] {
+  const list = images ?? [];
+  const banner = getEventBanner(list);
+  const gallery = list.filter(
+    (image) => image.type === "gallery" && image.url?.trim() && image !== banner,
+  );
+
+  const items: PublicEventImage[] = [];
+  if (banner?.url?.trim()) items.push(banner);
+  for (const item of gallery) items.push(item);
+
+  if (!items.length) {
+    for (const image of list) {
+      if (image.url?.trim()) items.push(image);
+    }
+  }
+
+  return items;
+}
+
+function EventGallerySlide({
+  media,
+  alt,
+  active,
+  priority = false,
+}: {
+  media: PublicEventImage | null;
+  alt: string;
+  active: boolean;
+  priority?: boolean;
+}) {
+  const isVideo = Boolean(media?.url) && isVideoMedia(media);
+
+  if (isVideo && media) {
+    return (
+      <MediaPlayer
+        media={media}
+        alt={alt}
+        active={active}
+        frameClassName="absolute inset-0 h-full w-full"
+      />
+    );
+  }
+
+  const src = media?.url?.trim() || eventCover.src;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      priority={priority}
+      sizes="(max-width: 1023px) 100vw, 50vw"
+      className="object-cover object-center"
+      unoptimized={typeof src === "string"}
+    />
   );
 }
 
@@ -70,16 +132,42 @@ export default function PublicEventPage() {
   const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
   const isWishlisted = event ? wishlistedIds.has(event.id) : false;
 
-  const [isPlaying, setIsPlaying] = useState(true);
+  const galleryMedia = useMemo(() => buildEventGalleryMedia(event?.images), [event?.images]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const galleryScrollRef = useRef<HTMLElement | null>(null);
 
-  const galleryImages = useMemo(() => {
-    const urls = (event?.images ?? [])
-      .map((image) => image.url)
-      .filter((url): url is string => Boolean(url?.trim()));
-    if (urls.length) return urls;
-    const banner = getEventBannerUrl(event?.images);
-    return banner ? [banner] : [eventCover.src];
-  }, [event]);
+  useEffect(() => {
+    const root = galleryScrollRef.current;
+    if (!root || !galleryMedia.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let bestIndex = 0;
+        let bestRatio = 0;
+        for (const entry of entries) {
+          const index = Number((entry.target as HTMLElement).dataset.slideIndex);
+          if (!Number.isFinite(index)) continue;
+          if (entry.isIntersecting && entry.intersectionRatio >= bestRatio) {
+            bestRatio = entry.intersectionRatio;
+            bestIndex = index;
+          }
+        }
+        if (bestRatio > 0) setActiveSlide(bestIndex);
+      },
+      {
+        // Use the gallery pane when it scrolls; otherwise the viewport (mobile page scroll).
+        root: root.scrollHeight > root.clientHeight + 8 ? root : null,
+        threshold: [0.35, 0.55, 0.75],
+      },
+    );
+
+    for (const node of slideRefs.current) {
+      if (node) observer.observe(node);
+    }
+
+    return () => observer.disconnect();
+  }, [galleryMedia]);
 
   const locationLabel = useMemo(() => {
     const address = event?.venue?.address;
@@ -123,6 +211,10 @@ export default function PublicEventPage() {
     );
   }
 
+  const slides = galleryMedia.length
+    ? galleryMedia
+    : [{ url: eventCover.src, type: "banner", media_type: "image" } as PublicEventImage];
+
   return (
     <main className="bg-white text-black">
       <Breadcrumb
@@ -135,30 +227,36 @@ export default function PublicEventPage() {
 
       <div className="grid lg:grid-cols-2">
         <section
-          aria-label="Event photos"
-          className={`relative overflow-hidden bg-white lg:sticky lg:top-0 ${GALLERY_FRAME}`}
+          ref={galleryScrollRef}
+          aria-label="Event media gallery"
+          className={`${GALLERY_VIEWPORT} snap-y snap-mandatory`}
         >
-          <div className={`event-gallery-track ${isPlaying ? "" : "event-gallery-paused"}`}>
-            {[...galleryImages, ...galleryImages].map((image, index) => (
-              <div
-                key={`${index}-${typeof image === "string" ? image : index}`}
-                className={`flex w-full flex-col ${GALLERY_FRAME}`}
-              >
-                <div className="relative min-h-0 w-full flex-1">
-                  <Image
-                    src={image}
-                    alt={`${event.name} photo ${(index % galleryImages.length) + 1}`}
-                    fill
-                    priority={index === 0}
-                    sizes="(max-width: 1023px) 100vw, 50vw"
-                    className="object-cover object-center"
-                    unoptimized={typeof image === "string"}
-                  />
-                </div>
-                <div className="h-1 shrink-0 bg-white" aria-hidden="true" />
+          {slides.map((media, index) => (
+            <div
+              key={`${media.path || media.url || "slide"}-${index}`}
+              data-slide-index={index}
+              ref={(node) => {
+                slideRefs.current[index] = node;
+              }}
+              className={GALLERY_SLIDE}
+            >
+              <div className="absolute inset-0">
+                <EventGallerySlide
+                  media={media}
+                  alt={`${event.name} media ${index + 1}`}
+                  active={activeSlide === index}
+                  priority={index === 0}
+                />
               </div>
-            ))}
-          </div>
+              {index < slides.length - 1 ? (
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-1 bg-white"
+                  aria-hidden="true"
+                />
+              ) : null}
+            </div>
+          ))}
+
           <button
             type="button"
             aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
@@ -181,23 +279,6 @@ export default function PublicEventPage() {
                 strokeLinejoin="round"
               />
             </svg>
-          </button>
-          <button
-            type="button"
-            aria-label={isPlaying ? "Pause photo carousel" : "Play photo carousel"}
-            aria-pressed={isPlaying}
-            onClick={() => setIsPlaying((playing) => !playing)}
-            className="absolute bottom-4 right-5 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black transition hover:bg-white"
-          >
-            {isPlaying ? (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
-                <path d="M3 2h3v10H3zM8 2h3v10H8z" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
-                <path d="m4 2 8 5-8 5V2Z" />
-              </svg>
-            )}
           </button>
         </section>
 

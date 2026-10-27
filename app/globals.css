@@ -1,10 +1,11 @@
 @import "tailwindcss";
+@import "./organiser-dashboard.css";
 
 :root {
   --black: #000000;
   --white: #ffffff;
   --status-draft: #ff6d00;
-  --status-active: #1a7f37;
+  --status-active: #34c759;
   --status-inactive: #949494;
   --status-soldout: #dc2626;
 }
@@ -58,25 +59,99 @@ body {
   text-transform: uppercase;
 }
 
-/* Organiser auth screens share the same type rules as the public site headings. */
+/* Auth / onboarding — 1440 Figma tokens (shared with organiser inputs) */
 .auth-site {
   font-family: var(--font-univers), sans-serif;
   font-weight: 400;
+  --auth-title-size: 20px;
+  --auth-title-leading: 24.2px;
+  --auth-title-tracking: 1px;
+  --auth-subtitle-size: 14px;
+  --auth-subtitle-color: #6f6e69;
+  --auth-label-color: #6f6e69;
+  --auth-input-height: 41px;
+  --auth-btn-height: 41px;
 }
 
 .auth-site :is(h1, h2, h3, h4, h5, h6),
-.auth-site .font-heading,
-.auth-site label {
+.auth-site .font-heading {
   font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* Field labels are Regular / capitalize — not condensed uppercase */
+.auth-site label,
+.auth-site .input-heading {
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: 0;
+  text-transform: capitalize;
+  color: var(--auth-label-color);
+}
+
+.auth-site .auth-title {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-weight: 700;
+  font-size: var(--auth-title-size);
+  line-height: var(--auth-title-leading);
+  letter-spacing: var(--auth-title-tracking);
+  text-transform: uppercase;
+  color: #161616;
+  margin: 0;
+  font-feature-settings: "kern" 0;
+}
+
+.auth-site .auth-subtitle {
+  margin-top: 6px;
+  font-family: var(--font-univers), sans-serif;
+  font-weight: 400;
+  font-size: var(--auth-subtitle-size);
+  line-height: 19.6px;
+  color: var(--auth-subtitle-color);
+}
+
+.auth-site .input-box {
+  height: var(--auth-input-height);
+}
+
+.auth-site .auth-primary-button {
+  display: flex;
+  width: 100%;
+  height: var(--auth-btn-height);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  background: #000;
+  padding: 10px 20px;
+  font-family: var(--font-univers), sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  transition: opacity 0.15s ease;
+}
+
+.auth-site .auth-primary-button:hover {
+  opacity: 0.9;
+}
+
+.auth-site .auth-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .auth-site .PhoneInput {
   display: flex;
   align-items: center;
   width: 100%;
-  height: 48px;
+  height: var(--auth-input-height);
 }
 
 .auth-site .PhoneInputCountry {
@@ -98,7 +173,8 @@ body {
 }
 
 .auth-site .PhoneInputInput::placeholder {
-  color: rgba(0, 0, 0, 0.6);
+  color: #000;
+  opacity: 1;
 }
 
 /*
@@ -179,37 +255,8 @@ textarea {
   font-family: var(--font-univers), sans-serif;
 }
 
-@keyframes event-gallery-loop {
-  to {
-    transform: translateY(-50%);
-  }
-}
-
-.event-gallery-track {
-  animation: event-gallery-loop 42s linear infinite;
-  will-change: transform;
-}
-
-.event-gallery-track:hover,
-.event-gallery-paused {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .event-gallery-track {
-    animation: none;
-  }
-}
-
-/* ── Organiser dashboard (Figma: Hednesford Town) ── */
+/* ── Organiser dashboard shell chrome (tokens live in organiser-dashboard.css) ── */
 .organiser-dashboard {
-  --od-border: #000000;
-  --od-bg: #fafbfc;
-  --od-muted: #6f6e69;
-  --od-label: #aaaaac;
-  --od-danger: #ff383c;
-  --od-sidebar-width: 250px;
-  --od-header-height: 45px;
   font-family: var(--font-univers), sans-serif;
   font-weight: 400;
   color: var(--black);
@@ -226,18 +273,31 @@ textarea {
   border-right-width: 1px;
   border-right-style: solid;
   border-right-color: var(--od-border);
+  width: var(--od-sidebar-width);
 }
 
 .organiser-dashboard__header {
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: var(--od-border);
+  height: var(--od-header-height);
 }
 
 .organiser-dashboard__search {
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-bottom-color: var(--od-border);
+  height: var(--od-header-height);
+}
+
+.organiser-dashboard__main {
+  margin-left: 0;
+}
+
+@media (min-width: 768px) {
+  .organiser-dashboard__main {
+    margin-left: var(--od-sidebar-width);
+  }
 }
 
 .organiser-grid-card {

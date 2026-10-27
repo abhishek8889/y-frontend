@@ -56,6 +56,7 @@ export function proxy(request: NextRequest) {
         pathname.startsWith("/roles") ||
         pathname.startsWith("/staff") ||
         pathname.startsWith("/finance") ||
+        pathname.startsWith("/settings") ||
         pathname.startsWith("/whitelabels")
       ) {
         return redirectTo(request, buildSurfaceUrl("organiser", pathname, hostHeader));

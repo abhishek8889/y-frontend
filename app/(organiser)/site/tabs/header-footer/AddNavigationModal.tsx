@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { OrganiserModal } from "@/components/organiser/OrganiserModal";
 import { InputField } from "@/components/ui/InputField";
 
 type AddNavigationModalProps = {
+  open: boolean;
   defaultPriority: string;
   onClose: () => void;
   onSave: (item: { name: string; url: string; priority: string }) => void;
@@ -23,6 +25,7 @@ function isValidNavUrl(value: string) {
 }
 
 export default function AddNavigationModal({
+  open,
   defaultPriority,
   onClose,
   onSave,
@@ -47,111 +50,84 @@ export default function AddNavigationModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") onClose();
-      }}
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <OrganiserModal
+      open={open}
+      onClose={onClose}
+      showClose
+      titleId="add-navigation-title"
+      panelClassName="max-w-[420px]"
     >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-navigation-title"
-        className="flex h-full w-full max-w-[420px] flex-col border-l border-black/70 bg-white shadow-xl"
-      >
-        <header className="flex min-h-[86px] items-center gap-3 border-b border-black/70 px-[18px]">
-          <span aria-hidden="true" className="h-[45px] w-[45px] shrink-0 rounded-[5px] bg-black" />
-          <div className="min-w-0 flex-1">
-            <h2 id="add-navigation-title" className="text-[17px] font-black uppercase leading-6">
+      <form onSubmit={submitItem} className="site-nav-modal">
+        <header className="site-nav-modal-header">
+          <span aria-hidden="true" className="site-nav-modal-icon" />
+          <div>
+            <h2 id="add-navigation-title" className="site-nav-modal-title">
               Add Navigation Menu
             </h2>
-            <p className="text-[13px] leading-5 text-[#777]">Add item in navigation menu in header.</p>
+            <p className="site-nav-modal-subtitle">Add item in navigation menu in header.</p>
           </div>
-          <button
-            type="button"
-            aria-label="Close add navigation menu"
-            onClick={onClose}
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center text-[22px] leading-none hover:bg-black/5"
-          >
-            ×
-          </button>
         </header>
 
-        <form onSubmit={submitItem} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 space-y-5 overflow-y-auto px-[18px] py-5">
-            <InputField
-              id="navigation-label-name"
-              required
-              label="Label name *"
-              labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
-              autoFocus
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setError("");
-              }}
-              placeholder="Enter name"
-              density="compact"
-            />
+        <div className="site-nav-modal-body">
+          <InputField
+            id="navigation-label-name"
+            required
+            label="Label name *"
+            labelClassName="input-heading"
+            autoFocus
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setError("");
+            }}
+            placeholder="Enter name"
+          />
 
-            <InputField
-              id="navigation-url-link"
-              required
-              value={url}
-              label="URL link *"
-              labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
-              onChange={(event) => {
-                setUrl(event.target.value);
-                setError("");
-              }}
-              placeholder="/about or https://example.com"
-              density="compact"
-            />
+          <InputField
+            id="navigation-url-link"
+            required
+            value={url}
+            label="URL link *"
+            labelClassName="input-heading"
+            onChange={(event) => {
+              setUrl(event.target.value);
+              setError("");
+            }}
+            placeholder="/about or https://example.com"
+          />
 
-            <InputField
-              id="navigation-priority"
-              type="number"
-              min="1"
-              step="1"
-              required
-              label="Priority"
-              labelClassName="!text-[14px] !mb-[6px] !leading-[18px]"
-              value={priority}
-              onChange={(event) => {
-                setPriority(event.target.value);
-                setError("");
-              }}
-              placeholder="6"
-              density="compact"
-            />
+          <InputField
+            id="navigation-priority"
+            type="number"
+            min="1"
+            step="1"
+            required
+            label="Priority"
+            labelClassName="input-heading"
+            value={priority}
+            onChange={(event) => {
+              setPriority(event.target.value);
+              setError("");
+            }}
+            placeholder="6"
+          />
 
-            {error ? (
-              <p role="alert" className="text-[12px] text-red-600">
-                {error}
-              </p>
-            ) : null}
-          </div>
+          {error ? (
+            <p role="alert" className="site-error">
+              {error}
+            </p>
+          ) : null}
+        </div>
 
-          <footer className="grid grid-cols-2 gap-3 border-t border-black/70 px-[18px] py-[24px]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-[41px] cursor-pointer rounded-[4px] border border-black px-4 text-[14px] uppercase hover:bg-black hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="h-[41px] cursor-pointer rounded-[4px] border border-black bg-black px-4 text-[14px] uppercase text-white hover:bg-white hover:text-black"
-            >
-              Save
-            </button>
-          </footer>
-        </form>
-      </section>
-    </div>
+        <footer className="site-nav-modal-footer">
+          <button type="button" onClick={onClose} className="form-footer-btn form-footer-btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" className="form-footer-btn form-footer-btn-primary">
+            Save
+          </button>
+        </footer>
+      </form>
+    </OrganiserModal>
   );
 }

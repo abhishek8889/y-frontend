@@ -25,6 +25,7 @@ import {
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { isVenueVideoMedia } from "@/components/organiser/venues/venueFormHelpers";
 import { Button } from "@/components/ui/Button";
 import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
 
@@ -38,21 +39,14 @@ type VenueConfirmState = {
 function formatVenueLocation(venue: Venue) {
   const address = venue.address;
   if (!address) return "—";
-  return [address.address_line_1, address.city, address.postal_code].filter(Boolean).join(", ") || "—";
+  const line1 = [address.address_line_1].filter(Boolean).join(", ");
+  const line2 = [address.city, address.postal_code].filter(Boolean).join(", ");
+  if (line1 && line2) return `${line1},\n${line2}`;
+  return line1 || line2 || "—";
 }
 
-function formatVenueCapacity(venue: Venue) {
-  const lines = [
-    venue.maximum_capacity != null ? `Maximum - ${venue.maximum_capacity}` : null,
-    venue.standing_capacity != null ? `Standing - ${venue.standing_capacity}` : null,
-    venue.seated_capacity != null ? `Seated - ${venue.seated_capacity}` : null,
-  ].filter(Boolean);
-  return lines.length ? lines.join("\n") : "—";
-}
-
-function getVenueImageUrl(venue: Venue) {
-  const banner = venue.images?.find((image) => image.type === "banner");
-  return banner?.url || venue.images?.[0]?.url || "";
+function getVenueBanner(venue: Venue) {
+  return venue.images?.find((image) => image.type === "banner") ?? venue.images?.[0] ?? null;
 }
 
 // const EyeIcon = (
@@ -308,16 +302,34 @@ export default function VenuesPage() {
         header: "VENUE",
         accessorKey: "name",
         cell: ({ row }) => {
-          const imageUrl = getVenueImageUrl(row);
+          const banner = getVenueBanner(row);
+          const bannerUrl = banner?.url || "";
+          const showVideo = Boolean(bannerUrl) && isVenueVideoMedia(banner);
+
           return (
-            <div className="flex min-w-[180px] items-center gap-3 pr-2 sm:gap-5 sm:pr-3">
-              <div
-                className="h-[64px] w-[64px] shrink-0 rounded-[6px] bg-cover bg-center bg-[#d9d9d9] sm:h-[90px] sm:w-[90px]"
-                style={imageUrl ? { backgroundImage: `url("${imageUrl}")` } : undefined}
-                role="img"
-                aria-label={row.name}
-              />
-              <span className="min-w-0 text-[14px] font-normal leading-5 text-black">{row.name}</span>
+            <div className="datatable-venue-cell">
+              <div className="datatable-venue-thumb" aria-label={row.name}>
+                {bannerUrl ? (
+                  showVideo ? (
+                    <video
+                      src={bannerUrl}
+                      className="h-full w-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                      aria-hidden
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={bannerUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )
+                ) : null}
+              </div>
+              <span className="datatable-venue-name">{row.name}</span>
             </div>
           );
         },
@@ -326,7 +338,7 @@ export default function VenuesPage() {
         id: "location",
         header: "LOCATION",
         cell: ({ row }) => (
-          <span className="block max-w-[180px] text-[14px] font-normal leading-5 text-black">
+          <span className="block max-w-[150px] whitespace-pre-line text-[12px] font-normal leading-5 text-black">
             {formatVenueLocation(row)}
           </span>
         ),
@@ -335,7 +347,7 @@ export default function VenuesPage() {
         id: "type",
         header: "VENUE TYPE",
         cell: ({ row }) => (
-          <span className="text-[14px] font-normal leading-5 text-black">
+          <span className="text-[12px] font-normal leading-5 text-black">
             {row.venue_type?.name || "—"}
           </span>
         ),
@@ -343,20 +355,31 @@ export default function VenuesPage() {
       {
         id: "capacity",
         header: "CAPACITY",
-        cell: ({ row }) => (
-          <span className="whitespace-pre-line text-[14px] font-normal leading-5 text-black">
-            {formatVenueCapacity(row)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const lines = [
+            row.maximum_capacity != null ? `Maximum - ${row.maximum_capacity}` : null,
+            row.standing_capacity != null ? `Standing - ${row.standing_capacity}` : null,
+            row.seated_capacity != null ? `Seated - ${row.seated_capacity}` : null,
+          ].filter(Boolean) as string[];
+
+          if (!lines.length) return "—";
+
+          return (
+            <div className="datatable-cell-stack">
+              {lines.map((line) => (
+                <p key={line} className="m-0">
+                  {line}
+                </p>
+              ))}
+            </div>
+          );
+        },
       },
       {
         id: "status",
         header: "STATUS",
         cell: ({ row }) => (
-          <StatusBadge
-            status={row.status}
-            className="font-heading gap-[9px] text-[14px] font-bold leading-5 tracking-normal"
-          />
+          <StatusBadge status={row.status} className="datatable-status" />
         ),
       },
       {
@@ -404,21 +427,17 @@ export default function VenuesPage() {
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-      <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-[11px]">
-            <h1 className="font-heading text-[24px] font-bold uppercase leading-[24.2px] text-black">
-              Venues
-            </h1>
-            <p className="text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
-              Manage and organize all your venues
-            </p>
+      <div className="page-content">
+        <div className="page-header">
+          <div className="page-header-text">
+            <h1 className="page-title">Venues</h1>
+            <p className="page-subtitle">Manage and organize all your venues</p>
           </div>
 
           <Button
             type="button"
             onClick={() => router.push("/venues/create")}
-            className="inline-flex h-auto cursor-pointer items-center justify-center gap-0.5 rounded-[4px] border border-black bg-black py-2.5 pl-1.5 pr-2.5 text-[14px] font-normal uppercase leading-[19.6px] text-white transition hover:opacity-90"
+            className="page-primary-button-action"
           >
             <span aria-hidden className="text-[18px] leading-none">
               +
@@ -446,7 +465,7 @@ export default function VenuesPage() {
                 setSearch(value);
                 resetCursorAndPage();
               },
-              placeholder: "SEARCH",
+              placeholder: "Search..",
             }}
             filters={[
               {

@@ -15,14 +15,14 @@ export type GridCardItem = {
   indicatorColor?: string;
 };
 
-export type GridCardColumns = 1 | 2 | 3 | 4 | 5;
+export type GridCardColumns = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type GridCardProps = {
   /** Config-driven overview metrics (like Offthetree `listItems`) */
   items: GridCardItem[];
   /**
-   * Desktop column count (max 5).
-   * When omitted, uses `items.length` capped at 5 so cards fill the row equally.
+   * Desktop column count (max 6).
+   * When omitted, uses `items.length` capped at 6 so cards fill the row equally.
    */
   columns?: GridCardColumns;
   isLoading?: boolean;

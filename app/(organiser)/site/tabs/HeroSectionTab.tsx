@@ -21,8 +21,8 @@ function usePreview(asset: HeroAsset | null) {
 
 function PlayIcon() {
   return (
-    <span className="flex h-[38px] w-[46px] items-center justify-center rounded-[2px] bg-[#d9d9d9]">
-      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true" className="ml-0.5 h-5 w-5">
+    <span className="site-play-icon">
+      <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
         <path d="M7 4.8a1 1 0 0 1 1.5-.86l11.2 6.2a2.1 2.1 0 0 1 0 3.72L8.5 20.06A1 1 0 0 1 7 19.2V4.8Z" />
       </svg>
     </span>
@@ -31,7 +31,7 @@ function PlayIcon() {
 
 function ImagePlaceholder() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-8 w-8 text-[#d7d7d7]">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="site-upload-preview-icon">
       <rect x="3" y="3" width="42" height="42" rx="4" fill="currentColor" />
       <path d="m9 34 9-10 6 6 5-5 10 9H9Z" fill="white" />
       <circle cx="17" cy="16" r="3" fill="white" />
@@ -177,12 +177,12 @@ export default function HeroSectionTab() {
   }
 
   return (
-    <form onSubmit={saveHero} className="mt-4">
-      <div className="mb-4 max-w-[320px]">
+    <form onSubmit={saveHero} className="site-tab">
+      <div className="site-field-half">
         <SelectField
           id="hero-banner-type"
           label="Banner type *"
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
+          labelClassName="input-heading"
           value={bannerType}
           onChange={(event) => {
             setBannerType(event.target.value as BannerType);
@@ -193,23 +193,15 @@ export default function HeroSectionTab() {
             { value: "image", label: "Image" },
             { value: "video", label: "Video" },
           ]}
-          density="compact"
-          containerClassName="!h-[40px] !rounded-[3px] !border-black/65"
-          className="!px-3 !text-[14px]"
         />
       </div>
 
       {bannerType === "video" ? (
-        <div>
-          <label
-            htmlFor="hero-video-upload"
-            className="flex cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 p-14 text-center transition hover:bg-black/[0.025]"
-          >
+        <div className="site-upload-section">
+          <label htmlFor="hero-video-upload" className="site-upload-box">
             <PlayIcon />
-            <span className="mt-2.5 text-[16px] font-bold text-black">
-              {video ? video.name : "Add Banner Video"}
-            </span>
-            <span className="mt-2 text-[14px] font-[300] leading-[20px] text-[#939393]">
+            <span className="site-upload-title">{video ? video.name : "Add Banner Video"}</span>
+            <span className="site-upload-hint form-upload-hint">
               Add a quick video highlight for your site. MP4 or MOV,
               <br className="hidden sm:block" />
               max 100MB. Keep it under 60 seconds.
@@ -226,26 +218,19 @@ export default function HeroSectionTab() {
           </label>
         </div>
       ) : (
-        <div>
-          <label
-            htmlFor="hero-image-upload"
-            className="flex cursor-pointer flex-col items-center justify-center border border-dashed border-black/65 p-14 text-center transition hover:bg-black/[0.025]"
-          >
+        <div className="site-upload-section">
+          <label htmlFor="hero-image-upload" className="site-upload-box">
             {image ? (
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.url}
-                  alt="Hero banner preview"
-                  className="mb-2 max-h-[105px] max-w-full object-contain"
-                />
-                <span className="text-[11px] font-bold">{image.name}</span>
+                <img src={image.url} alt="Hero banner preview" className="site-upload-thumb" />
+                <span className="site-upload-filename">{image.name}</span>
               </>
             ) : (
               <ImagePlaceholder />
             )}
-            {!image ? <span className="mt-2.5 text-[16px] font-bold text-black">Add Banner Image</span> : null}
-            <span className="mt-2 text-[14px] leading-[20px] text-[#939393]">
+            {!image ? <span className="site-upload-title">Add Banner Image</span> : null}
+            <span className="site-upload-hint form-upload-hint">
               Upload a clear image for your site. JPG or PNG, under
               <br className="hidden sm:block" />
               5MB. You can change this anytime.
@@ -263,51 +248,42 @@ export default function HeroSectionTab() {
         </div>
       )}
       {errors.media ? (
-        <p role="alert" className="mt-1 text-[11px] text-red-600">
+        <p role="alert" className="site-error">
           {errors.media}
         </p>
       ) : null}
 
-      <div className="mt-4 grid gap-x-6 gap-y-3.5 lg:grid-cols-2">
+      <div className="site-form-grid-2 site-form-grid-2-mt">
         <InputField
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
           label="Hero title *"
+          labelClassName="input-heading"
           id="hero-title"
           required
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Enter headline"
-          density="compact"
-          containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0"
-          className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
         />
         <InputField
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
           label="Hero subtitle *"
+          labelClassName="input-heading"
           id="hero-subtitle"
           required
           value={subtitle}
           onChange={(event) => setSubtitle(event.target.value)}
           placeholder="Supporting text..."
-          density="compact"
-          containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0"
-          className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
         />
         <InputField
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
           label="CTA button label *"
+          labelClassName="input-heading"
           id="hero-cta-label"
           required
           value={buttonLabel}
           onChange={(event) => setButtonLabel(event.target.value)}
           placeholder="CTA button label"
-          density="compact"
-          containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0"
-          className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
         />
         <InputField
-          labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
           label="CTA button URL *"
+          labelClassName="input-heading"
           id="hero-cta-url"
           required
           value={buttonUrl}
@@ -317,33 +293,23 @@ export default function HeroSectionTab() {
             setNotice("");
           }}
           placeholder="CTA Button URL"
-          density="compact"
-          containerClassName="mt-1 !rounded-[3px] !border-black/65 focus-within:!ring-0"
-          className="!px-3 !text-[11px] normal-case placeholder:!text-[#777]"
         />
       </div>
       {errors.form ? (
-        <p role="alert" className="mt-2 text-[11px] text-red-600">
+        <p role="alert" className="site-error">
           {errors.form}
         </p>
       ) : null}
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+      <div className="site-form-actions">
         {notice ? (
-          <p role="status" className="mr-auto text-[11px] text-[#666]">
+          <p role="status" className="site-notice">
             {notice}
           </p>
         ) : null}
-        <button
-          type="button"
-          onClick={cancelChanges}
-          className="h-[40px] min-w-[96px] rounded-[3px] border border-black/70 px-4 text-[12px] uppercase hover:bg-black hover:text-white"
-        >
+        <button type="button" onClick={cancelChanges} className="form-footer-btn form-footer-btn-secondary">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="h-[40px] min-w-[82px] rounded-[3px] border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black"
-        >
+        <button type="submit" className="form-footer-btn form-footer-btn-primary">
           Save
         </button>
       </div>

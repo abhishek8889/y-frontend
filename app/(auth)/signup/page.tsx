@@ -501,7 +501,7 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              className="mt-[13px] flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase leading-6 text-white transition hover:opacity-90"
+              className="auth-primary-button mt-[13px]"
             >
               Continue
             </button>
@@ -669,7 +669,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={isRegistering}
-                className="flex h-[52px] w-full flex-1 cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase leading-6 text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="auth-primary-button flex-1"
               >
                 {isRegistering ? "Submitting..." : "Submit"}
               </button>

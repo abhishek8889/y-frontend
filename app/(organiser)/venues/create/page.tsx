@@ -16,7 +16,7 @@ function CreateVenuePageContent() {
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-      <div className="min-h-full bg-white p-5 md:p-6 md:px-8">
+      <div className="page-content">
         <Breadcrumb
           variant="dashboard"
           className="mb-4"
@@ -26,7 +26,7 @@ function CreateVenuePageContent() {
           ]}
         />
 
-        <h1 className="font-heading text-[22px] font-bold uppercase leading-none text-black sm:text-[26px]">
+        <h1 className="page-title">
           {isEditing ? "Edit Venue" : "Create New Venue"}
         </h1>
 
@@ -41,7 +41,7 @@ export default function CreateVenuePage() {
     <Suspense
       fallback={
         <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
-          <div className="min-h-full bg-white p-5 text-[14px] text-black/60 md:p-6 md:px-8">
+          <div className="page-content text-[14px] text-black/60">
             Loading...
           </div>
         </DashboardShell>

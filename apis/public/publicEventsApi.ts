@@ -8,6 +8,9 @@ export type PublicEventImage = {
   url?: string | null;
   alt_text?: string | null;
   sort_order?: number | null;
+  /** `image` | `video` — drives public card media preview. */
+  media_type?: "image" | "video" | string | null;
+  mime?: string | null;
 };
 
 export type PublicEventListItem = {

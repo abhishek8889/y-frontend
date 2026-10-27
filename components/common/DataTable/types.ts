@@ -111,4 +111,9 @@ export type DataTableProps<T> = {
    * with internal scroll. Pass `false` to disable, or a custom class string.
    */
   bodyHeightClassName?: string | false;
+  /**
+   * Header background color (CSS color). Defaults to white.
+   * e.g. `"#EEEEEE"` for light grey product offer tables.
+   */
+  headerBackground?: string;
 };

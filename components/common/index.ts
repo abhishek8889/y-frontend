@@ -33,3 +33,12 @@ export { StatusBadge } from "./StatusBadge";
 
 export { Breadcrumb } from "./Breadcrumb";
 export type { BreadcrumbItem, BreadcrumbVariant } from "./Breadcrumb";
+
+export { RichTextEditor } from "./RichTextEditor";
+export type { RichTextEditorProps } from "./RichTextEditor";
+
+export { MediaPlayer } from "./MediaPlayer";
+export type { MediaPlayerMedia, MediaPlayerProps } from "./MediaPlayer";
+
+export { MediaGalleryLightbox } from "./MediaGalleryLightbox";
+export type { GalleryMediaItem, MediaGalleryLightboxProps } from "./MediaGalleryLightbox";

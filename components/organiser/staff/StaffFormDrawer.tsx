@@ -12,7 +12,7 @@ import {
 import { SideDrawer } from "@/components/common";
 import IconCard, { STAFF_MEMBER_ICON } from "@/components/ui/IconCard";
 import { InputField } from "@/components/ui/InputField";
-import { SelectBox } from "@/components/ui/SelectBox";
+import { SelectField } from "@/components/ui/SelectField";
 import { appToast } from "@/lib/ui/toast";
 
 type StaffFormDrawerProps = {
@@ -31,7 +31,7 @@ const COUNTRY_OPTIONS = [
 
 function StaffLogo() {
   return (
-    <span className="flex h-10 w-10 items-center justify-center rounded-[4px] border border-black bg-white">
+    <span className="staff-form-logo">
       <IconCard name={STAFF_MEMBER_ICON} className="h-5 w-5" />
     </span>
   );
@@ -284,155 +284,132 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
         void handleSubmit();
       }}
       isSubmitting={isSaving}
-      panelClassName="max-w-[640px]"
+      panelClassName="!max-w-[640px]"
     >
       {isEditLoading ? (
-        <p className="py-6 text-[13px] text-black/55">Loading staff details...</p>
+        <p className="staff-form-state">Loading staff details...</p>
       ) : null}
       {isEdit && isDetailsError ? (
-        <p className="py-6 text-[13px] text-[#d32f2f]">Unable to load staff details.</p>
+        <p className="staff-form-state staff-form-state-error">Unable to load staff details.</p>
       ) : null}
 
       {!isEditLoading && !(isEdit && isDetailsError) ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <div className="staff-form">
+          <div className="staff-form-row">
             <InputField
               label="First name *"
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-first-name"
               autoFocus
               required
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               placeholder="Enter first name"
-              density="compact"
+              labelClassName="input-heading"
             />
             <InputField
               label="Last name *"
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-last-name"
               required
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
               placeholder="Enter last name"
-              density="compact"
+              labelClassName="input-heading"
             />
             <InputField
               label="Email address *"
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-email"
               type="email"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Enter email"
-              density="compact"
+              labelClassName="input-heading"
             />
             <InputField
               label="Phone number *"
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-phone"
               type="tel"
               required
               value={phone}
               onChange={(event) => setPhone(event.target.value)}
               placeholder="Enter phone"
-              density="compact"
+              labelClassName="input-heading"
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <div>
-              <label
-                className="mb-[6px] block text-[14px] font-bold uppercase leading-[16px]"
-                htmlFor="staff-country"
-              >
-                Country *
-              </label>
-              <SelectBox
-                id="staff-country"
-                value={country}
-                options={COUNTRY_OPTIONS.map(({ value, label }) => ({ value, label }))}
-                onChange={(event) => setCountry(event.target.value)}
-                density="compact"
-                aria-label="Country"
-              />
-            </div>
-            <div>
-              <label
-                className="mb-[6px] block text-[14px] font-bold uppercase leading-[16px]"
-                htmlFor="staff-status"
-              >
-                Status *
-              </label>
-              <SelectBox
-                id="staff-status"
-                value={status}
-                options={[
-                  { value: "active", label: "Active" },
-                  { value: "inactive", label: "Inactive" },
-                ]}
-                onChange={(event) =>
-                  setStatus(event.target.value === "inactive" ? "inactive" : "active")
-                }
-                density="compact"
-                aria-label="Status"
-              />
-            </div>
+          <div className="staff-form-row">
+            <SelectField
+              id="staff-country"
+              label="Country *"
+              labelClassName="input-heading"
+              value={country}
+              options={COUNTRY_OPTIONS.map(({ value, label }) => ({ value, label }))}
+              onChange={(event) => setCountry(event.target.value)}
+              aria-label="Country"
+            />
+            <SelectField
+              id="staff-status"
+              label="Status *"
+              labelClassName="input-heading"
+              value={status}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+              onChange={(event) =>
+                setStatus(event.target.value === "inactive" ? "inactive" : "active")
+              }
+              aria-label="Status"
+            />
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="staff-form-row">
             <InputField
               label={isEdit ? "Password (optional)" : "Password *"}
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-password"
               type="password"
               required={!isEdit}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder={isEdit ? "Leave blank to keep current" : "Enter password"}
-              density="compact"
+              labelClassName="input-heading"
               autoComplete="new-password"
             />
             <InputField
               label={isEdit ? "Confirm password" : "Confirm password *"}
-              labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
               id="staff-confirm-password"
               type="password"
               required={!isEdit}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Confirm password"
-              density="compact"
+              labelClassName="input-heading"
               autoComplete="new-password"
             />
           </div>
 
-          <div>
-            <label
-              className="mb-[6px] block text-[14px] font-bold uppercase leading-[16px]"
-              htmlFor="staff-role-picker"
-            >
+          <div className="staff-role-field">
+            <label className="input-heading" htmlFor="staff-role-picker">
               Assign role(s) *
             </label>
-            <p className="mt-1 text-[11px] text-[#737b8c]">
+            <p className="staff-form-helper">
               Select one or more roles for this staff member.
             </p>
-            <div className="relative mt-1">
+            <div className="staff-role-picker">
               <button
                 id="staff-role-picker"
                 type="button"
                 aria-haspopup="listbox"
                 aria-expanded={rolePickerOpen}
                 onClick={() => setRolePickerOpen((open) => !open)}
-                className="flex h-10 w-full items-center justify-between rounded-[3px] border border-black/60 px-3 text-left text-[14px] text-[#555]"
+                className="staff-role-trigger"
               >
                 {isRolesLoading ? "Loading roles..." : "Select role"}
                 <svg
                   viewBox="0 0 20 20"
                   fill="none"
                   aria-hidden="true"
-                  className={`h-3.5 w-3.5 transition-transform ${rolePickerOpen ? "rotate-180" : ""}`}
+                  className={`staff-role-chevron ${rolePickerOpen ? "staff-role-chevron-open" : ""}`}
                 >
                   <path
                     d="m5 7.5 5 5 5-5"
@@ -448,21 +425,17 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
                   role="listbox"
                   aria-label="Available roles"
                   aria-multiselectable="true"
-                  className="absolute inset-x-0 top-10 z-20 max-h-48 overflow-y-auto border border-black/60 bg-white p-1 shadow-md"
+                  className="staff-role-menu"
                 >
                   {roleOptions.length === 0 ? (
-                    <p className="px-2 py-2 text-[12px] text-black/55">No roles available.</p>
+                    <p className="staff-form-state">No roles available.</p>
                   ) : (
                     roleOptions.map((roleOption) => (
-                      <label
-                        key={roleOption.id}
-                        className="flex cursor-pointer items-center gap-2 px-2 py-2 text-[12px] hover:bg-black/5"
-                      >
+                      <label key={roleOption.id} className="staff-role-option">
                         <input
                           type="checkbox"
                           checked={selectedRoleIds.includes(roleOption.id)}
                           onChange={() => toggleRole(roleOption.id)}
-                          className="h-[13px] w-[13px] accent-black"
                         />
                         {roleOption.name}
                       </label>
@@ -471,18 +444,15 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
                 </div>
               ) : null}
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="staff-role-chips">
               {selectedRoles.map((selectedRole) => (
-                <span
-                  key={selectedRole.id}
-                  className="inline-flex items-center gap-2 rounded-[4px] bg-[#eee] px-2.5 py-1.5 text-[11px]"
-                >
+                <span key={selectedRole.id} className="staff-role-chip">
                   {selectedRole.name}
                   <button
                     type="button"
                     onClick={() => toggleRole(selectedRole.id)}
                     aria-label={`Remove ${selectedRole.name}`}
-                    className="font-bold leading-none"
+                    className="staff-role-chip-remove"
                   >
                     ×
                   </button>
@@ -490,18 +460,18 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
               ))}
             </div>
             {selectedRoleIds.length === 0 ? (
-              <p role="alert" className="mt-1 text-[11px] text-red-600">
+              <p role="alert" className="staff-form-error">
                 Select at least one role.
               </p>
             ) : null}
           </div>
 
-          <div>
-            <p className="text-[10px] font-bold uppercase">Photo (Optional)</p>
-            <div className="mt-1.5 flex items-center gap-3">
+          <div className="staff-photo-field">
+            <p className="staff-form-section-label">Photo (Optional)</p>
+            <div className="staff-photo-row">
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#eee] text-[15px] text-[#999]"
+                className="staff-photo-preview"
                 style={
                   profileImageUrl
                     ? {
@@ -515,7 +485,7 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
                 {profileImageUrl ? null : "▧"}
               </span>
               <div>
-                <label className="inline-flex h-10 cursor-pointer items-center rounded-[3px] border border-black/60 px-3 text-[14px] hover:bg-black/5">
+                <label className="staff-photo-button">
                   {uploadingPhoto ? "Uploading..." : profileImagePath ? "Change photo" : "Add photo"}
                   <input
                     type="file"
@@ -528,7 +498,7 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
                     }}
                   />
                 </label>
-                <p className="mt-1 text-[10px] text-[#888]">
+                <p className="staff-form-helper">
                   {photoError || (profileImagePath ? "Photo ready" : "JPG, PNG (Max 2MB)")}
                 </p>
               </div>
@@ -538,14 +508,13 @@ export function StaffFormDrawer({ isOpen, staffId, onClose, onSaved }: StaffForm
           <InputField
             as="textarea"
             label="Description"
-            labelClassName="!mb-[6px] !text-[14px] !leading-[16px]"
             id="staff-description"
             rows={3}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Provide a short brief..."
-            className="!resize-y !px-3 !py-2"
-            containerClassName="!min-h-[74px]"
+            labelClassName="input-heading"
+            containerClassName="staff-form-textarea"
           />
         </div>
       ) : null}

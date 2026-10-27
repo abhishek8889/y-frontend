@@ -25,7 +25,7 @@ export function OrganiserModal({
   titleId,
   showClose = false,
   onClose,
-  panelClassName = "",
+  panelClassName = "max-w-[500px]",
 }: OrganiserModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -58,14 +58,14 @@ export function OrganiserModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`organiser-modal__panel relative w-full max-w-[500px] overflow-hidden rounded-[4px] bg-white ${panelClassName}`.trim()}
+        className={`organiser-modal__panel relative w-full overflow-hidden rounded-[4px] bg-white ${panelClassName}`.trim()}
       >
         {showClose && onClose ? (
           <button
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="absolute right-5 top-5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-[5px] border border-[#e5e5e5] bg-white text-black/70 transition hover:text-black"
+            className="organiser-modal__close absolute right-4 top-4 z-[2] flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-black/15 bg-white text-black/70 transition hover:bg-black/[0.04] hover:text-black"
           >
             <IconCard name={CLOSE_ICON} className="h-3.5 w-3.5" />
           </button>

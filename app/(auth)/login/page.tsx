@@ -374,7 +374,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isBusy}
-              className="mt-1 flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="auth-primary-button mt-1"
             >
               {isPasswordLoading ? "Signing in..." : "Continue"}
             </button>

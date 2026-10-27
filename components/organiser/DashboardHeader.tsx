@@ -43,7 +43,7 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
   const displayOwner = ownerName || (isLoading ? "" : "Owner");
 
   return (
-    <header className="organiser-dashboard__header flex h-[45px] items-center justify-between border-b border-black bg-white px-5 md:px-8">
+    <header className="organiser-dashboard__header flex items-center justify-between border-b border-black bg-white px-5 md:px-8">
       <div className="flex min-w-0 items-center gap-2">
         <div className="relative h-5 w-5 shrink-0 overflow-hidden">
           {organisationLogo ? (
@@ -63,9 +63,7 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
             />
           )}
         </div>
-        <span className="truncate text-[13.333px] font-bold uppercase leading-5 text-black">
-          {displayOrganisation}
-        </span>
+        <span className="sidebar-title truncate">{displayOrganisation}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-5">

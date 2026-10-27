@@ -16,7 +16,8 @@ export function normalizeStatusKey(status: string | null | undefined): StatusCol
     normalized === "sold_out" ||
     normalized === "soldout" ||
     normalized === "cancelled" ||
-    normalized === "canceled"
+    normalized === "canceled" ||
+    normalized === "suspended"
   ) {
     return "soldout";
   }
@@ -42,6 +43,7 @@ export function formatStatusLabel(status: string | null | undefined) {
   if (normalized === "draft") return "Draft";
   if (normalized === "inactive") return "Inactive";
   if (normalized === "active") return "Active";
+  if (normalized === "suspended") return "Suspended";
   return normalized
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

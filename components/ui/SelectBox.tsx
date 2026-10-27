@@ -166,13 +166,13 @@ export function SelectBox({
   }
 
   const isCompact = density === "compact";
-  const heightClass = isCompact ? "h-10" : "h-[48px]";
-  const labelPadClass = isCompact ? "pl-2.5 pr-2" : "px-5 pr-2";
+  const labelPadClass = isCompact ? "pl-2.5 pr-2" : "px-4 pr-2";
   const chevronWrapClass = isCompact
-    ? "flex w-10 shrink-0 items-center justify-center pr-1"
+    ? "flex w-8 shrink-0 items-center justify-center pr-1"
     : "flex w-11 shrink-0 items-center justify-center";
   const displayLabel = selectedOption?.label ?? placeholder ?? "Select";
   const isPlaceholder = !selectedOption;
+  const labelSizeClass = isCompact ? "text-[12px] leading-normal" : "text-[14px] leading-[20px]";
 
   return (
     <div ref={rootRef} className="relative">
@@ -192,14 +192,14 @@ export function SelectBox({
           if (!disabled) setOpen((current) => !current);
         }}
         onKeyDown={handleTriggerKeyDown}
-        className={`flex w-full ${heightClass} cursor-pointer items-center overflow-hidden rounded-[4px] border border-black bg-white p-0 text-left text-black outline-none transition hover:bg-black/[0.02] focus-visible:ring-1 focus-visible:ring-black disabled:cursor-not-allowed disabled:opacity-50 ${containerClassName} ${className}`.trim()}
+        className={`flex h-[41px] w-full cursor-pointer items-center overflow-hidden rounded-[4px] border border-black bg-white p-0 text-left text-black outline-none transition hover:bg-black/[0.02] focus-visible:ring-1 focus-visible:ring-black disabled:cursor-not-allowed disabled:opacity-50 ${containerClassName} ${className}`.trim()}
       >
         {prefix ? (
-          <span className={`mr-2 flex items-center ${isCompact ? "pl-2.5" : "pl-5"}`}>{prefix}</span>
+          <span className={`mr-2 flex items-center ${isCompact ? "pl-2.5" : "pl-4"}`}>{prefix}</span>
         ) : null}
         <span
-          className={`min-w-0 flex-1 truncate text-[14px] leading-[20px] ${labelPadClass} ${
-            isPlaceholder ? "text-black/45" : "text-black"
+          className={`min-w-0 flex-1 truncate ${labelSizeClass} ${labelPadClass} ${
+            isPlaceholder ? "input-placeholder-text" : "text-black"
           } ${prefix ? "!pl-0" : ""}`.trim()}
         >
           {displayLabel}

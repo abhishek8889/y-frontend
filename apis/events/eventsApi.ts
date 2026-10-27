@@ -29,6 +29,9 @@ export type EventImageInput = {
 
 export type EventImage = EventImageInput & {
   url?: string | null;
+  /** `image` | `video` — used for list card media preview. */
+  media_type?: "image" | "video" | string | null;
+  mime?: string | null;
 };
 
 export type EventLifecycleStatus = "draft" | "published" | "cancelled" | "completed";

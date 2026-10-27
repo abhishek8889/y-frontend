@@ -16,10 +16,12 @@ import {
 } from "@/apis/events/eventsApi";
 import {
   ActionMenu,
+  DataTable,
   StatusBadge,
   WarningAlertIcon,
   YourlistAlert,
   type ActionMenuItem,
+  type DataTableColumn,
 } from "@/components/common";
 import {
   localDateTimeInZoneToUtcSql,
@@ -229,11 +231,11 @@ function TicketDialogFrame({
             <div className="min-w-0">
               <h3
                 id="ticket-dialog-title"
-                className="font-heading truncate text-[18px] font-bold uppercase leading-[26px] text-black"
+                className="event-panel-section-title truncate"
               >
                 {title}
               </h3>
-              <p className="mt-1 text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">{subtitle}</p>
+              <p className="event-panel-subtitle">{subtitle}</p>
             </div>
           </div>
           <button
@@ -275,7 +277,6 @@ function TicketFormDialog({
         <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto px-5 py-[14px]">
           <InputField
             label="Ticket name"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="ticketName"
             required
             defaultValue={ticket?.name}
@@ -285,7 +286,6 @@ function TicketFormDialog({
           />
           <InputField
             label="Description"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             as="textarea"
             name="ticketDescription"
             rows={4}
@@ -299,7 +299,6 @@ function TicketFormDialog({
               type="number"
               min="0"
               label="Base price"
-              labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
               step="0.01"
               defaultValue={String(ticket?.price ?? 0)}
               density="compact"
@@ -309,7 +308,6 @@ function TicketFormDialog({
             <InputField
               name="quantityCap"
               label="Quantity cap"
-              labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
               type="number"
               min="1"
               defaultValue={String(ticket?.quantityCap ?? 500)}
@@ -322,13 +320,11 @@ function TicketFormDialog({
             defaultValue={toApiCurrency(ticket?.currency ?? "USD")}
             label="Currency"
             wrapperClassName="mb-[20px]"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             options={currencyOptions}
             density="compact"
           />
           <InputField
             label="Badge label"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="badgeLabel"
             defaultValue={ticket?.badgeLabel ?? ""}
             placeholder="e.g. Most Popular"
@@ -337,7 +333,6 @@ function TicketFormDialog({
           />
           <InputField
             label="Entitlement"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="entitlement"
             defaultValue={ticket?.entitlement}
             placeholder="Add entitlement"
@@ -346,7 +341,6 @@ function TicketFormDialog({
           />
           <SelectField
             label="Status"
-            labelClassName="!text-[14px] !mb-[6px] !leading-[20px]"
             name="ticketStatus"
             defaultValue={toApiStatus(ticket?.status ?? "active")}
             wrapperClassName="mb-[50px]"
@@ -359,14 +353,14 @@ function TicketFormDialog({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="h-[40px] cursor-pointer rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black hover:bg-black/5 disabled:opacity-50"
+            className="form-footer-btn form-footer-btn-secondary disabled:opacity-50"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="h-[40px] cursor-pointer rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white hover:bg-black/80 disabled:opacity-50"
+            className="form-footer-btn form-footer-btn-primary disabled:opacity-50"
           >
             {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Create ticket"}
           </Button>
@@ -415,7 +409,6 @@ function CreateOfferDialog({
           <InputField
             name="offerName"
             label="Offer name"
-            labelClassName="!text-[14px] !leading-[20px]"
             required
             placeholder="Early Birds"
             defaultValue={offer?.name ?? ""}
@@ -426,7 +419,6 @@ function CreateOfferDialog({
             <InputField
               name="offerPrice"
               label="Price"
-              labelClassName="!text-[14px] !leading-[20px]"
               type="number"
               min="0"
               step="0.01"
@@ -440,7 +432,6 @@ function CreateOfferDialog({
             <InputField
               name="offerQuantityCap"
               label="Quantity cap"
-              labelClassName="!text-[14px] !leading-[20px]"
               type="number"
               min="1"
               defaultValue={String(offer?.quantityCap ?? 500)}
@@ -454,7 +445,6 @@ function CreateOfferDialog({
             <InputField
               name="validFrom"
               label="Sale start"
-              labelClassName="!text-[14px] !leading-[20px]"
               type="datetime-local"
               required
               defaultValue={saleStartDefault}
@@ -465,7 +455,6 @@ function CreateOfferDialog({
             <InputField
               name="validTo"
               label="Sale end"
-              labelClassName="!text-[14px] !leading-[20px]"
               type="datetime-local"
               required
               defaultValue={saleEndDefault}
@@ -477,7 +466,6 @@ function CreateOfferDialog({
           <InputField
             name="maxTicketsPerOrder"
             label="Max tickets per order"
-            labelClassName="!text-[14px] !leading-[20px]"
             type="number"
             min="1"
             defaultValue={String(offer?.maxTicketsPerOrder ?? 6)}
@@ -488,7 +476,6 @@ function CreateOfferDialog({
           <RadioGroup
             name="offerAccess"
             legend="Access"
-            labelClassName="!text-[14px] !leading-[20px]"
             optionClassName="!text-[14px]"
             defaultValue={toApiAccess(offer?.access ?? "public")}
             options={[
@@ -499,7 +486,6 @@ function CreateOfferDialog({
           <SelectField
             name="offerStatus"
             label="Status"
-            labelClassName="!text-[14px] !leading-[20px]"
             defaultValue={toApiStatus(offer?.status ?? "active")}
             options={statusOptions}
             density="compact"
@@ -513,14 +499,14 @@ function CreateOfferDialog({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="h-[40px] rounded-[3px] border border-black/70 bg-white px-3 text-[14px] font-normal uppercase text-black cursor-pointer hover:bg-black/5 disabled:opacity-50"
+            className="form-footer-btn form-footer-btn-secondary disabled:opacity-50"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="h-[40px] rounded-[3px] border border-black bg-black px-3 text-[14px] font-normal uppercase text-white cursor-pointer hover:bg-black/80 disabled:opacity-50"
+            className="form-footer-btn form-footer-btn-primary disabled:opacity-50"
           >
             {isSubmitting
               ? isEditing
@@ -739,6 +725,47 @@ export default function TicketsTab({
     ];
   }
 
+  function getOfferColumns(ticketId: string): DataTableColumn<TicketOffer>[] {
+    return [
+      { id: "name", header: "Offer name", accessorKey: "name" },
+      {
+        id: "price",
+        header: "Price",
+        cell: ({ row }) => `$${row.price.toFixed(2)}`,
+      },
+      {
+        id: "quantityCap",
+        header: "Quantity cap",
+        cell: ({ row }) => String(row.quantityCap),
+      },
+      { id: "validPeriod", header: "Valid period", accessorKey: "validPeriod" },
+      { id: "access", header: "Access", accessorKey: "access" },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
+      },
+      {
+        id: "actions",
+        header: "Action",
+        align: "center",
+        headerClassName: "text-center",
+        cell: ({ row }) => (
+          <ActionMenu
+            row={row}
+            actions={getOfferActions(ticketId)}
+            open={openActionId === `offer-${row.id}`}
+            onOpenChange={(nextOpen) =>
+              setOpenActionId(nextOpen ? `offer-${row.id}` : null)
+            }
+            ariaLabel={`Open actions for ${row.name}`}
+            className="justify-center"
+          />
+        ),
+      },
+    ];
+  }
+
   async function saveOffer(event: FormEvent<HTMLFormElement>, ticketId: string) {
     event.preventDefault();
     event.stopPropagation();
@@ -809,17 +836,21 @@ export default function TicketsTab({
   }
 
   return (
-    <div className="pt-4">
-      <div className="mb-[27px] flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-heading text-[22px] font-bold uppercase leading-none tracking-[-0.03em] text-black sm:text-[26px]">
-          Products
-        </h3>
+    <section className="pt-5" aria-label={`${eventTitle} products`}>
+      <div className="event-panel-header">
+        <div>
+          <h3 className="event-panel-title">Products</h3>
+          <p className="event-panel-subtitle">Ticket types, offers, and inventory for this event.</p>
+        </div>
         <Button
           type="button"
           onClick={() => setDialog({ type: "ticket" })}
-          className="inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-3 text-[14px] font-bold uppercase leading-[20px] text-white hover:bg-white hover:text-black"
+          className="page-primary-button-action"
         >
-          + Create ticket
+          <span aria-hidden className="text-[16px] leading-none">
+            +
+          </span>
+          Create ticket
         </Button>
       </div>
 
@@ -835,18 +866,18 @@ export default function TicketsTab({
         </p>
       ) : null}
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {!isLoading && !isError
           ? tickets.map((ticket) => {
           const isExpanded = resolvedExpandedTicketIds.includes(ticket.id);
           const remaining = Math.max(0, ticket.quantityCap - ticket.sold);
 
           return (
-            <article key={ticket.id} className="border border-black/70 bg-white p-5">
+            <article key={ticket.id} className="border border-black bg-white p-4">
               <div className="flex items-start justify-between gap-3">
-                <h4 className="text-[18px] leading-[20px] font-bold uppercase text-black">{ticket.name}</h4>
+                <h4 className="event-panel-section-title min-w-0 flex-1">{ticket.name}</h4>
                 <div className="flex shrink-0 items-center gap-3">
-                  <StatusBadge status={ticket.status} className="text-[16px] leading-[20px]" />
+                  <StatusBadge status={ticket.status} className="datatable-status" />
                   <ActionMenu
                     row={ticket}
                     actions={getTicketActions(ticket)}
@@ -864,76 +895,64 @@ export default function TicketsTab({
 
               {isExpanded ? (
                 <>
-                  <p className="mt-4 mb-[22px] max-w-[1000px] text-[14px] leading-[20px] text-[#6F6E69]">{ticket.description}</p>
-                  <dl className="grid grid-cols-2 border border-black/70 md:grid-cols-4">
+                  <p className="event-panel-subtitle mt-2 mb-4 max-w-[1000px]">{ticket.description}</p>
+                  <dl className="grid grid-cols-2 border border-black md:grid-cols-4">
                     {[
                       { label: "Price", value: `${currencySymbol(ticket.currency)}${ticket.price.toFixed(2)}` },
                       { label: "Quantity cap", value: String(ticket.quantityCap) },
                       { label: "Sold", value: String(ticket.sold) },
                       { label: "Remaining", value: String(remaining) },
                     ].map((metric, index) => (
-                      <div key={metric.label} className={`min-h-[62px] py-4 px-8 ${index < 2 ? "border-b md:border-b-0" : ""} ${index % 2 === 0 ? "border-r" : ""} border-black/70 ${index === 1 ? "md:border-r" : ""}`}>
-                        <dd className="text-[16px] leading-[20px] font-bold text-black">{metric.value}</dd>
-                        <dt className="mt-1 text-[14px] leading-[20px] text-[#949494]">{metric.label}</dt>
+                      <div
+                        key={metric.label}
+                        className={`min-h-[62px] px-4 py-3 ${index < 2 ? "border-b md:border-b-0" : ""} ${index % 2 === 0 ? "border-r" : ""} border-black ${index === 1 ? "md:border-r" : ""}`}
+                      >
+                        <dd className="gridcard-value !mt-0 text-[16px]">{metric.value}</dd>
+                        <dt className="event-detail-label mt-1 !normal-case tracking-normal">{metric.label}</dt>
                       </div>
                     ))}
                   </dl>
-                  <div className="flex flex-wrap items-center justify-between gap-3 py-6">
-                    <p className="flex items-center gap-2 text-[16px] font-bold text-black">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21.41 11.58L12.41 2.58C12.05 2.22 11.55 2 11 2H4C2.9 2 2 2.9 2 4V11C2 11.55 2.22 12.05 2.59 12.42L11.59 21.42C11.95 21.78 12.45 22 13 22C13.55 22 14.05 21.78 14.41 21.41L21.41 14.41C21.78 14.05 22 13.55 22 13C22 12.45 21.77 11.94 21.41 11.58ZM13 20.01L4 11V4H11V3.99L20 12.99L13 20.01Z" fill="black"/>
-                      <path d="M6.5 8C7.32843 8 8 7.32843 8 6.5C8 5.67157 7.32843 5 6.5 5C5.67157 5 5 5.67157 5 6.5C5 7.32843 5.67157 8 6.5 8Z" fill="black"/>
+                  <div className="event-panel-header !mb-0 py-4">
+                    <p className="event-panel-section-title flex items-center gap-2 !tracking-[1px]">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M21.41 11.58L12.41 2.58C12.05 2.22 11.55 2 11 2H4C2.9 2 2 2.9 2 4V11C2 11.55 2.22 12.05 2.59 12.42L11.59 21.42C11.95 21.78 12.45 22 13 22C13.55 22 14.05 21.78 14.41 21.41L21.41 14.41C21.78 14.05 22 13.55 22 13C22 12.45 21.77 11.94 21.41 11.58ZM13 20.01L4 11V4H11V3.99L20 12.99L13 20.01Z" fill="black"/>
+                        <path d="M6.5 8C7.32843 8 8 7.32843 8 6.5C8 5.67157 7.32843 5 6.5 5C5.67157 5 5 5.67157 5 6.5C5 7.32843 5.67157 8 6.5 8Z" fill="black"/>
                       </svg>
                       Offers: {ticket.offers.length}
                     </p>
-                    <Button 
-                      type="button" 
-                      onClick={() => setDialog({ type: "offer", ticketId: ticket.id })} 
-                      className="cursor-pointer h-[40px] rounded-[3px] border border-black/100 bg-white px-3 text-[14px] leading-[20px] font-bold uppercase text-black hover:bg-black hover:text-white">
-                        + Create offer
+                    <Button
+                      type="button"
+                      onClick={() => setDialog({ type: "offer", ticketId: ticket.id })}
+                      className="page-secondary-button"
+                    >
+                      <span aria-hidden className="text-[16px] leading-none">
+                        +
+                      </span>
+                      Create offer
                     </Button>
                   </div>
                   {ticket.offers.length ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[760px] border-collapse text-left">
-                        <thead><tr className="bg-[#EEEEEE] text-[14px] font-bold uppercase text-black">
-                          <th className="border-y border-black/35 py-[18px] px-3">Offer name</th>
-                          <th className="border-y border-black/35 py-[18px] px-3">Price</th>
-                          <th className="border-y border-black/35 py-[18px] px-3">Quantity cap</th>
-                          <th className="border-y border-black/35 py-[18px] px-3">Valid period</th>
-                          <th className="border-y border-black/35 py-[18px] px-3">Access</th>
-                          <th className="border-y border-black/35 py-[18px] px-3">Status</th>
-                          <th className="border-y border-black/35 py-[18px] px-3 text-center">Action</th>
-                        </tr></thead>
-                        <tbody>{ticket.offers.map((offer) => (
-                          <tr key={offer.id} className="border-b border-black/50 text-[16px] leading-[20px] text-black last:border-b-0">
-                            <td className="py-[18px] px-3">{offer.name}</td>
-                            <td className="py-[18px] px-3">${offer.price.toFixed(2)}</td>
-                            <td className="py-[18px] px-3">{offer.quantityCap}</td>
-                            <td className="py-[18px] px-3">{offer.validPeriod}</td>
-                            <td className="py-[18px] px-3">{offer.access}</td>
-                            <td className="py-[18px] px-3">
-                              <StatusBadge status={offer.status} />
-                            </td>
-                            <td className="px-2.5 py-3 text-center">
-                              <ActionMenu
-                                row={offer}
-                                actions={getOfferActions(ticket.id)}
-                                open={openActionId === `offer-${offer.id}`}
-                                onOpenChange={(nextOpen) =>
-                                  setOpenActionId(nextOpen ? `offer-${offer.id}` : null)
-                                }
-                                ariaLabel={`Open actions for ${offer.name}`}
-                                className="justify-center"
-                              />
-                            </td>
-                          </tr>
-                        ))}</tbody>
-                      </table>
-                    </div>
-                  ) : <p className="border-t border-black/15 py-4 text-[12px] text-black/50">No offers for this ticket yet.</p>}
+                    <DataTable
+                      columns={getOfferColumns(ticket.id)}
+                      data={ticket.offers}
+                      getRowId={(row) => row.id}
+                      features={{
+                        search: false,
+                        filters: false,
+                        pagination: false,
+                        pageSize: false,
+                      }}
+                      bodyHeightClassName={false}
+                      headerBackground="#EEEEEE"
+                      emptyMessage="No offers for this ticket yet."
+                    />
+                  ) : (
+                    <p className="py-4 text-[12px] text-black/50">No offers for this ticket yet.</p>
+                  )}
                 </>
-              ) : <p className="mt-[16px] truncate text-[14px] leading-[20px] text-[#6F6E69]">{ticket.description}</p>}
+              ) : (
+                <p className="event-panel-subtitle mt-2 truncate">{ticket.description}</p>
+              )}
             </article>
           );
         })
@@ -986,6 +1005,6 @@ export default function TicketsTab({
         }}
         isSubmitting={isDeleteSubmitting}
       />
-    </div>
+    </section>
   );
 }

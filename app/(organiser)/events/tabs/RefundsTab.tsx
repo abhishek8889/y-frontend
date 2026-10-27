@@ -92,18 +92,19 @@ export default function RefundsTab({ eventTitle }: { eventTitle: string }) {
       {
         id: "status",
         header: "STATUS",
-        cell: ({ row }) => <StatusBadge status={row.status} className="text-[14px]" />,
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
       },
     ],
     [],
   );
 
   return (
-    <section className="pt-4" aria-label={`${eventTitle} refunds`}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-heading text-[26px] font-bold uppercase leading-none tracking-[-0.03em] text-black">
-          Refunds
-        </h3>
+    <section className="pt-5" aria-label={`${eventTitle} refunds`}>
+      <div className="event-panel-header">
+        <div>
+          <h3 className="event-panel-title">Refunds</h3>
+          <p className="event-panel-subtitle">Track refund requests and completed payouts.</p>
+        </div>
         <ExportButton
           fileName="event-refunds"
           headers={["Refund ID", "Order ID", "Customer", "Email", "Amount", "Reason", "Date", "Status"]}
@@ -122,7 +123,7 @@ export default function RefundsTab({ eventTitle }: { eventTitle: string }) {
 
       <TabSearch value={search} onChange={setSearch} />
 
-      <div className="mt-6">
+      <div className="mt-4">
         <DataTable
           columns={columns}
           data={filteredRefunds}

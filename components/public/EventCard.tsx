@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import eventCover from "@/assets/event-cover.jpg";
 import type { PublicEventListItem } from "@/apis/public/publicEventsApi";
+import { MediaPlayer } from "@/components/common";
+import { isVideoMedia } from "@/lib/media/isVideoMedia";
 import { toEventCardModel } from "@/lib/events/publicEventFormat";
 
 type EventCardProps = {
@@ -22,20 +24,41 @@ export function EventCard({
   const model = toEventCardModel(event);
   const href = `/event/${encodeURIComponent(model.uniqueId)}`;
   const imageSrc = model.imageUrl || eventCover;
+  const mediaType = model.banner?.media_type?.trim().toLowerCase();
+  // Image banners never get player controls; only explicit/detected video does.
+  const bannerIsVideo =
+    mediaType !== "image" && Boolean(model.banner?.url) && isVideoMedia(model.banner);
 
   return (
     <article className="min-w-0 border-r border-b border-black bg-white">
       <div className="relative aspect-[360/417] overflow-hidden bg-black">
-        <Link href={href} aria-label={`View ${model.name}`} className="absolute inset-0">
-          <Image
-            src={imageSrc}
-            alt={model.name}
-            fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 25vw"
-            className="object-cover"
-            unoptimized={typeof imageSrc === "string"}
-          />
-        </Link>
+        {bannerIsVideo ? (
+          <>
+            <MediaPlayer
+              media={model.banner}
+              alt={model.name}
+              active
+              frameClassName="absolute inset-0 h-full w-full"
+            />
+            {/* Navigate on media click, but leave bottom control bar free */}
+            <Link
+              href={href}
+              aria-label={`View ${model.name}`}
+              className="absolute inset-x-0 top-0 bottom-14 z-[1]"
+            />
+          </>
+        ) : (
+          <Link href={href} aria-label={`View ${model.name}`} className="absolute inset-0">
+            <Image
+              src={imageSrc}
+              alt={model.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 25vw"
+              className="object-cover"
+              unoptimized={typeof imageSrc === "string"}
+            />
+          </Link>
+        )}
         {onToggleWishlist ? (
           <button
             type="button"
@@ -65,13 +88,6 @@ export function EventCard({
             </svg>
           </button>
         ) : null}
-        <img
-          src="/landing/card-action.svg"
-          width={27}
-          height={27}
-          alt=""
-          className="pointer-events-none absolute right-4 bottom-[18px]"
-        />
       </div>
       <Link href={href} className="flex flex-col items-center gap-2 px-3 pt-2 pb-6 text-center">
         <h2 className="text-[16px] leading-[13.8px] text-black">{model.name}</h2>

@@ -4,10 +4,13 @@ import type {
   PublicEventTicket,
 } from "@/apis/public/publicEventsApi";
 
-export function getEventBannerUrl(images?: PublicEventImage[] | null) {
+export function getEventBanner(images?: PublicEventImage[] | null) {
   if (!images?.length) return null;
-  const banner = images.find((image) => image.type === "banner") ?? images[0];
-  return banner?.url?.trim() || null;
+  return images.find((image) => image.type === "banner") ?? images[0] ?? null;
+}
+
+export function getEventBannerUrl(images?: PublicEventImage[] | null) {
+  return getEventBanner(images)?.url?.trim() || null;
 }
 
 export type UtcDateTimeFormat = "date" | "time" | "datetime";
@@ -255,12 +258,14 @@ export function formatTicketPriceRange(tickets: PublicEventTicket[]) {
 }
 
 export function toEventCardModel(event: PublicEventListItem) {
+  const banner = getEventBanner(event.images);
   return {
     id: event.id,
     uniqueId: event.unique_id,
     name: event.name,
     dateLabel: formatPublicEventDate(event.starts_at, event.timezone),
     venueName: event.venue_name?.trim() || "Venue TBA",
-    imageUrl: getEventBannerUrl(event.images),
+    imageUrl: banner?.url?.trim() || null,
+    banner,
   };
 }

@@ -14,13 +14,13 @@ export function TabSearch({ value, onChange }: { value: string; onChange: (value
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="SEARCH"
+        placeholder="Search.."
         aria-label="Search records"
         density="compact"
         prefix={(
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.6" />
+            <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
         )}
         suffix={value ? (
@@ -28,8 +28,8 @@ export function TabSearch({ value, onChange }: { value: string; onChange: (value
             ×
           </button>
         ) : null}
-        containerClassName="!rounded-none !border-0 !border-b !border-black/55 !px-0 focus-within:!ring-0 focus-within:!border-black"
-        className="!px-2 !text-[13px] placeholder:!text-[#666]"
+        containerClassName="!h-[41px] !rounded-none !border-0 !border-b !border-black !px-0 focus-within:!ring-0"
+        className="!px-2 !text-[14px] placeholder:!text-[#666]"
       />
     </div>
   );
@@ -54,8 +54,9 @@ export function SelectFilter({
         onChange={(event) => onChange(event.target.value)}
         options={options}
         density="compact"
-        containerClassName="!min-w-[125px] !rounded-none"
-        className="!text-[14px] !rounded-none !border-black/75 !px-2.5 !pr-8 !font-bold !uppercase"
+        wrapperClassName="datatable-filter-option !gap-0"
+        containerClassName="input-box input-box-compact !min-w-[125px]"
+        className="w-full text-[12px] font-normal normal-case text-black"
       />
     </div>
   );
@@ -70,8 +71,8 @@ export function MonthFilter({ value, onChange }: { value: string; onChange: (val
         onChange={(event) => onChange(event.target.value)}
         aria-label="Filter by month"
         density="compact"
-        containerClassName="!rounded-none !border-black/75 focus-within:!ring-0"
-        className="!px-2.5 !text-[14px] !font-bold !uppercase"
+        containerClassName="input-box input-box-compact"
+        className="!px-2.5 !text-[12px] normal-case"
       />
     </div>
   );
@@ -98,7 +99,7 @@ export function ExportButton({
   }
 
   return (
-    <Button type="button" onClick={exportRows} className="inline-flex h-[36px] items-center gap-2 rounded-[3px] border border-black bg-black px-3 text-[14px] font-medium uppercase text-white hover:bg-white hover:text-black">
+    <Button type="button" onClick={exportRows} className="page-primary-button-action gap-2">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 16v4h14v-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
       </svg>

@@ -35,15 +35,15 @@ export function DataTablePagination({
   }));
 
   return (
-    <div className="datatable-pagination flex flex-col gap-3 border-t border-black px-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-[13px] font-normal leading-5 text-[#6f6e69] sm:text-[14px]">
+    <div className="datatable-pagination">
+      <p className="datatable-pagination-meta">
         Showing {from}-{to} of {total}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="datatable-pagination-buttons">
         {showPageSize ? (
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-normal uppercase text-black sm:text-[14px]">Rows</span>
+            <span className="datatable-pagination-label">Rows</span>
             <SelectField
               name="datatable-page-size"
               aria-label="Rows per page"
@@ -51,9 +51,9 @@ export function DataTablePagination({
               options={pageSizeSelectOptions}
               onChange={(event) => onPageSizeChange?.(Number(event.target.value))}
               density="compact"
-              wrapperClassName="!gap-0 w-[88px]"
-              containerClassName="!h-10 !rounded-none !border-black"
-              className="!h-10 !rounded-none !border-black text-[14px] font-normal uppercase text-black"
+              wrapperClassName="datatable-filter-option !gap-0 w-[88px]"
+              containerClassName="input-box input-box-compact"
+              className="w-full text-[12px] font-normal uppercase text-black"
             />
           </div>
         ) : null}
@@ -63,18 +63,18 @@ export function DataTablePagination({
             type="button"
             disabled={!canPrev}
             onClick={() => onPageChange(page - 1)}
-            className="h-10 min-w-[64px] cursor-pointer border border-black bg-white px-3 text-[13px] font-normal uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black sm:min-w-[72px] sm:text-[14px]"
+            className="datatable-pagination-btn"
           >
             Prev
           </button>
-          <span className="min-w-[56px] text-center text-[13px] font-normal uppercase text-black sm:min-w-[72px] sm:text-[14px]">
+          <span className="datatable-pagination-page">
             {page} / {totalPages}
           </span>
           <button
             type="button"
             disabled={!canNext}
             onClick={() => onPageChange(page + 1)}
-            className="h-10 min-w-[64px] cursor-pointer border border-black bg-white px-3 text-[13px] font-normal uppercase text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-black sm:min-w-[72px] sm:text-[14px]"
+            className="datatable-pagination-btn"
           >
             Next
           </button>

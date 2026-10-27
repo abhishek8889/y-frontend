@@ -196,7 +196,7 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
       {
         id: "status",
         header: "STATUS",
-        cell: ({ row }) => <StatusBadge status={row.status} className="text-[14px]" />,
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
       },
       {
         id: "actions",
@@ -218,11 +218,12 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
   );
 
   return (
-    <section className="pt-4" aria-label={`${eventTitle} orders`}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-heading text-[22px] font-bold uppercase leading-none tracking-[-0.03em] text-black sm:text-[26px]">
-          Orders
-        </h3>
+    <section className="pt-5" aria-label={`${eventTitle} orders`}>
+      <div className="event-panel-header">
+        <div>
+          <h3 className="event-panel-title">Orders</h3>
+          <p className="event-panel-subtitle">Search, filter, and export orders for this event.</p>
+        </div>
         <ExportButton
           fileName="event-orders"
           headers={[
@@ -269,7 +270,7 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
             setSearch(value);
             setPage(1);
           },
-          placeholder: "SEARCH",
+          placeholder: "Search..",
         }}
         filters={[
           {
@@ -335,9 +336,27 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
       <OrderDetailsModal
         open={detailsOrderId != null}
         order={detailsData?.data ?? null}
+        eventTitle={eventTitle}
         isLoading={isDetailsLoading || isDetailsFetching}
         isError={isDetailsError}
         onClose={() => setDetailsOrderId(null)}
+        onResend={() => {
+          const id = detailsData?.data?.unique_id;
+          setNotice(
+            id
+              ? `Resend email is not available yet for ${id}.`
+              : "Resend email is not available yet.",
+          );
+        }}
+        onRefundSubmit={({ amount }) => {
+          const id = detailsData?.data?.unique_id;
+          const sign = detailsData?.data?.currency_sign?.trim() || "£";
+          setNotice(
+            id
+              ? `Refund of ${sign}${amount} for ${id} is not connected to the API yet.`
+              : `Refund of ${sign}${amount} is not connected to the API yet.`,
+          );
+        }}
       />
     </section>
   );

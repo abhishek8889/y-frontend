@@ -1,6 +1,8 @@
 export { DashboardHeader } from "./DashboardHeader";
 export { DashboardShell } from "./DashboardShell";
 export { DashboardSidebar } from "./DashboardSidebar";
+export { FormSectionTabs } from "./FormSectionTabs";
+export type { FormSectionTab } from "./FormSectionTabs";
 export { OrganiserModal } from "./OrganiserModal";
 export { StripeConnectModal } from "./StripeConnectModal";
 export type { StripeConnectModalVariant } from "./StripeConnectModal";

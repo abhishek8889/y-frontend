@@ -1,13 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  ActionMenu,
+  Breadcrumb,
+  DataTable,
+  StatusBadge,
+  type ActionMenuItem,
+  type DataTableColumn,
+  type GridCardItem,
+} from "@/components/common";
+import { AddCustomerModal } from "@/components/organiser/customers/AddCustomerModal";
 import { DashboardHeader } from "@/components/organiser/DashboardHeader";
 import { DashboardShell } from "@/components/organiser/DashboardShell";
 import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
+import { FormSectionTabs } from "@/components/organiser/FormSectionTabs";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
-import type { Customer, CustomerAction } from "./customerTypes";
+import {
+  CUSTOMER_SEED,
+  customerFullName,
+  customerInitials,
+  formatCustomerSpend,
+  type Customer,
+  type CustomerAction,
+} from "./customerTypes";
 import ActivityTab from "./tabs/ActivityTab";
 import AttendanceTab from "./tabs/AttendanceTab";
 import OrdersTab from "./tabs/OrdersTab";
@@ -29,142 +47,173 @@ function CustomerActionDrawer({
     suspend: "Suspend account",
   }[action];
   const description = {
-    message: `Send direct messages or important updates to ${customer.firstName} ${customer.lastName}.`,
-    ticket: `Provide a free ticket to ${customer.firstName} ${customer.lastName} for a specific event.`,
+    message: `Send direct messages or important updates to ${customerFullName(customer)}.`,
+    ticket: `Provide a free ticket to ${customerFullName(customer)} for a specific event.`,
     suspend: "Temporarily restrict a supporter's access and privileges.",
   }[action];
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onClose();
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-      <section role="dialog" aria-modal="true" aria-labelledby="customer-action-title" className="flex h-full w-full max-w-[620px] flex-col border-l border-black bg-white">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="customer-action-title"
+        className="flex h-full w-full max-w-[620px] flex-col border-l border-black bg-white"
+      >
         <header className="flex min-h-[82px] items-center justify-between gap-4 border-b border-black px-5 py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] bg-black text-white" aria-hidden="true">
-              {action === "suspend" ? (
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M12 3 22 20H2L12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M12 9v5m0 3h.01" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
-              ) : action === "message" ? (
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v12H8l-4 3V5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/><path d="M8 9h8m-8 4h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
-              ) : (
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><path d="M4 8h16v12H4zM2 4h20v4H2zM12 4v16m0-16c-4.5 0-5-4-2.5-4S12 4 12 4Zm0 0c4.5 0 5-4 2.5-4S12 4 12 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-              )}
-            </div>
-            <div className="min-w-0">
-              <h2 id="customer-action-title" className="text-[18px] font-bold uppercase leading-[26px] text-black">{title}</h2>
-              <p className="mt-0.5 text-[14px] leading-[18px] text-[#6E6B69]">{description}</p>
-            </div>
+          <div className="min-w-0">
+            <h2
+              id="customer-action-title"
+              className="text-[18px] font-bold uppercase leading-[26px] text-black"
+            >
+              {title}
+            </h2>
+            <p className="mt-0.5 text-[14px] leading-[18px] text-[#6E6B69]">{description}</p>
           </div>
-          <button type="button" aria-label="Close" onClick={onClose} className="flex h-8 w-8 shrink-0 items-center justify-center text-[24px] leading-none text-black hover:bg-black/5">×</button>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center text-[24px] leading-none text-black hover:bg-black/5"
+          >
+            ×
+          </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onClose();
+          }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
             {action === "suspend" ? (
               <>
                 <div className="flex gap-3 rounded-[4px] border border-[#ff3838] bg-[#fff5f5] p-3 text-[13px] leading-[20px] text-[#ff2424]">
-                  <span aria-hidden="true" className="text-[19px] leading-5">△</span>
-                  <p>Suspending this account will immediately revoke access to all tickets, memberships, and the supporter portal. This action can be reversed.</p>
+                  <span aria-hidden="true" className="text-[19px] leading-5">
+                    △
+                  </span>
+                  <p>
+                    Suspending this account will immediately revoke access to all tickets,
+                    memberships, and the supporter portal. This action can be reversed.
+                  </p>
                 </div>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Reason for suspension
-                  <SelectField
-                    name="suspensionReason"
-                    required
-                    defaultValue="abusive"
-                    density="compact"
-                    options={[
-                      { value: "abusive", label: "Abusive behaviour" },
-                      { value: "fraud", label: "Fraudulent activity" },
-                      { value: "policy", label: "Policy violation" },
-                      { value: "other", label: "Other" },
-                    ]}
-                    containerClassName="mt-1.5"
-                    className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
-                  />
-                </label>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Additional notes
-                  <InputField as="textarea" rows={4} placeholder="Internal notes..." className="!px-3 !py-2 !text-[13px]" containerClassName="mt-1.5 !min-h-[120px] !rounded-[4px] !border-black" />
-                </label>
+                <SelectField
+                  name="suspensionReason"
+                  label="Reason for suspension"
+                  required
+                  defaultValue="abusive"
+                  density="compact"
+                  options={[
+                    { value: "abusive", label: "Abusive behaviour" },
+                    { value: "fraud", label: "Fraudulent activity" },
+                    { value: "policy", label: "Policy violation" },
+                    { value: "other", label: "Other" },
+                  ]}
+                  className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
+                />
+                <InputField
+                  as="textarea"
+                  name="notes"
+                  label="Additional notes"
+                  rows={4}
+                  placeholder="Internal notes..."
+                  className="!px-3 !py-2 !text-[13px]"
+                  containerClassName="!min-h-[120px] !rounded-[4px] !border-black"
+                />
               </>
             ) : null}
 
             {action === "message" ? (
               <>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Channel
-                  <SelectField
-                    name="channel"
-                    defaultValue="email"
-                    density="compact"
-                    options={[{ value: "email", label: "Email" }, { value: "sms", label: "SMS" }]}
-                    containerClassName="mt-1.5"
-                    className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
-                  />
-                </label>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Subject
-                  <InputField name="subject" required placeholder="Subject line..." density="compact" className="!px-3 !text-[13px]" containerClassName="mt-1.5 !rounded-[4px] !border-black" />
-                </label>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Message
-                  <InputField as="textarea" name="message" required rows={5} placeholder="Write your message..." className="!px-3 !py-2 !text-[13px]" containerClassName="mt-1.5 !min-h-[140px] !rounded-[4px] !border-black" />
-                </label>
+                <SelectField
+                  name="channel"
+                  label="Channel"
+                  defaultValue="email"
+                  density="compact"
+                  options={[
+                    { value: "email", label: "Email" },
+                    { value: "sms", label: "SMS" },
+                  ]}
+                  className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
+                />
+                <InputField
+                  name="subject"
+                  label="Subject"
+                  required
+                  placeholder="Subject line..."
+                  density="compact"
+                  className="!px-3 !text-[13px]"
+                  containerClassName="!rounded-[4px] !border-black"
+                />
+                <InputField
+                  as="textarea"
+                  name="message"
+                  label="Message"
+                  required
+                  rows={5}
+                  placeholder="Write your message..."
+                  className="!px-3 !py-2 !text-[13px]"
+                  containerClassName="!min-h-[140px] !rounded-[4px] !border-black"
+                />
               </>
             ) : null}
 
             {action === "ticket" ? (
               <>
-                  <SelectField
-                    name="event"
-                    defaultValue="city-fc"
-                    density="compact"
-                    options={[
-                      { value: "city-fc", label: "City FC vs Rovers United - 14 Jan 2025" },
-                      { value: "closing-party", label: "The Closing Party - 24 Aug 2026" },
-                    ]}
-                    containerClassName="mt-1.5"
-                    className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
-                  />
-                  <SelectField
-                    name="ticket"
-                    defaultValue="adult"
-                    density="compact"
-                    options={[{ value: "adult", label: "Adult GA" }, { value: "concession", label: "Concession" }]}
-                    containerClassName="mt-1.5"
-                    className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
-                  />
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Ticket type
-                  <InputField name="ticketType" required placeholder="e.g. General" density="compact" className="!px-3 !text-[13px]" containerClassName="mt-1.5 !rounded-[4px] !border-black" />
-                </label>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Allocation
-                  <SelectField
-                    name="allocation"
-                    defaultValue="vip"
-                    density="compact"
-                    options={[{ value: "vip", label: "VIP / guest" }, { value: "general", label: "General admission" }]}
-                    containerClassName="mt-1.5"
-                    className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
-                  />
-                </label>
-                <label className="block text-[12px] font-bold uppercase text-black">
-                  Internal note
-                  <InputField as="textarea" name="internalNote" rows={4} placeholder="Add context..." className="!px-3 !py-2 !text-[13px]" containerClassName="mt-1.5 !min-h-[120px] !rounded-[4px] !border-black" />
-                </label>
+                <SelectField
+                  name="event"
+                  label="Event"
+                  defaultValue="city-fc"
+                  density="compact"
+                  options={[
+                    { value: "city-fc", label: "City FC vs Rovers United - 14 Jan 2025" },
+                    { value: "closing-party", label: "The Closing Party - 24 Aug 2026" },
+                  ]}
+                  className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
+                />
+                <SelectField
+                  name="ticket"
+                  label="Ticket"
+                  defaultValue="adult"
+                  density="compact"
+                  options={[
+                    { value: "adult", label: "Adult GA" },
+                    { value: "concession", label: "Concession" },
+                  ]}
+                  className="!rounded-[4px] !border-black !px-3 !text-[13px] !normal-case"
+                />
+                <InputField
+                  as="textarea"
+                  name="internalNote"
+                  label="Internal note"
+                  rows={4}
+                  placeholder="Add context..."
+                  className="!px-3 !py-2 !text-[13px]"
+                  containerClassName="!min-h-[120px] !rounded-[4px] !border-black"
+                />
               </>
             ) : null}
           </div>
 
           <footer className="grid grid-cols-2 gap-3 border-t border-black px-5 py-3">
-            <Button type="button" onClick={onClose} className="rounded cursor-pointer h-[40px] border border-black bg-white text-[13px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
-            <Button type="submit" className="h-[40px] border rounded cursor-pointer border-black bg-black text-[13px] font-medium uppercase text-white hover:bg-white hover:text-black">
-              {action === "suspend" ? "Confirm suspension" : action === "message" ? "Send message" : "Issue ticket"}
+            <Button
+              type="button"
+              onClick={onClose}
+              className="h-[40px] cursor-pointer rounded border border-black bg-white text-[13px] font-medium uppercase text-black hover:bg-black/5"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="h-[40px] cursor-pointer rounded border border-black bg-black text-[13px] font-medium uppercase text-white hover:bg-white hover:text-black"
+            >
+              {action === "suspend"
+                ? "Confirm suspension"
+                : action === "message"
+                  ? "Send message"
+                  : "Issue ticket"}
             </Button>
           </footer>
         </form>
@@ -173,7 +222,7 @@ function CustomerActionDrawer({
   );
 }
 
-function CustomerProfile({
+function CustomerPassport({
   customer,
   onBack,
   onAction,
@@ -183,98 +232,124 @@ function CustomerProfile({
   onAction: (action: CustomerAction) => void;
 }) {
   const [activeTab, setActiveTab] = useState("Overview");
-  const fullName = `${customer.firstName} ${customer.lastName}`;
-  const initials = `${customer.firstName[0] ?? ""}${customer.lastName[0] ?? ""}`.toUpperCase();
-  const tabs = ["Overview", "Orders", "Tickets", "Attendance", "Activity"];
+  const [passportMenuOpen, setPassportMenuOpen] = useState(false);
+  const fullName = customerFullName(customer);
+  const initials = customerInitials(customer);
+  const tabs = ["Overview", "Orders", "Products", "Attendance", "Activity"];
+
+  const metrics = [
+    { label: "Total orders", value: String(customer.totalOrders) },
+    { label: "Total tickets purchased", value: String(customer.ticketsPurchased) },
+    { label: "Total spend", value: formatCustomerSpend(customer.totalSpend) },
+    { label: "Events attended", value: String(customer.attended) },
+  ];
+
+  const passportActions = useMemo<ActionMenuItem<Customer>[]>(
+    () => [
+      {
+        key: "ticket",
+        label: "Issue Complimentary Ticket",
+        onClick: () => {
+          onAction("ticket");
+          setPassportMenuOpen(false);
+        },
+      },
+      {
+        key: "suspend",
+        label: "Suspend Account",
+        variant: "danger",
+        onClick: () => {
+          onAction("suspend");
+          setPassportMenuOpen(false);
+        },
+      },
+    ],
+    [onAction],
+  );
 
   return (
-    <main className="min-h-full bg-white p-5 md:p-6">
-      <button type="button" onClick={onBack} className="cursor-pointer flex items-center gap-[6px] mb-3 text-[12px] text-[#919EAB] hover:text-black">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6.99786 2.91406L2.91406 6.99786L6.99786 11.0817M2.91406 6.99786H11.0817" stroke="#919EAB" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-        Back to Customers
-      </button>
+    <main className="customer-page">
+      <Breadcrumb
+        variant="dashboard"
+        className="mb-4"
+        items={[
+          { label: "Customers", onClick: onBack },
+          { label: fullName },
+        ]}
+      />
 
-      <section className="flex flex-wrap items-center gap-4 border border-black p-4 md:px-5 md:py-6">
-        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-black/60 text-[20px] font-bold text-black">
+      <section className="customer-passport" aria-label="Customer passport">
+        <div className="customer-passport-avatar" aria-hidden>
           {initials}
         </div>
-        <div className="min-w-[200px] flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[24px] font-bold leading-6 text-[#212B36]">{fullName}</h1>
-            <span className="bg-[#E2FBE9] px-2 py-1 text-[11px] rounded font-bold uppercase text-[#34C759]">● Active</span>
+
+        <div className="customer-passport-main">
+          <div className="customer-passport-name-row">
+            <h1 className="customer-passport-name">{fullName}</h1>
+            <StatusBadge status={customer.status} className="text-[12px]" />
           </div>
-          <p className="mt-1 text-[14px] text-black/80">CUST-{String(customer.id).slice(-6)}</p>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[#666666]">
-            <span className="flex items-center gap-1">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.8317 4.08576L7.58649 7.42618C7.4085 7.52954 7.20633 7.58399 7.00049 7.58399C6.79465 7.58399 6.59248 7.52954 6.41448 7.42618L1.16406 4.08576M2.33082 2.33594H11.6649C12.3093 2.33594 12.8317 2.85822 12.8317 3.50249V10.5018C12.8317 11.1461 12.3093 11.6683 11.6649 11.6683H2.33082C1.68644 11.6683 1.16406 11.1461 1.16406 10.5018V3.50249C1.16406 2.85822 1.68644 2.33594 2.33082 2.33594Z" stroke="black" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-              {customer.email}
-            </span>
-            {customer.phone ? 
-              <span className="flex items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g clip-path="url(#clip0_257_20682)">
-                <path d="M8.45147 9.69859C8.32284 9.73072 8.1871 9.71808 8.06662 9.66274C6.44623 8.86748 5.13494 7.55783 4.33765 5.93844C4.2786 5.81732 4.2633 5.67949 4.29436 5.54837C4.32541 5.41724 4.4009 5.30091 4.508 5.21914L4.78102 5.01437C4.92593 4.90569 5.04354 4.76476 5.12454 4.60275C5.20555 4.44074 5.24772 4.2621 5.24772 4.08096V2.33082C5.24772 2.02138 5.1248 1.72461 4.90599 1.5058C4.68718 1.28699 4.39041 1.16406 4.08096 1.16406H2.33082C2.02138 1.16406 1.72461 1.28699 1.5058 1.5058C1.28699 1.72461 1.16406 2.02138 1.16406 2.33082C1.16406 5.11582 2.2704 7.78675 4.23969 9.75604C6.20898 11.7253 8.87991 12.8317 11.6649 12.8317C11.9743 12.8317 12.2711 12.7087 12.4899 12.4899C12.7087 12.2711 12.8317 11.9743 12.8317 11.6649V9.91476C12.8317 9.60532 12.7087 9.30855 12.4899 9.08974C12.2711 8.87093 11.9743 8.748 11.6649 8.748H9.91476C9.73363 8.748 9.55498 8.79018 9.39297 8.87118C9.23096 8.95219 9.09003 9.0698 8.98135 9.21471L8.77426 9.48598C8.69394 9.59147 8.5801 9.66646 8.45147 9.69859Z" stroke="black" strokeWidth="1.4" strokeLinecap="round"/>
-                </g>
-                <defs>
-                <clipPath id="clip0_257_20682">
-                <rect width="14" height="14" fill="white"/>
-                </clipPath>
-                </defs>
-                </svg>
-                {customer.phone}
-              </span> : null}
-            <span className="flex items-center gap-1">
-              <svg width="14px" height="14px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c-4.4 0-8 3.6-8 8 0 5.4 7 11.5 7.3 11.8.2.1.5.2.7.2.2 0 .5-.1.7-.2.3-.3 7.3-6.4 7.3-11.8 0-4.4-3.6-8-8-8zm0 17.7c-2.1-2-6-6.3-6-9.7 0-3.3 2.7-6 6-6s6 2.7 6 6-3.9 7.7-6 9.7zM12 6c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="#0D0D0D"/></svg>
-              Birmingham, UK
-            </span>
+          <p className="customer-passport-id">{customer.customerId}</p>
+          <div className="customer-passport-contacts">
+            <span className="customer-passport-contact">{customer.email}</span>
+            {customer.phone ? (
+              <span className="customer-passport-contact">{customer.phone}</span>
+            ) : null}
           </div>
         </div>
-        <div className="flex gap-7 text-[12px]">
-          <div><p className="font-bold uppercase text-[#919EAB]">Customer since</p><p className="mt-1 font-semibold text-[14px] text-[#212B36]">12 Jan 2024</p></div>
-          <div><p className="font-bold uppercase text-[#919EAB]">Last activity</p><p className="mt-1 font-semibold text-[14px] text-[#212B36]">12 Jan 2025</p></div>
-        </div>
-        <Button type="button" onClick={() => onAction("message")} className="h-[36px] border border-black px-3 rounded cursor-pointer text-[13px] font-bold uppercase text-black hover:bg-black hover:text-white">Send message</Button>
-        <button type="button" aria-label="More customer actions" className="h-8 w-8 border border-black/15 text-[18px] rounded cursor-pointer text-black/70 hover:bg-black/5">⋮</button>
-      </section>
 
-      <section aria-label="Customer statistics" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total orders", value: "0" },
-          { label: "Total spend", value: "£0.00" },
-          { label: "Events attended", value: "0" },
-          { label: "Upcoming events", value: "0" },
-        ].map((stat) => (
-          <div key={stat.label} className="border border-black p-[18px]">
-            <p className="text-[14px] leading-[20px] font-bold uppercase text-[#9B9994]">{stat.label}</p>
-            <p className="mt-1 text-[22px] leading-[24px] font-bold text-black">{stat.value}</p>
+        <div className="customer-passport-meta">
+          <div>
+            <p className="customer-passport-meta-label">Customer since</p>
+            <p className="customer-passport-meta-value">{customer.customerSince}</p>
           </div>
-        ))}
-      </section>
+          <div>
+            <p className="customer-passport-meta-label">Last activity</p>
+            <p className="customer-passport-meta-value">{customer.lastActivity}</p>
+          </div>
+        </div>
 
-      <nav aria-label="Customer profile" role="tablist" className="mt-4 flex gap-7 overflow-x-auto border-b border-black/20">
-        {tabs.map((tab) => (
+        <div className="customer-passport-actions">
           <button
-            key={tab}
             type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            onClick={() => setActiveTab(tab)}
-            className={`shrink-0 border-b-2 px-1 py-3 text-[16px]  font-bold uppercase ${activeTab === tab ? "border-black text-black" : "border-transparent text-[#949494] cursor-pointer hover:text-black"}`}
+            className="page-secondary-button"
+            onClick={() => onAction("message")}
           >
-            {tab}
+            Send message
           </button>
+          <ActionMenu
+            row={customer}
+            actions={passportActions}
+            open={passportMenuOpen}
+            onOpenChange={setPassportMenuOpen}
+            ariaLabel={`More actions for ${fullName}`}
+          />
+        </div>
+      </section>
+
+      <section className="customer-metric-grid" aria-label="Customer statistics">
+        {metrics.map((metric) => (
+          <article key={metric.label} className="customer-metric-card">
+            <p className="customer-metric-label">{metric.label}</p>
+            <p className="customer-metric-value">{metric.value}</p>
+          </article>
         ))}
-      </nav>
+      </section>
+
+      <FormSectionTabs
+        className="form-tabs-bar-inline"
+        tabs={tabs.map((tab) => ({ id: tab, label: tab }))}
+        activeTabId={activeTab}
+        ariaLabel="Customer profile"
+        asTablist
+        mode="button"
+        onTabSelect={setActiveTab}
+      />
 
       {activeTab === "Overview" ? (
         <OverviewTab customer={customer} onAction={onAction} />
       ) : activeTab === "Orders" ? (
         <OrdersTab />
-      ) : activeTab === "Tickets" ? (
+      ) : activeTab === "Products" ? (
         <TicketsTab />
       ) : activeTab === "Attendance" ? (
         <AttendanceTab />
@@ -286,364 +361,347 @@ function CustomerProfile({
 }
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(CUSTOMER_SEED);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [activeCustomerAction, setActiveCustomerAction] = useState<{ action: CustomerAction; customer: Customer } | null>(null);
+  const [activeCustomerAction, setActiveCustomerAction] = useState<{
+    action: CustomerAction;
+    customer: Customer;
+  } | null>(null);
   const [search, setSearch] = useState("");
-  const [openActionId, setOpenActionId] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const filteredCustomers = customers.filter((customer) =>
-    `${customer.firstName} ${customer.lastName} ${customer.email} ${customer.phone}`
-      .toLowerCase()
-      .includes(search.trim().toLowerCase()),
+
+  const filteredCustomers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return customers.filter((customer) => {
+      const matchesSearch =
+        !query ||
+        `${customer.firstName} ${customer.lastName} ${customer.email} ${customer.phone} ${customer.customerId}`
+          .toLowerCase()
+          .includes(query);
+      const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [customers, search, statusFilter]);
+
+  const pagedCustomers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, page, pageSize]);
+
+  const stats = useMemo(() => {
+    const total = customers.length;
+    const active = customers.filter((customer) => customer.status === "active").length;
+    const inactive = customers.filter((customer) => customer.status === "inactive").length;
+    const suspended = customers.filter((customer) => customer.status === "suspended").length;
+    return { total, active, inactive, suspended };
+  }, [customers]);
+
+  const summaryItems = useMemo<GridCardItem[]>(
+    () => [
+      {
+        id: "total",
+        label: "Total customers",
+        value: stats.total.toLocaleString("en-GB"),
+        description: <span className="customer-stat-delta">+12% from last month</span>,
+      },
+      {
+        id: "active",
+        label: "Active",
+        value: stats.active.toLocaleString("en-GB"),
+      },
+      {
+        id: "inactive",
+        label: "Inactive",
+        value: stats.inactive.toLocaleString("en-GB"),
+      },
+      {
+        id: "suspended",
+        label: "Suspended",
+        value: stats.suspended.toLocaleString("en-GB"),
+        description: <span className="customer-stat-note">100 in this month</span>,
+      },
+    ],
+    [stats],
   );
-  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
-  const pageStart = (currentPage - 1) * pageSize;
-  const pageCustomers = filteredCustomers.slice(pageStart, pageStart + pageSize);
-  const showingStart = filteredCustomers.length ? pageStart + 1 : 0;
-  const showingEnd = Math.min(pageStart + pageSize, filteredCustomers.length);
-  const visiblePages = Array.from({ length: Math.min(totalPages, 5) }, (_, index) => index + 1);
 
-  function handleAddCustomer(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const firstName = String(formData.get("firstName") ?? "").trim();
-    const lastName = String(formData.get("lastName") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
-    const phone = String(formData.get("phone") ?? "").trim();
-    const entitlement = String(formData.get("entitlement") ?? "").trim();
+  const orderActions = useMemo<ActionMenuItem<Customer>[]>(
+    () => [
+      {
+        key: "view",
+        label: "View Profile",
+        onClick: (customer) => {
+          setSelectedCustomer(customer);
+          setOpenActionId(null);
+        },
+      },
+      {
+        key: "message",
+        label: "Message",
+        onClick: (customer) => {
+          setActiveCustomerAction({ action: "message", customer });
+          setOpenActionId(null);
+        },
+      },
+      {
+        key: "ticket",
+        label: "Issue Complimentary Ticket",
+        onClick: (customer) => {
+          setActiveCustomerAction({ action: "ticket", customer });
+          setOpenActionId(null);
+        },
+      },
+      {
+        key: "suspend",
+        label: "Suspend Account",
+        onClick: (customer) => {
+          setActiveCustomerAction({ action: "suspend", customer });
+          setOpenActionId(null);
+        },
+      },
+    ],
+    [],
+  );
 
-    setCustomers((currentCustomers) => [
-      ...currentCustomers,
-      { id: Date.now(), firstName, lastName, email, phone, entitlement },
+  const columns = useMemo<DataTableColumn<Customer>[]>(
+    () => [
+      {
+        id: "customerId",
+        header: "Customer ID",
+        accessorKey: "customerId",
+      },
+      {
+        id: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="customer-name-cell">
+            <strong>{customerFullName(row)}</strong>
+            <span>{row.email}</span>
+          </div>
+        ),
+      },
+      {
+        id: "phone",
+        header: "Phone",
+        cell: ({ row }) => row.phone || "—",
+      },
+      {
+        id: "orders",
+        header: "Total orders",
+        cell: ({ row }) => String(row.totalOrders),
+      },
+      {
+        id: "attended",
+        header: "Attended",
+        cell: ({ row }) => String(row.attended),
+      },
+      {
+        id: "spend",
+        header: "Total spend",
+        cell: ({ row }) => formatCustomerSpend(row.totalSpend),
+      },
+      {
+        id: "lastActivity",
+        header: "Last activity",
+        accessorKey: "lastActivity",
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
+      },
+      {
+        id: "actions",
+        header: "Action",
+        align: "center",
+        headerClassName: "text-center",
+        cell: ({ row }) => (
+          <ActionMenu
+            row={row}
+            actions={orderActions}
+            open={openActionId === row.id}
+            onOpenChange={(next) => setOpenActionId(next ? row.id : null)}
+            ariaLabel={`Actions for ${customerFullName(row)}`}
+          />
+        ),
+      },
+    ],
+    [openActionId, orderActions],
+  );
+
+  function exportCustomers() {
+    const headers = [
+      "Customer ID",
+      "Name",
+      "Email",
+      "Phone",
+      "Total orders",
+      "Attended",
+      "Total spend",
+      "Last activity",
+      "Status",
+    ];
+    const rows = filteredCustomers.map((customer) => [
+      customer.customerId,
+      customerFullName(customer),
+      customer.email,
+      customer.phone,
+      customer.totalOrders,
+      customer.attended,
+      formatCustomerSpend(customer.totalSpend),
+      customer.lastActivity,
+      customer.status,
     ]);
-    setCurrentPage(1);
-    setIsDialogOpen(false);
+    const escapeCell = (cell: string | number) => `"${String(cell).replaceAll('"', '""')}"`;
+    const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\r\n");
+    const blobUrl = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "customers.csv";
+    link.click();
+    URL.revokeObjectURL(blobUrl);
   }
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
       {selectedCustomer ? (
-        <CustomerProfile
+        <CustomerPassport
           customer={selectedCustomer}
           onBack={() => setSelectedCustomer(null)}
           onAction={(action) => setActiveCustomerAction({ action, customer: selectedCustomer })}
         />
       ) : (
-        <>
-      <main className="flex min-h-full flex-col bg-white p-5 md:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-[26px] font-bold uppercase leading-[32px] tracking-[-0.05em] text-black md:text-[32px]">
-              Customers
-            </h1>
-            <p className="mt-1 text-[14px] leading-[20px] text-[#6F6E69]">
-              View and manage all your customers across sites, venues and events.
-            </p>
-          </div>
-          <div className="flex shrink-0 gap-2">
-            <Button
-              type="button"
-              onClick={() => setIsDialogOpen(true)}
-              className="inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-white px-4 text-[12px] font-bold uppercase text-black transition hover:bg-black hover:text-white"
-            >
-              + Add customer
-            </Button>
-            <Button
-              type="button"
-              disabled={!customers.length}
-              className="inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-4 text-[12px] font-bold uppercase text-white transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              ↓ Export
-            </Button>
-          </div>
-        </div>
-
-        <section aria-label="Customer overview" className="mt-5 grid gap-3 md:grid-cols-3">
-          {[
-            { label: "Total customers", value: customers.length.toLocaleString() },
-            { label: "Ticket buyers", value: customers.length.toLocaleString() },
-            { label: "Total orders", value: "0" },
-          ].map((stat) => (
-            <div key={stat.label} className="border border-black p-[18px]">
-              <p className="text-[14px] font-bold uppercase text-[#AAAAAC]">{stat.label}</p>
-              <p className="mt-[6px] mb-[10px] text-[22px] leading-[24px] font-bold text-black">{stat.value}</p>
-              <p className="mt-1 text-[14px] text-[#6F6E69]"> from last month</p>
+        <main className="customer-page">
+          <div className="customer-page-header">
+            <div>
+              <h1 className="page-title">Customers</h1>
+              <p className="page-subtitle">
+                View and manage all your customers across sites, venues and events.
+              </p>
             </div>
-          ))}
-        </section>
-
-        <div className="mt-5 flex flex-col gap-3 border-b border-black/35 pb-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="flex h-[40px] min-w-0 flex-1 items-center gap-2 border-b border-black/35 px-2 text-black/60 focus-within:border-black xl:max-w-[540px]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.8" />
-              <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="SEARCH"
-              aria-label="Search customers"
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-black placeholder:text-black/55 focus:outline-none"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:flex">
-            <SelectField
-              aria-label="Site"
-              defaultValue="all"
-              density="compact"
-              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
-              options={[{ value: "all", label: "All sites" }]}
-            />
-            <SelectField
-              aria-label="Event"
-              defaultValue="all"
-              density="compact"
-              containerClassName="!h-[38px]"
-              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
-              options={[{ value: "all", label: "All events" }]}
-            />
-            <SelectField
-              aria-label="Status"
-              defaultValue="all"
-              density="compact"
-              containerClassName="!h-[38px]"
-              className="!rounded-none !border-black !px-2 !pr-7 !text-[14px] !font-bold !uppercase xl:!w-[125px]"
-              options={[
-                { value: "all", label: "All statuses" },
-                { value: "active", label: "Active" },
-              ]}
-            />
-            <button type="button" className="h-[38px] border border-black px-3 text-[14px] font-bold uppercase text-black">More filters</button>
+            <div className="customer-page-actions">
+              <button
+                type="button"
+                className="page-secondary-button"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                + Add customer
+              </button>
+              <button
+                type="button"
+                className="page-primary-button-action"
+                disabled={!customers.length}
+                onClick={exportCustomers}
+              >
+                Export
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-2 flex min-h-[320px] min-w-0 flex-1 flex-col">
-          <div className="min-w-0 flex-1 overflow-x-auto">
-            <table className="w-full min-w-[1050px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-black text-[14px] font-bold uppercase text-black">
-                <th className="py-[18px] px-3">First name</th>
-                <th className="py-[18px] px-3">Email</th>
-                <th className="py-[18px] px-3">Phone</th>
-                <th className="py-[18px] px-3">Customer ID</th>
-                <th className="py-[18px] px-3">Total orders</th>
-                <th className="py-[18px] px-3">Attended</th>
-                <th className="py-[18px] px-3">Total spend</th>
-                <th className="py-[18px] px-3">Last activity</th>
-                <th className="py-[18px] px-3">Status</th>
-                <th className="py-[18px] px-3 text-right">Action</th>
-              </tr>
-            </thead>
-            {filteredCustomers.length ? (
-              <tbody>
-                {pageCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-black/35 text-[14px] text-black last:border-b-0">
-                    <td className="py-[16px] px-[12]">{customer.firstName} {customer.lastName}</td>
-                    <td className="py-[16px] px-[12]">{customer.email}</td>
-                    <td className="py-[16px] px-[12]">{customer.phone || "-"}</td>
-                    <td className="py-[16px] px-[12]">CUS-{String(customer.id).slice(-6)}</td>
-                    <td className="py-[16px] px-[12]">0</td>
-                    <td className="py-[16px] px-[12]">0</td>
-                    <td className="py-[16px] px-[12]">£0</td>
-                    <td className="py-[16px] px-[12]">-</td>
-                    <td className="py-[16px] px-[12] font-bold uppercase text-[#24b26b]">● Active</td>
-                    <td className="px-2 py-2 text-right">
-                      <div className="relative inline-block">
-                        <button
-                          type="button"
-                          aria-label={`Actions for ${customer.firstName} ${customer.lastName}`}
-                          aria-haspopup="menu"
-                          aria-expanded={openActionId === customer.id}
-                          onClick={() => setOpenActionId(openActionId === customer.id ? null : customer.id)}
-                          className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-full text-[20px] leading-none text-black/70 hover:bg-black/5"
-                        >
-                          ⋮
-                        </button>
-                        {openActionId === customer.id ? (
-                          <div role="menu" className="absolute right-0 top-full z-30 mt-1 w-[230px] border border-black/70 bg-white p-1 shadow-[0_4px_16px_rgba(0,0,0,0.14)]">
-                            {[
-                              { label: "View Profile", icon: "◉" },
-                              { label: "Message", icon: "✉" },
-                              { label: "Issue Complimentary Ticket", icon: "▣" },
-                              { label: "Suspend Account", icon: "△" },
-                            ].map((action) => (
-                              <button
-                                key={action.label}
-                                type="button"
-                                role="menuitem"
-                                onClick={() => {
-                                  setOpenActionId(null);
-                                  if (action.label === "View Profile") {
-                                    setSelectedCustomer(customer);
-                                  } else if (action.label === "Message") {
-                                    setActiveCustomerAction({ action: "message", customer });
-                                  } else if (action.label === "Issue Complimentary Ticket") {
-                                    setActiveCustomerAction({ action: "ticket", customer });
-                                  } else if (action.label === "Suspend Account") {
-                                    setActiveCustomerAction({ action: "suspend", customer });
-                                  }
-                                }}
-                                className="flex min-h-[28px] w-full items-center gap-2 px-2 text-left text-[12px] text-black hover:bg-black/5 focus:bg-black/5 focus:outline-none"
-                              >
-                                <span aria-hidden="true" className="w-4 text-center text-black/65">{action.icon}</span>
-                                <span>{action.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            ) : null}
-            </table>
-            {!filteredCustomers.length ? (
-              <section className="flex min-h-[280px] items-center justify-center px-4 py-12 text-center" aria-live="polite">
-              <div>
-                <h2 className="text-[22px] font-bold uppercase leading-[26px] text-black">No customers found</h2>
-                <p className="mt-2 text-[14px] leading-[21px] text-black/60">
-                  {customers.length ? "Try a different search." : "Add your first customer to see them listed here."}
+          <div className="customer-stats">
+            {summaryItems.map((item) => (
+              <div key={item.id ?? String(item.label)} className="organiser-grid-card gridcard-box">
+                <p className="gridcard-title">
+                  <span className="min-w-0">{item.label}</span>
                 </p>
-                {!customers.length ? (
-                  <Button type="button" onClick={() => setIsDialogOpen(true)} className="mt-5 inline-flex h-[40px] cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-5 text-[12px] font-bold uppercase text-white transition hover:bg-white hover:text-black">
-                    + Add customer
-                  </Button>
+                <p className="gridcard-value">{item.value}</p>
+                {item.description != null && item.description !== "" ? (
+                  <div className="gridcard-description">{item.description}</div>
                 ) : null}
               </div>
-              </section>
-            ) : null}
+            ))}
           </div>
 
-          {filteredCustomers.length > 0 ? (
-            <footer className="mt-auto flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-t border-black/35 py-2 text-[12px] text-black/55">
-              <p aria-live="polite">Showing {showingStart}-{showingEnd} of {filteredCustomers.length.toLocaleString()} customers</p>
-              <div className="flex flex-wrap items-center justify-end gap-2 text-black">
-                <nav aria-label="Customer pages" className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label="Previous page"
-                    disabled={currentPage <= 1}
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    className="flex h-8 min-w-7 items-center justify-center px-1 text-[16px] disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    ‹
-                  </button>
-                  {visiblePages.map((page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      aria-current={currentPage === page ? "page" : undefined}
-                      onClick={() => setCurrentPage(page)}
-                      className={`h-8 min-w-7 border px-1 text-[12px] ${currentPage === page ? "border-black text-black" : "border-transparent text-black/65 hover:border-black/40"}`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  {totalPages > 5 ? (
-                    <>
-                      <span className="px-1 text-black/50" aria-hidden="true">...</span>
-                      <button
-                        type="button"
-                        aria-current={currentPage === totalPages ? "page" : undefined}
-                        onClick={() => setCurrentPage(totalPages)}
-                        className={`h-8 min-w-9 border px-1 text-[12px] ${currentPage === totalPages ? "border-black text-black" : "border-transparent text-black/65 hover:border-black/40"}`}
-                      >
-                        {totalPages.toLocaleString()}
-                      </button>
-                    </>
-                  ) : null}
-                  <button
-                    type="button"
-                    aria-label="Next page"
-                    disabled={!totalPages || currentPage >= totalPages}
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    className="flex h-8 min-w-7 items-center justify-center px-1 text-[16px] disabled:cursor-not-allowed disabled:opacity-35"
-                  >
-                    ›
-                  </button>
-                </nav>
-                <label className="sr-only" htmlFor="customer-page-size">Customers per page</label>
-                <select
-                  id="customer-page-size"
-                  value={pageSize}
-                  onChange={(event) => {
-                    setPageSize(Number(event.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 border border-black/50 bg-white px-2 text-[11px] text-black"
-                >
-                  <option value={10}>10 per page</option>
-                  <option value={25}>25 per page</option>
-                  <option value={50}>50 per page</option>
-                </select>
-              </div>
-            </footer>
-          ) : null}
-        </div>
-      </main>
-
-      {isDialogOpen ? (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-          <section role="dialog" aria-modal="true" aria-labelledby="add-customer-title" className="flex h-full w-full max-w-[780px] flex-col border-l border-black bg-white">
-            <header className="flex min-h-[102px] items-center justify-between gap-4 border-b border-black px-6 py-5 md:px-8">
-              <div className="flex items-center gap-3">
-                <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-[5px] bg-black text-white" aria-hidden="true">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                    <circle cx="9" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.6" />
-                    <path d="M2.5 20c.3-3.4 2.7-5.5 6.5-5.5s6.2 2.1 6.5 5.5M17 5.5a3.5 3.5 0 0 1 0 6.8M17.5 15c2.4.7 3.7 2.3 4 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 id="add-customer-title" className="text-[18px] font-bold uppercase leading-[26px] text-black">Add customer</h2>
-                  <p className="mt-1 text-[14px] leading-[20px] text-[#6E6B69]">Fill in the details to register a customer.</p>
-                </div>
-              </div>
-              <button type="button" aria-label="Close" onClick={() => setIsDialogOpen(false)} className="flex h-8 w-8 shrink-0 items-center justify-center text-[26px] leading-none text-black hover:bg-black/5">×</button>
-            </header>
-
-            <form onSubmit={handleAddCustomer} className="flex min-h-0 flex-1 flex-col">
-              <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5 md:px-8">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-[14px] font-bold uppercase text-black">
-                    First name
-                    <input name="firstName" required autoFocus placeholder="Enter first name" className="mt-2 block h-[45px] w-full rounded-[4px] border border-black bg-white px-3 text-[16px] font-normal normal-case placeholder:text-black/55 outline-none focus:ring-2 focus:ring-[#1688e8]" />
-                  </label>
-                  <label className="block text-[14px] font-bold uppercase text-black">
-                    Last name
-                    <input name="lastName" required placeholder="Enter last name" className="mt-2 block h-[45px] w-full rounded-[4px] border border-black bg-white px-3 text-[16px] font-normal normal-case placeholder:text-black/55 outline-none focus:ring-2 focus:ring-[#1688e8]" />
-                  </label>
-                </div>
-                <label className="block text-[14px] font-bold uppercase text-black">
-                  Email
-                  <input name="email" type="email" required placeholder="Enter email" className="mt-2 block h-[45px] w-full rounded-[4px] border border-black bg-white px-3 text-[16px] font-normal normal-case placeholder:text-black/55 outline-none focus:ring-2 focus:ring-[#1688e8]" />
-                </label>
-                <label className="block text-[14px] font-bold uppercase text-black">
-                  Phone
-                  <input name="phone" type="tel" placeholder="+44 7712 345678" className="mt-2 block h-[45px] w-full rounded-[4px] border border-black bg-white px-3 text-[16px] font-normal normal-case placeholder:text-black/55 outline-none focus:ring-2 focus:ring-[#1688e8]" />
-                </label>
-                <label className="block text-[14px] font-bold uppercase text-black">
-                  Entitlement
-                  <input name="entitlement" placeholder="Add entitlement" className="mt-2 block h-[45px] w-full rounded-[4px] border border-black bg-white px-3 text-[16px] font-normal normal-case placeholder:text-black/55 outline-none focus:ring-2 focus:ring-[#1688e8]" />
-                </label>
-              </div>     
-
-              <footer className="grid grid-cols-2 gap-3 border-t border-black px-6 py-4 md:px-8">
-                <Button type="button" onClick={() => setIsDialogOpen(false)} className="cursor-pointer h-[40px] rounded-[4px] border border-black bg-white text-[14px] font-medium uppercase text-black hover:bg-black/5">Cancel</Button>
-                <Button type="submit" className="h-[40px] rounded-[4px] cursor-pointer border border-black bg-black text-[14px] font-medium uppercase text-white hover:bg-white hover:text-black">+ Add supporter</Button>
-              </footer>
-            </form>
-          </section>
-        </div>
-      ) : null}
-        </>
+          <div className="mt-5">
+            <DataTable
+              columns={columns}
+              data={pagedCustomers}
+              getRowId={(row) => row.id}
+              features={{
+                search: true,
+                filters: true,
+                pagination: true,
+                pageSize: true,
+              }}
+              search={{
+                value: search,
+                onChange: (value) => {
+                  setSearch(value);
+                  setPage(1);
+                },
+                placeholder: "Search..",
+              }}
+              filters={[
+                {
+                  key: "status",
+                  label: "Status",
+                  type: "select",
+                  value: statusFilter,
+                  options: [
+                    { value: "all", label: "All statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" },
+                    { value: "suspended", label: "Suspended" },
+                  ],
+                },
+              ]}
+              onFilterChange={(key, value) => {
+                if (key === "status") setStatusFilter(value);
+                setPage(1);
+              }}
+              pagination={{
+                page,
+                pageSize,
+                total: filteredCustomers.length,
+              }}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              bodyHeightClassName={false}
+              emptyMessage="No customers found."
+            />
+          </div>
+        </main>
       )}
+
+      <AddCustomerModal
+        open={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSubmit={(payload) => {
+          const nextId = Date.now();
+          setCustomers((current) => [
+            {
+              id: nextId,
+              customerId: `SUP-${String(nextId).slice(-4)}`,
+              firstName: payload.firstName,
+              lastName: payload.lastName,
+              email: payload.email,
+              phone: payload.phone ? `${payload.phoneCode} ${payload.phone}` : "",
+              entitlement: payload.entitlement,
+              status: "active",
+              totalOrders: 0,
+              attended: 0,
+              totalSpend: 0,
+              ticketsPurchased: 0,
+              lastActivity: "Just now",
+              customerSince: new Intl.DateTimeFormat("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }).format(new Date()),
+            },
+            ...current,
+          ]);
+          setPage(1);
+          setIsDialogOpen(false);
+        }}
+      />
+
       {activeCustomerAction ? (
         <CustomerActionDrawer
           action={activeCustomerAction.action}

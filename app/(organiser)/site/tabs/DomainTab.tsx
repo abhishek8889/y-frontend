@@ -32,20 +32,20 @@ export default function DomainTab({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-180px)] flex-col items-center justify-center px-3 pb-10">
-      <svg viewBox="0 0 120 120" fill="none" aria-hidden="true" className="h-[112px] w-[112px] text-[#d4d4d4]">
+    <div className="site-domain-panel">
+      <svg viewBox="0 0 120 120" fill="none" aria-hidden="true" className="site-domain-icon">
         <circle cx="53" cy="54" r="43" stroke="currentColor" strokeWidth="4" />
         <path d="M10 54h82M53 11c15 13 23 28 23 43S68 84 53 97M53 11C38 24 30 39 30 54s8 30 23 43M53 11v86" stroke="currentColor" strokeWidth="4" />
         <path d="M89 62 110 99a7 7 0 0 1-6 10H62a7 7 0 0 1-6-10l21-37a7 7 0 0 1 12 0Z" fill="white" stroke="currentColor" strokeWidth="4" />
         <path d="M83 76v12m0 6v.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
       </svg>
-      <h3 className="mt-8 text-[22px] font-black uppercase text-black">Site not live yet</h3>
-      <p className="mt-5 max-w-[440px] text-center text-[14px] leading-[20px] text-[#666666]">
+      <h3 className="site-domain-title">Site not live yet</h3>
+      <p className="site-domain-copy">
         Your site needs a connected domain before it can go live.
         <br className="hidden sm:block" /> Once configured, customers will be able to access it.
       </p>
-      <form onSubmit={connectDomain} className="mt-6 w-full max-w-[600px]">
-        <div className="flex h-[40px] justify-between items-center gap-1 rounded-[6px] border border-black/80 p-[4px]">
+      <form onSubmit={connectDomain} className="site-domain-form">
+        <div className="site-domain-compose">
           <InputField
             id="site-domain"
             type="text"
@@ -57,19 +57,25 @@ export default function DomainTab({
             }}
             placeholder="Enter your domain"
             aria-describedby={domainError ? "domain-error" : formNotice || notice ? "domain-notice" : undefined}
-            containerClassName="!h-full !min-w-0 !flex-1 !rounded-none !border-0 focus-within:!ring-0"
-            className="!px-[10px] !text-[14px] !leading-6 !text-black placeholder:!text-black"
+            labelClassName="input-heading"
           />
-          <button
-            type="submit"
-            className="h-full w-[228px] max-w-[40%] shrink-0 rounded-[4px] border border-black bg-black text-[14px] uppercase leading-6 text-white transition hover:bg-white hover:text-black"
-          >
+          <button type="submit" className="site-domain-submit">
             Connect domain
           </button>
         </div>
-        {domainError ? <p id="domain-error" role="alert" className="mt-2 text-[11px] text-red-600">{domainError}</p> : null}
-        {formNotice || notice ? <p id="domain-notice" role="status" className="mt-2 text-[11px] text-[#666]">{formNotice || notice}</p> : null}
-        {connectedDomain ? <p className="mt-2 text-[10px] text-[#777]">Current domain: {connectedDomain}</p> : null}
+        {domainError ? (
+          <p id="domain-error" role="alert" className="site-error">
+            {domainError}
+          </p>
+        ) : null}
+        {formNotice || notice ? (
+          <p id="domain-notice" role="status" className="site-notice">
+            {formNotice || notice}
+          </p>
+        ) : null}
+        {connectedDomain ? (
+          <p className="site-domain-meta">Current domain: {connectedDomain}</p>
+        ) : null}
       </form>
     </div>
   );

@@ -54,16 +54,9 @@ function ContactSwitch({
       aria-checked={checked}
       disabled={disabled}
       onClick={onChange}
-      className={`relative inline-flex h-[17px] w-[32px] shrink-0 items-center rounded-full transition ${
-        checked ? "bg-black" : "bg-[#e5e7eb]"
-      } ${disabled ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+      className={`site-switch${checked ? " site-switch-on" : ""}`}
     >
-      <span
-        aria-hidden="true"
-        className={`h-[13px] w-[13px] rounded-full bg-white transition-transform ${
-          checked ? "translate-x-[16px]" : "translate-x-[2px]"
-        }`}
-      />
+      <span aria-hidden="true" className="site-switch-knob" />
     </button>
   );
 }
@@ -130,78 +123,62 @@ export default function ContactUsTab() {
   }
 
   return (
-    <form onSubmit={saveContactPage} className="mt-4" aria-label="Contact page settings">
-      <h3 className="text-[18px] font-black uppercase leading-6">Contact Page</h3>
-      <p className="mt-1 text-[12px] text-[#777]">Create contact form to collect essential data.</p>
+    <form onSubmit={saveContactPage} className="site-tab" aria-label="Contact page settings">
+      <h3 className="site-tab-title">Contact Page</h3>
+      <p className="site-tab-subtitle">Create contact form to collect essential data.</p>
 
-      <div className="mt-[24px] grid gap-3 lg:grid-cols-2">
-        <div>
-          <InputField
-            id="contact-title"
-            label="Title"
-            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
-            required
-            value={draft.title}
-            onChange={(event) => updateText("title", event.target.value)}
-            placeholder="Enter headline"
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
-          />
-        </div>
-        <div>
-          <InputField
-            id="contact-subtitle"
-            required
-            label="Subtitle"
-            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
-            value={draft.subtitle}
-            onChange={(event) => updateText("subtitle", event.target.value)}
-            placeholder="Supporting text..."
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
-          />
-        </div>
-        <div className="lg:col-span-2 lg:max-w-[50%] lg:pr-1.5">
+      <div className="site-form-grid-2 site-form-grid-2-mt">
+        <InputField
+          id="contact-title"
+          label="Title"
+          labelClassName="input-heading"
+          required
+          value={draft.title}
+          onChange={(event) => updateText("title", event.target.value)}
+          placeholder="Enter headline"
+        />
+        <InputField
+          id="contact-subtitle"
+          required
+          label="Subtitle"
+          labelClassName="input-heading"
+          value={draft.subtitle}
+          onChange={(event) => updateText("subtitle", event.target.value)}
+          placeholder="Supporting text..."
+        />
+        <div className="site-field-span-half">
           <InputField
             id="contact-delivery-email"
             type="email"
             required
             label="Delivery email *"
-            labelClassName="!text-[14px] !leading-[20px] mb-[6px]"
+            labelClassName="input-heading"
             value={draft.deliveryEmail}
             onChange={(event) => updateText("deliveryEmail", event.target.value)}
             placeholder="Where contact form submissions are sent"
-            density="compact"
-            containerClassName="mt-1 !h-[40px] !rounded-[3px] !border-black/65 focus-within:!ring-0"
-            className="!px-3 !text-[14px] normal-case placeholder:!text-[#777]"
           />
         </div>
       </div>
 
-      <fieldset className="mt-5">
-        <legend className="mb-2 text-[14px] font-bold uppercase">What data do you want to collect?</legend>
-        <div className="grid grid-cols-[minmax(0,1fr)_96px_96px] border-b border-black px-3 py-2 text-[14px] font-bold">
+      <fieldset className="site-contact-table">
+        <legend className="site-contact-legend">What data do you want to collect?</legend>
+        <div className="site-contact-head">
           <span>Data Field</span>
-          <span className="text-center">Include</span>
-          <span className="text-center">Required</span>
+          <span>Include</span>
+          <span>Required</span>
         </div>
         <div>
           {draft.fields.map((field) => (
-            <div
-              key={field.id}
-              className="grid grid-cols-[minmax(0,1fr)_96px_96px] items-center border-b border-black/50 p-[16px] text-[14px]"
-            >
+            <div key={field.id} className="site-contact-row">
               <span>{field.label}</span>
-              <span className="flex justify-center">
+              <span className="site-contact-cell">
                 <ContactSwitch
                   label={`Include ${field.label}`}
                   checked={field.included}
                   onChange={() => toggleField(field.id, "included")}
                 />
               </span>
-              <span className="flex justify-center">
+              <span className="site-contact-cell">
                 <ContactSwitch
                   label={`Require ${field.label}`}
                   checked={field.required}
@@ -215,24 +192,21 @@ export default function ContactUsTab() {
       </fieldset>
 
       {error ? (
-        <p role="alert" className="mt-3 text-[11px] text-red-600">
+        <p role="alert" className="site-error">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
-        {notice ? <p role="status" className="mr-auto text-[11px] text-[#666]">{notice}</p> : null}
-        <button
-          type="button"
-          onClick={cancelChanges}
-          className="cursor-pointer h-[40px] min-w-[90px] rounded border border-black px-4 text-[12px] uppercase hover:bg-black hover:text-white"
-        >
+      <div className="site-form-actions">
+        {notice ? (
+          <p role="status" className="site-notice">
+            {notice}
+          </p>
+        ) : null}
+        <button type="button" onClick={cancelChanges} className="form-footer-btn form-footer-btn-secondary">
           Cancel
         </button>
-        <button
-          type="submit"
-          className="cursor-pointer h-[40px] min-w-[78px] rounded border border-black bg-black px-4 text-[12px] uppercase text-white hover:bg-white hover:text-black"
-        >
+        <button type="submit" className="form-footer-btn form-footer-btn-primary">
           Save
         </button>
       </div>
