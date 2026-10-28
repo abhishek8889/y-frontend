@@ -1455,8 +1455,105 @@
 }
 
 .organiser-dashboard .event-detail-actions {
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
   align-self: flex-start;
+  gap: 10px;
+}
+
+.organiser-dashboard .event-status-select {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.organiser-dashboard .event-status-select-trigger {
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 4px 2px;
+  transition: opacity 0.15s ease;
+}
+
+.organiser-dashboard .event-status-select-trigger:hover {
+  opacity: 0.85;
+}
+
+.organiser-dashboard .event-status-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.organiser-dashboard .event-status-select-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 16px;
+}
+
+.organiser-dashboard .event-status-select-chevron {
+  color: currentColor;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.organiser-dashboard .event-status-select-trigger .event-status-select-badge {
+  /* Inherit status text color onto chevron via currentColor */
+  color: inherit;
+}
+
+.organiser-dashboard .event-status-select-chevron-open {
+  transform: rotate(180deg);
+}
+
+.event-status-select-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 148px;
+  overflow: hidden;
+  border: 1px solid var(--black);
+  border-radius: 4px;
+  background: var(--white);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+}
+
+.event-status-select-option {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  padding: 8px 10px;
+  font-family: var(--font-univers), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.event-status-select-option:hover {
+  border-color: var(--black);
+}
+
+.event-status-select-option-active {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.event-status-select-option-dot {
+  height: 7px;
+  width: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
 }
 
 .organiser-dashboard .event-detail-title {

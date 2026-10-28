@@ -33,6 +33,10 @@ export function statusBgClass(status: string | null | undefined) {
   return `bg-status-${normalizeStatusKey(status)}`;
 }
 
+export function statusBorderClass(status: string | null | undefined) {
+  return `border-status-${normalizeStatusKey(status)}`;
+}
+
 export function formatStatusLabel(status: string | null | undefined) {
   const normalized = normalizeStatusToken(status);
   if (!normalized) return "";

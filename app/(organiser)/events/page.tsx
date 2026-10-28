@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   normalizeEventTickets,
+  useDeleteEventMutation,
   useDuplicateEventMutation,
   useGetEventCategoriesQuery,
   useGetEventDetailsQuery,
@@ -21,6 +22,7 @@ import {
   YourlistAlert,
   type ActionMenuItem,
 } from "@/components/common";
+import { EventStatusSelect } from "@/components/organiser/events/EventStatusSelect";
 import {
   EVENT_LIST_FILTER_DEFAULTS,
   EventFilterButton,
@@ -68,6 +70,13 @@ type StatusConfirmState = {
   event: OrganisationEvent;
   status: EventLifecycleStatus;
 };
+
+const EVENT_STATUS_OPTIONS: { value: EventLifecycleStatus; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "published", label: "Published" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 function toEventLifecycleStatus(status: string | null | undefined): EventLifecycleStatus {
   const normalized = String(status ?? "")
@@ -125,6 +134,7 @@ function EventsPageContent() {
   const [events, setEvents] = useState<OrganisationEvent[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [statusConfirm, setStatusConfirm] = useState<StatusConfirmState | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<OrganisationEvent | null>(null);
   const [detailActionsOpen, setDetailActionsOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 400);
@@ -170,6 +180,7 @@ function EventsPageContent() {
   });
   const [manageEventStatus, { isLoading: isManagingStatus }] = useManageEventStatusMutation();
   const [duplicateEvent, { isLoading: isDuplicatingEvent }] = useDuplicateEventMutation();
+  const [deleteEvent, { isLoading: isDeletingEvent }] = useDeleteEventMutation();
 
   const hasMore = Boolean(nextCursor);
   const hasSearch = Boolean(debouncedSearch.trim());
@@ -351,6 +362,11 @@ function EventsPageContent() {
     setStatusConfirm(null);
   }
 
+  function closeDeleteConfirm() {
+    if (isDeletingEvent) return;
+    setDeleteConfirm(null);
+  }
+
   async function confirmStatusChange() {
     if (!statusConfirm) return;
 
@@ -361,7 +377,34 @@ function EventsPageContent() {
         current.map((item) => (item.id === event.id ? { ...item, status } : item)),
       );
       setStatusConfirm(null);
-      selectEvent(event, activeTab);
+      selectEvent({ ...event, status }, activeTab);
+    } catch {
+      // toast handled by mutation
+    }
+  }
+
+  async function confirmDeleteEvent() {
+    if (!deleteConfirm) return;
+
+    const event = deleteConfirm;
+    try {
+      await deleteEvent(event.id).unwrap();
+      setDeleteConfirm(null);
+      setDetailActionsOpen(false);
+
+      const remaining = events.filter((item) => item.id !== event.id);
+      setEvents(remaining);
+
+      if (remaining[0]) {
+        selectEvent(remaining[0], "Overview");
+      } else {
+        setActiveEventKey(null);
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete(EVENT_URL_PARAM);
+        params.delete("id");
+        const query = params.toString();
+        router.replace(query ? `/events?${query}` : "/events", { scroll: false });
+      }
     } catch {
       // toast handled by mutation
     }
@@ -404,44 +447,18 @@ function EventsPageContent() {
         },
       },
       {
-        key: "publish",
-        label: "Set Published",
-        hidden: (event) => toEventLifecycleStatus(event.status) === "published",
-        onClick: (event) => {
-          if (toEventLifecycleStatus(event.status) === "published") return;
-          setStatusConfirm({ event, status: "published" });
-        },
-      },
-      {
-        key: "draft",
-        label: "Set Draft",
-        hidden: (event) => toEventLifecycleStatus(event.status) === "draft",
-        onClick: (event) => {
-          if (toEventLifecycleStatus(event.status) === "draft") return;
-          setStatusConfirm({ event, status: "draft" });
-        },
-      },
-      {
-        key: "complete",
-        label: "Set Completed",
-        hidden: (event) => toEventLifecycleStatus(event.status) === "completed",
-        onClick: (event) => {
-          if (toEventLifecycleStatus(event.status) === "completed") return;
-          setStatusConfirm({ event, status: "completed" });
-        },
-      },
-      {
-        key: "cancel",
-        label: "Set Cancelled",
+        key: "delete",
+        label: isDeletingEvent ? "Deleting…" : "Delete",
         variant: "danger",
-        hidden: (event) => toEventLifecycleStatus(event.status) === "cancelled",
+        disabled: isDeletingEvent,
         onClick: (event) => {
-          if (toEventLifecycleStatus(event.status) === "cancelled") return;
-          setStatusConfirm({ event, status: "cancelled" });
+          if (isDeletingEvent) return;
+          setDetailActionsOpen(false);
+          setDeleteConfirm(event);
         },
       },
     ],
-    [duplicateEvent, isDuplicatingEvent, router, selectEvent],
+    [duplicateEvent, isDeletingEvent, isDuplicatingEvent, router, selectEvent],
   );
 
   function dismissSearchFocus() {
@@ -693,6 +710,15 @@ function EventsPageContent() {
                     </p>
                   </div>
                   <div className="event-detail-actions">
+                    <EventStatusSelect
+                      value={toEventLifecycleStatus(activeEvent.status)}
+                      options={EVENT_STATUS_OPTIONS}
+                      disabled={isManagingStatus}
+                      onChange={(nextStatus) => {
+                        if (nextStatus === toEventLifecycleStatus(activeEvent.status)) return;
+                        setStatusConfirm({ event: activeEvent, status: nextStatus });
+                      }}
+                    />
                     <ActionMenu
                       row={activeEvent}
                       actions={detailActions}
@@ -770,6 +796,27 @@ function EventsPageContent() {
           void confirmStatusChange();
         }}
         isSubmitting={isManagingStatus}
+      />
+
+      <YourlistAlert
+        isOpen={Boolean(deleteConfirm)}
+        onClose={closeDeleteConfirm}
+        title="ARE YOU SURE?"
+        message={
+          deleteConfirm
+            ? `Delete "${deleteConfirm.name}"? This action cannot be undone.`
+            : undefined
+        }
+        icon={<WarningAlertIcon />}
+        variant="warning"
+        showFooter
+        secondaryButtonLabel="CANCEL"
+        onSecondaryClick={closeDeleteConfirm}
+        primaryButtonLabel="DELETE EVENT"
+        onPrimaryClick={() => {
+          void confirmDeleteEvent();
+        }}
+        isSubmitting={isDeletingEvent}
       />
     </DashboardShell>
   );

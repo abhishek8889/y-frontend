@@ -40,6 +40,19 @@
   background-color: var(--status-soldout);
 }
 
+.border-status-draft {
+  border-color: var(--status-draft) !important;
+}
+.border-status-active {
+  border-color: var(--status-active) !important;
+}
+.border-status-inactive {
+  border-color: var(--status-inactive) !important;
+}
+.border-status-soldout {
+  border-color: var(--status-soldout) !important;
+}
+
 html,
 body {
   min-height: 100%;

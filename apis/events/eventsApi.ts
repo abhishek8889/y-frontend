@@ -457,6 +457,19 @@ export const eventsApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { success: true, error: true });
       },
     }),
+    deleteEvent: build.mutation<
+      { success: boolean; message: string },
+      number | string
+    >({
+      query: (eventId) => ({
+        url: `organisation/event/delete/${eventId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Events"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { success: true, error: true });
+      },
+    }),
   }),
 });
 
@@ -476,4 +489,5 @@ export const {
   useDeleteEventTicketOfferMutation,
   useManageEventStatusMutation,
   useDuplicateEventMutation,
+  useDeleteEventMutation,
 } = eventsApi;
