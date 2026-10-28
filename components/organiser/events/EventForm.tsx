@@ -21,11 +21,13 @@ import { RichTextEditor } from "@/components/common";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
+import { useResolveOrganisationEventId } from "@/lib/hooks/useResolveOrganisationEventId";
 import { appToast } from "@/lib/ui/toast";
 import { isVenueVideoMedia } from "@/components/organiser/venues/venueFormHelpers";
 import {
   buildEventPayload,
   createEmptyEventFormValues,
+  getEventUniqueId,
   mapEventToFormValues,
   toEventLifecycleStatus,
   validateEventForm,
@@ -54,7 +56,8 @@ const EDIT_STATUS_OPTIONS: { value: EventLifecycleStatus; label: string }[] = [
 
 type EventFormProps = {
   mode: "create" | "edit";
-  eventId?: string;
+  /** Browser URL key: prefer `unique_id` for UX. APIs still use numeric id. */
+  eventKey?: string;
 };
 
 function FormSectionHeader({ title }: { title: string }) {
@@ -86,7 +89,7 @@ function UploadPlaceholder({ uploading }: { uploading?: boolean }) {
   );
 }
 
-export function EventForm({ mode, eventId }: EventFormProps) {
+export function EventForm({ mode, eventKey }: EventFormProps) {
   const router = useRouter();
   const isEdit = mode === "edit";
   const [activeTab, setActiveTab] = useState(sectionTabs[0].id);
@@ -97,6 +100,14 @@ export function EventForm({ mode, eventId }: EventFormProps) {
   const [showCustomCategory, setShowCustomCategory] = useState(false);
   const [customCategoryName, setCustomCategoryName] = useState("");
 
+  const {
+    eventKey: resolvedEventKey,
+    numericId,
+    isResolving,
+    isUnresolved,
+    isError: isResolveError,
+  } = useResolveOrganisationEventId(isEdit ? eventKey : null);
+
   const { data: categoriesData, isLoading: isLoadingCategories } = useGetEventCategoriesQuery();
   const { data: venuesForEventsData, isLoading: isLoadingVenues } = useGetVenuesForEventsQuery();
   const { data: timezonesData, isLoading: isLoadingTimezones } = useGetPublicTimezonesQuery();
@@ -104,8 +115,8 @@ export function EventForm({ mode, eventId }: EventFormProps) {
     data: eventDetailsData,
     isLoading: isEventLoading,
     isError: isEventError,
-  } = useGetEventDetailsQuery(eventId as string | number, {
-    skip: !isEdit || eventId == null || eventId === "",
+  } = useGetEventDetailsQuery(numericId as string, {
+    skip: !isEdit || !numericId,
   });
 
   const [createCustomCategory, { isLoading: isCreatingCategory }] =
@@ -118,7 +129,18 @@ export function EventForm({ mode, eventId }: EventFormProps) {
   const venues = venuesForEventsData?.data ?? [];
   const isSaving = isCreating || isUpdating;
   const canSubmit =
-    !isSaving && (!isEdit || (!isEventLoading && !isEventError && hydratedEventId != null));
+    !isSaving &&
+    (!isEdit ||
+      (!isResolving &&
+        !isUnresolved &&
+        !isResolveError &&
+        !isEventLoading &&
+        !isEventError &&
+        hydratedEventId != null));
+
+  const eventsListHref = resolvedEventKey
+    ? `/events?event=${encodeURIComponent(resolvedEventKey)}`
+    : "/events";
 
   useEffect(() => {
     if (!isEdit || !eventDetailsData?.data) return;
@@ -278,21 +300,32 @@ export function EventForm({ mode, eventId }: EventFormProps) {
 
     try {
       if (isEdit) {
-        if (eventId == null || eventId === "") {
+        if (!numericId) {
           appToast.error("Missing event id.");
           return;
         }
-        await updateEvent({ eventId, body: payload }).unwrap();
+        const updated = await updateEvent({ eventId: numericId, body: payload }).unwrap();
+        const uniqueId =
+          updated.data?.unique_id?.trim() ||
+          eventDetailsData?.data?.unique_id?.trim() ||
+          resolvedEventKey ||
+          numericId;
+        router.push(`/events?event=${encodeURIComponent(uniqueId)}`);
       } else {
-        await createEvent(payload).unwrap();
+        const created = await createEvent(payload).unwrap();
+        const uniqueId = created.data
+          ? getEventUniqueId(created.data)
+          : "";
+        router.push(
+          uniqueId ? `/events?event=${encodeURIComponent(uniqueId)}` : "/events",
+        );
       }
-      router.push("/events");
     } catch {
       // toast handled by mutation
     }
   }
 
-  if (isEdit && !eventId) {
+  if (isEdit && !eventKey?.trim()) {
     return (
       <div className="rounded-[4px] border border-black/20 bg-black/5 px-4 py-6 text-[14px] text-black/70">
         Missing event id for edit mode.
@@ -300,7 +333,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
     );
   }
 
-  if (isEdit && isEventLoading) {
+  if (isEdit && (isResolving || isEventLoading)) {
     return (
       <div className="rounded-[4px] border border-black/20 bg-black/5 px-4 py-6 text-[14px] text-black/70">
         Loading event details...
@@ -308,11 +341,11 @@ export function EventForm({ mode, eventId }: EventFormProps) {
     );
   }
 
-  if (isEdit && isEventError) {
+  if (isEdit && (isResolveError || isUnresolved || isEventError)) {
     return (
       <div className="rounded-[4px] border border-black/20 bg-black/5 px-4 py-6 text-[14px] text-black/70">
         Unable to load event details.{" "}
-        <button type="button" className="underline" onClick={() => router.push("/events")}>
+        <button type="button" className="underline" onClick={() => router.push(eventsListHref)}>
           Back to events
         </button>
       </div>
@@ -617,7 +650,17 @@ export function EventForm({ mode, eventId }: EventFormProps) {
       <div className="form-footer-bar -mx-5 sm:-mx-8 sm:px-8">
         <Button
           type="button"
-          onClick={() => router.push("/events")}
+          onClick={() => {
+            const uniqueId =
+              (eventDetailsData?.data
+                ? getEventUniqueId(eventDetailsData.data)
+                : "") ||
+              resolvedEventKey ||
+              "";
+            router.push(
+              uniqueId ? `/events?event=${encodeURIComponent(uniqueId)}` : "/events",
+            );
+          }}
           className="form-footer-btn form-footer-btn-secondary"
         >
           Cancel

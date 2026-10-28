@@ -8,6 +8,7 @@
   --status-active: #34c759;
   --status-inactive: #949494;
   --status-soldout: #dc2626;
+  --toast-danger: #ff383c;
 }
 
 /* Shared entity status colors (Draft / Active / Inactive / Sold out) */
@@ -1223,4 +1224,115 @@ textarea {
 
 .organiser-modal__panel {
   box-shadow: 0 20px 50px rgba(55, 69, 87, 0.1);
+}
+
+/* ── App toast (react-hot-toast custom) — matches Yourlist black/white UI ── */
+
+.app-toast-container {
+  inset: 16px 16px auto !important;
+  top: 16px !important;
+  right: 16px !important;
+  left: 16px !important;
+  bottom: auto !important;
+  pointer-events: none;
+}
+
+.app-toast-container > div {
+  justify-content: center;
+}
+
+.app-toast {
+  pointer-events: auto;
+  display: flex;
+  width: min(100%, 420px);
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--black);
+  border-radius: 4px;
+  background: var(--white);
+  padding: 14px 16px;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.08);
+  font-family: var(--font-univers), sans-serif;
+  color: var(--black);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.app-toast--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-toast--hidden {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.app-toast-icon {
+  display: flex;
+  height: 20px;
+  width: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  color: var(--black);
+}
+
+.app-toast-icon-svg {
+  display: block;
+  height: 20px;
+  width: 20px;
+}
+
+.app-toast-message {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--black);
+  word-break: break-word;
+}
+
+.app-toast-close {
+  display: flex;
+  height: 24px;
+  width: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  margin: -2px -4px 0 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--black);
+  transition: background-color 0.15s ease;
+}
+
+.app-toast-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.app-toast--success .app-toast-icon {
+  color: var(--black);
+}
+
+.app-toast--error {
+  border-color: var(--black);
+}
+
+.app-toast--error .app-toast-icon {
+  color: var(--toast-danger);
+}
+
+.app-toast--warning .app-toast-icon {
+  color: var(--black);
+}
+
+.app-toast--info .app-toast-icon {
+  color: var(--black);
 }

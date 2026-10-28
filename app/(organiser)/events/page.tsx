@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   normalizeEventTickets,
-  useGetEventCategoriesQuery,
-  useGetEventTicketsQuery,
   useDuplicateEventMutation,
+  useGetEventCategoriesQuery,
+  useGetEventDetailsQuery,
+  useGetEventTicketsQuery,
   useGetOrganisationEventsQuery,
   useManageEventStatusMutation,
   type EventLifecycleStatus,
   type OrganisationEvent,
 } from "@/apis/events/eventsApi";
+import { getEventUniqueId } from "@/components/organiser/events/eventFormHelpers";
+import { useResolveOrganisationEventId } from "@/lib/hooks/useResolveOrganisationEventId";
 import {
   ActionMenu,
   WarningAlertIcon,
@@ -59,6 +62,7 @@ const eventTabs = [
 
 type EventTab = (typeof eventTabs)[number];
 const EVENTS_PAGE_SIZE = 10;
+const EVENT_URL_PARAM = "event";
 
 type StatusConfirmState = {
   event: OrganisationEvent;
@@ -105,12 +109,17 @@ function CreateEventButton({
   );
 }
 
-export default function EventsPage() {
+function EventsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventKeyFromUrl =
+    searchParams.get(EVENT_URL_PARAM)?.trim() || searchParams.get("id")?.trim() || "";
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<EventListFilterValues>(EVENT_LIST_FILTER_DEFAULTS);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [activeEventId, setActiveEventId] = useState<number | null>(null);
+  const [activeEventKey, setActiveEventKey] = useState<string | null>(() =>
+    eventKeyFromUrl || null,
+  );
   const [activeTab, setActiveTab] = useState<EventTab>("Overview");
   const [listCursor, setListCursor] = useState<string | undefined>(undefined);
   const [events, setEvents] = useState<OrganisationEvent[]>([]);
@@ -150,7 +159,7 @@ export default function EventsPage() {
     [categoriesData?.data],
   );
 
-  const { data, isLoading, isFetching, isError, refetch } = useGetOrganisationEventsQuery({
+  const { data, isLoading, isFetching, isError } = useGetOrganisationEventsQuery({
     per_page: EVENTS_PAGE_SIZE,
     search: debouncedSearch.trim(),
     cursor: listCursor,
@@ -184,7 +193,23 @@ export default function EventsPage() {
 
     setNextCursor(data.data.pagination?.next_cursor ?? null);
     setEvents((current) => {
-      if (!listCursor) return pageItems;
+      if (!listCursor) {
+        // Avoid replacing with an equivalent list — prevents detail-panel remount flicker.
+        if (
+          current.length === pageItems.length &&
+          current.every((event, index) => event.id === pageItems[index]?.id)
+        ) {
+          let changed = false;
+          const merged = current.map((event, index) => {
+            const next = pageItems[index];
+            if (!next || event === next) return event;
+            changed = true;
+            return next;
+          });
+          return changed ? merged : current;
+        }
+        return pageItems;
+      }
 
       const seen = new Set(current.map((event) => event.id));
       const appended = pageItems.filter((event) => !seen.has(event.id));
@@ -202,15 +227,10 @@ export default function EventsPage() {
 
   const loadMore = useCallback(() => {
     if (!nextCursor || isFetching || loadMoreLockRef.current) return;
+    if (listCursor === nextCursor) return;
     loadMoreLockRef.current = true;
-
-    if (listCursor === nextCursor) {
-      void refetch();
-      return;
-    }
-
     setListCursor(nextCursor);
-  }, [nextCursor, isFetching, listCursor, refetch]);
+  }, [nextCursor, isFetching, listCursor]);
 
   useEffect(() => {
     const root = scrollContainerRef.current;
@@ -230,11 +250,69 @@ export default function EventsPage() {
     return () => observer.disconnect();
   }, [hasMore, loadMore, events.length]);
 
+  useEffect(() => {
+    if (eventKeyFromUrl) {
+      setActiveEventKey((current) => (current === eventKeyFromUrl ? current : eventKeyFromUrl));
+      return;
+    }
+    if (!activeEventKey && events[0]) {
+      setActiveEventKey(getEventUniqueId(events[0]));
+    }
+    // Seed from first list item only — do not re-run on every list refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit `events`
+  }, [activeEventKey, eventKeyFromUrl, events[0]?.id, events[0]?.unique_id]);
+
+  const activeEventFromList = useMemo(() => {
+    if (!activeEventKey) return events[0] ?? null;
+    return (
+      events.find((event) => getEventUniqueId(event) === activeEventKey) ??
+      events.find((event) => String(event.id) === activeEventKey) ??
+      null
+    );
+  }, [activeEventKey, events]);
+
+  const shouldResolveActiveEvent =
+    Boolean(activeEventKey) && activeEventFromList == null && events.length > 0;
+
+  const { numericId: resolvedActiveNumericId } = useResolveOrganisationEventId(
+    shouldResolveActiveEvent ? activeEventKey : null,
+  );
+
+  const { data: activeEventDetailsData } = useGetEventDetailsQuery(
+    resolvedActiveNumericId as string,
+    {
+      skip: !shouldResolveActiveEvent || !resolvedActiveNumericId,
+    },
+  );
+
+  const lastActiveEventRef = useRef<OrganisationEvent | null>(null);
+
   const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    if (activeEventId == null) return events[0] ?? null;
-    return events.find((event) => event.id === activeEventId) ?? events[0] ?? null;
-  }, [activeEventId, events]);
+    if (activeEventFromList) return activeEventFromList;
+    if (shouldResolveActiveEvent && activeEventDetailsData?.data) {
+      return activeEventDetailsData.data;
+    }
+    // Keep showing the last selected event while list/tickets refetch.
+    if (
+      activeEventKey &&
+      lastActiveEventRef.current &&
+      getEventUniqueId(lastActiveEventRef.current) === activeEventKey
+    ) {
+      return lastActiveEventRef.current;
+    }
+    if (!activeEventKey) return events[0] ?? null;
+    return null;
+  }, [
+    activeEventDetailsData?.data,
+    activeEventFromList,
+    activeEventKey,
+    events,
+    shouldResolveActiveEvent,
+  ]);
+
+  useEffect(() => {
+    if (activeEvent) lastActiveEventRef.current = activeEvent;
+  }, [activeEvent]);
 
   const activeBanner = useMemo(
     () => (activeEvent ? getEventBanner(activeEvent.images) : null),
@@ -249,6 +327,20 @@ export default function EventsPage() {
   function goToCreate() {
     router.push("/events/create");
   }
+
+  const selectEvent = useCallback(
+    (event: OrganisationEvent, tab: EventTab = "Overview") => {
+      const uniqueId = getEventUniqueId(event);
+      setActiveEventKey(uniqueId);
+      setDetailActionsOpen(false);
+      setActiveTab(tab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("id");
+      params.set(EVENT_URL_PARAM, uniqueId);
+      router.replace(`/events?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
 
   function clearFilters() {
     setFilters(EVENT_LIST_FILTER_DEFAULTS);
@@ -269,9 +361,7 @@ export default function EventsPage() {
         current.map((item) => (item.id === event.id ? { ...item, status } : item)),
       );
       setStatusConfirm(null);
-      setListCursor(undefined);
-      setNextCursor(null);
-      loadMoreLockRef.current = false;
+      selectEvent(event, activeTab);
     } catch {
       // toast handled by mutation
     }
@@ -285,7 +375,9 @@ export default function EventsPage() {
         key: "edit",
         label: "Edit",
         onClick: (event) => {
-          router.push(`/events/create?mode=edit&id=${event.id}`);
+          router.push(
+            `/events/create?mode=edit&event=${encodeURIComponent(getEventUniqueId(event))}`,
+          );
         },
       },
       {
@@ -303,11 +395,8 @@ export default function EventsPage() {
                   const exists = current.some((item) => item.id === duplicated.id);
                   return exists ? current : [duplicated, ...current];
                 });
-                setActiveEventId(duplicated.id);
+                selectEvent(duplicated);
               }
-              setListCursor(undefined);
-              setNextCursor(null);
-              loadMoreLockRef.current = false;
             } catch {
               // toast handled by mutation
             }
@@ -352,7 +441,7 @@ export default function EventsPage() {
         },
       },
     ],
-    [duplicateEvent, isDuplicatingEvent, router],
+    [duplicateEvent, isDuplicatingEvent, router, selectEvent],
   );
 
   function dismissSearchFocus() {
@@ -545,11 +634,11 @@ export default function EventsPage() {
                 <EventListCard
                   key={event.id}
                   event={event}
-                  selected={activeEvent?.id === event.id}
+                  selected={
+                    activeEvent != null && getEventUniqueId(activeEvent) === getEventUniqueId(event)
+                  }
                   onSelect={() => {
-                    setActiveEventId(event.id);
-                    setDetailActionsOpen(false);
-                    setActiveTab("Overview");
+                    selectEvent(event);
                   }}
                 />
               ))}
@@ -572,7 +661,7 @@ export default function EventsPage() {
 
           <section className="events-detail-panel">
             {activeEvent ? (
-              <div key={activeEvent.id}>
+              <div key={activeEventKey ?? getEventUniqueId(activeEvent)}>
                 <header className="event-detail-header">
                   <div className="event-detail-thumb">
                     <EventImage
@@ -586,6 +675,9 @@ export default function EventsPage() {
                   <div className="event-detail-copy">
                     <div className="event-detail-copy-top">
                       <h2 className="event-detail-title">{activeEvent.name}</h2>
+                      {activeEvent.unique_id ? (
+                        <p className="event-detail-unique-id">{activeEvent.unique_id}</p>
+                      ) : null}
                       <p className="event-detail-category">
                         {activeEvent.category?.name || "Uncategorised"}
                       </p>
@@ -680,5 +772,21 @@ export default function EventsPage() {
         isSubmitting={isManagingStatus}
       />
     </DashboardShell>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
+          <div className="min-h-full bg-white p-5 md:p-6">
+            <p className="text-[14px] text-black/55">Loading events...</p>
+          </div>
+        </DashboardShell>
+      }
+    >
+      <EventsPageContent />
+    </Suspense>
   );
 }

@@ -25,12 +25,9 @@ export function Providers({
       <Toaster
         position="top-center"
         reverseOrder={false}
-        toastOptions={{
-          duration: 3000,
-          style: {
-            fontSize: "14px",
-          },
-        }}
+        gutter={12}
+        containerClassName="app-toast-container"
+        toastOptions={{ duration: 3000 }}
       />
     </Provider>
   );

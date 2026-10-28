@@ -11,8 +11,13 @@ import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 function CreateEventPageContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") === "edit" ? "edit" : "create";
-  const eventId = searchParams.get("id") ?? undefined;
+  // Prefer `event` (unique_id). Keep `id` as a legacy fallback.
+  const eventKey =
+    searchParams.get("event")?.trim() || searchParams.get("id")?.trim() || undefined;
   const isEditing = mode === "edit";
+  const eventsHref = eventKey
+    ? `/events?event=${encodeURIComponent(eventKey)}`
+    : "/events";
 
   return (
     <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
@@ -21,7 +26,7 @@ function CreateEventPageContent() {
           variant="dashboard"
           className="mb-4"
           items={[
-            { label: "Events", href: "/events" },
+            { label: "Events", href: eventsHref },
             { label: isEditing ? "Edit Event" : "Create Event" },
           ]}
         />
@@ -30,7 +35,7 @@ function CreateEventPageContent() {
           {isEditing ? "Edit Event" : "Create New Event"}
         </h1>
 
-        <EventForm mode={mode} eventId={eventId} />
+        <EventForm mode={mode} eventKey={eventKey} />
       </div>
     </DashboardShell>
   );

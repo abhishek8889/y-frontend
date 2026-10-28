@@ -39,6 +39,29 @@ export function toEventLifecycleStatus(status: string | null | undefined): Event
   return "draft";
 }
 
+/** True when the value is a numeric primary key (API id), not a public unique_id. */
+export function isNumericEventId(value: string | null | undefined) {
+  return /^\d+$/.test(String(value ?? "").trim());
+}
+
+export function getEventUniqueId(event: Pick<OrganisationEvent, "id" | "unique_id">) {
+  const uniqueId = event.unique_id?.trim();
+  return uniqueId || String(event.id);
+}
+
+export function matchOrganisationEventByKey(
+  events: OrganisationEvent[],
+  key: string,
+): OrganisationEvent | null {
+  const normalized = key.trim();
+  if (!normalized) return null;
+  return (
+    events.find((event) => event.unique_id?.trim() === normalized) ??
+    events.find((event) => String(event.id) === normalized) ??
+    null
+  );
+}
+
 export function getBrowserTimeZone() {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";

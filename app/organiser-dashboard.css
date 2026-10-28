@@ -241,7 +241,7 @@
   cursor: pointer;
   align-items: center;
   border: 0;
-  border-bottom: 1px solid transparent;
+  border-bottom: 2px solid transparent;
   padding: 10px 16px;
   font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
   font-size: var(--od-form-tab-size);
@@ -269,7 +269,7 @@
 }
 
 .organiser-dashboard .form-tab-active {
-  border-bottom-color: var(--od-border);
+  border-bottom-color: var(--black);
   color: var(--black);
 }
 
@@ -867,7 +867,8 @@
   margin-top: 20px;
   margin-left: -20px;
   margin-right: -20px;
-  border-bottom: 1px solid var(--od-border);
+  /* Faded baseline; active tab uses solid black underline via .form-tab-active */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   background: var(--white);
   padding-left: 20px;
   padding-right: 20px;
@@ -1396,6 +1397,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 20px;
 }
 
@@ -1416,7 +1418,7 @@
   flex-wrap: nowrap;
   align-items: stretch;
   gap: 20px;
-  border-bottom: 1px solid var(--od-border);
+  border-bottom: 0;
   padding-bottom: 16px;
 }
 
@@ -1467,6 +1469,17 @@
   text-transform: uppercase;
   color: var(--black);
   font-feature-settings: "kern" 0;
+}
+
+.organiser-dashboard .event-detail-unique-id {
+  margin: 4px 0 0;
+  font-family: var(--font-univers), sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  color: var(--od-muted);
+  word-break: break-all;
 }
 
 .organiser-dashboard .event-detail-category {
