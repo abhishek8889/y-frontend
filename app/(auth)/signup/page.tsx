@@ -417,10 +417,6 @@ export default function SignupPage() {
       >
         {step === 1 ? (
           <form className="flex flex-col gap-[22px]" onSubmit={handleStep1Submit}>
-            <h2 className="text-[16px] font-bold uppercase leading-6 text-black">
-              Organiser Details
-            </h2>
-
             <div className="grid gap-[22px] sm:grid-cols-2 sm:gap-5">
               <InputField
                 label="First Name"
