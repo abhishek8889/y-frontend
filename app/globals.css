@@ -545,8 +545,8 @@ input[type="password"]::placeholder {
 }
 
 .event-media-controls .media-player__icon {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .event-card__wishlist,
@@ -796,8 +796,8 @@ input[type="password"]::placeholder {
 }
 
 .home-events__grid .event-media-controls .media-player__icon {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .home-searching {
@@ -929,8 +929,8 @@ input[type="password"]::placeholder {
   }
 
   .home-events__grid .event-media-controls .media-player__icon {
-    width: 0.875rem;
-    height: 0.875rem;
+    width: 1.15rem;
+    height: 1.15rem;
   }
 
   .event-card__title {
