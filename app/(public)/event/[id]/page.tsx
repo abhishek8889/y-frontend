@@ -25,12 +25,6 @@ import { useWishlistIds } from "@/lib/public/useWishlistIds";
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
-/** Header and breadcrumb are both 46px. Full-height gallery starts at the desktop split. */
-const GALLERY_VIEWPORT =
-  "relative overflow-y-auto overscroll-contain bg-white lg:sticky lg:top-0 lg:h-[calc(100svh-92px)]";
-const GALLERY_SLIDE =
-  "relative w-full shrink-0 snap-start aspect-[4/5] sm:aspect-[3/2] lg:aspect-auto lg:h-[calc(100svh-92px)]";
-
 function AccordionChevron() {
   return (
     <svg
@@ -92,7 +86,7 @@ function EventGallerySlide({
         alt={alt}
         active={active}
         showProgress={false}
-        frameClassName="absolute inset-0 h-full w-full"
+        frameClassName="event-detail-gallery__player"
         controlsClassName="event-media-controls"
       />
     );
@@ -138,11 +132,14 @@ export default function PublicEventPage() {
   const galleryMedia = useMemo(() => buildEventGalleryMedia(event?.images), [event?.images]);
   const [activeSlide, setActiveSlide] = useState(0);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const galleryScrollRef = useRef<HTMLElement | null>(null);
+  const galleryScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const root = galleryScrollRef.current;
     if (!root || !galleryMedia.length) return;
+
+    const isGalleryScrollRoot =
+      root.scrollWidth > root.clientWidth + 8 || root.scrollHeight > root.clientHeight + 8;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -159,8 +156,7 @@ export default function PublicEventPage() {
         if (bestRatio > 0) setActiveSlide(bestIndex);
       },
       {
-        // Use the gallery pane when it scrolls; otherwise the viewport (mobile page scroll).
-        root: root.scrollHeight > root.clientHeight + 8 ? root : null,
+        root: isGalleryScrollRoot ? root : null,
         threshold: [0.35, 0.55, 0.75],
       },
     );
@@ -228,37 +224,29 @@ export default function PublicEventPage() {
         ]}
       />
 
-      <div className="grid lg:grid-cols-2">
-        <section
-          ref={galleryScrollRef}
-          aria-label="Event media gallery"
-          className={`${GALLERY_VIEWPORT} snap-y snap-mandatory`}
-        >
-          {slides.map((media, index) => (
-            <div
-              key={`${media.path || media.url || "slide"}-${index}`}
-              data-slide-index={index}
-              ref={(node) => {
-                slideRefs.current[index] = node;
-              }}
-              className={GALLERY_SLIDE}
-            >
-              <div className="absolute inset-0">
-                <EventGallerySlide
-                  media={media}
-                  alt={`${event.name} media ${index + 1}`}
-                  active={activeSlide === index}
-                  priority={index === 0}
-                />
+      <div className="event-detail-layout">
+        <section aria-label="Event media gallery" className="event-detail-gallery">
+          <div ref={galleryScrollRef} className="event-detail-gallery__track">
+            {slides.map((media, index) => (
+              <div
+                key={`${media.path || media.url || "slide"}-${index}`}
+                data-slide-index={index}
+                ref={(node) => {
+                  slideRefs.current[index] = node;
+                }}
+                className="event-detail-gallery__slide"
+              >
+                <div className="event-detail-gallery__media">
+                  <EventGallerySlide
+                    media={media}
+                    alt={`${event.name} media ${index + 1}`}
+                    active={activeSlide === index}
+                    priority={index === 0}
+                  />
+                </div>
               </div>
-              {index < slides.length - 1 ? (
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-1 bg-white"
-                  aria-hidden="true"
-                />
-              ) : null}
-            </div>
-          ))}
+            ))}
+          </div>
 
           <button
             type="button"

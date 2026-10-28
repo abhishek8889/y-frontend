@@ -549,6 +549,105 @@ input[type="password"]::placeholder {
   height: 1.15rem;
 }
 
+/* Event detail: horizontal gallery on mobile, vertical sticky stack on desktop. */
+.event-detail-layout {
+  display: grid;
+}
+
+.event-detail-gallery {
+  position: relative;
+  width: 100%;
+  background: #fff;
+}
+
+/* Scroll track only — save button stays pinned on the outer gallery. */
+.event-detail-gallery__track {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+
+.event-detail-gallery__track::-webkit-scrollbar {
+  display: none;
+}
+
+.event-detail-gallery__slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: #000;
+}
+
+.event-detail-gallery__media {
+  position: absolute;
+  inset: 0;
+}
+
+/* Let swipes pass through media; keep play/mute tappable. */
+.event-detail-gallery .media-player,
+.event-detail-gallery .media-player__video,
+.event-detail-gallery .media-player__image,
+.event-detail-gallery img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.event-detail-gallery .media-player__control {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.event-detail-gallery__player {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .event-detail-gallery__slide {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .event-detail-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .event-detail-gallery {
+    position: sticky;
+    top: 0;
+    height: calc(100svh - 92px);
+  }
+
+  .event-detail-gallery__track {
+    display: block;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: y mandatory;
+    touch-action: pan-y;
+  }
+
+  .event-detail-gallery__slide {
+    width: 100%;
+    height: calc(100svh - 92px);
+    aspect-ratio: auto;
+  }
+}
+
 .event-card__wishlist,
 .event-detail__wishlist {
   --event-control-inset: 0.75rem;
