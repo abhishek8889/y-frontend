@@ -340,7 +340,7 @@ export default function PublicEventPage() {
           </button>
         </section>
 
-        <section className="flex flex-col px-4 py-8 sm:px-8 lg:min-h-[calc(100svh-92px)] lg:px-[min(8vw,112px)] lg:py-12">
+        <section className="flex flex-col px-4 py-8 sm:px-8 lg:min-h-[calc(100svh-46px)] lg:px-[min(8vw,112px)] lg:py-12">
           <div className="mx-auto w-full max-w-[540px]">
             <div className="text-center">
               <h1 className="break-words text-[20px] font-bold uppercase leading-6 sm:text-[23px] sm:leading-7">

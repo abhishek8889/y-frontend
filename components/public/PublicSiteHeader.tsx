@@ -142,7 +142,7 @@ export function PublicSiteHeader({
   ) : null;
 
   return (
-    <>
+    <div className="public-site-header">
       <header className="public-bar relative border-b border-black bg-white">
         <div className="flex h-full items-center justify-between px-4 sm:hidden">
           <Link href="/" aria-label="Yourlist home" className="shrink-0">
@@ -276,6 +276,6 @@ export function PublicSiteHeader({
           </nav>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

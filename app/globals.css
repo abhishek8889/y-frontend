@@ -395,6 +395,13 @@ input[type="password"]::placeholder {
   flex-shrink: 0;
 }
 
+.public-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+}
+
 /* Shared MediaPlayer shell (home / cards / detail override via controlsClassName). */
 .media-player {
   position: relative;
@@ -635,8 +642,8 @@ input[type="password"]::placeholder {
 
   .event-detail-gallery {
     position: sticky;
-    top: 0;
-    height: calc(100svh - 92px);
+    top: 46px;
+    height: calc(100svh - 46px);
   }
 
   .event-detail-gallery__track {
@@ -651,7 +658,7 @@ input[type="password"]::placeholder {
 
   .event-detail-gallery__slide {
     width: 100%;
-    height: calc(100svh - 92px);
+    height: calc(100svh - 46px);
     aspect-ratio: auto;
   }
 }
