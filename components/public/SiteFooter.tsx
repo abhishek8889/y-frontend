@@ -16,13 +16,6 @@ export function SiteFooter() {
   const footerGroups = useMemo(
     () => [
       {
-        title: "Your list",
-        links: [
-          { label: "About Us", href: "/#about" },
-          { label: "Support", href: "mailto:support@yourlist.com" },
-        ],
-      },
-      {
         title: "Customer",
         links: [
           { label: "Explore Events", href: "/" },
@@ -55,17 +48,44 @@ export function SiteFooter() {
     [host],
   );
 
+  const brandLinks = [
+    { label: "About Us", href: "/#about" },
+    { label: "Support", href: "mailto:support@yourlist.com" },
+  ];
+
   return (
     <footer className="border-t border-black bg-white text-black">
-      <div className="flex h-[50px] items-center border-b border-black px-5">
-        <Link href="/" aria-label="Yourlist home" className="inline-flex">
-          <Image src={yourlistLogo} alt="Yourlist" className="h-[31px] w-[97px] object-contain" />
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="min-h-[185px] border-r border-b border-black px-5 py-[15px]">
+          <Link href="/" aria-label="Yourlist home" className="inline-flex">
+            <Image
+              src={yourlistLogo}
+              alt="Yourlist"
+              className="h-[31px] w-[97px] object-contain"
+            />
+          </Link>
+          <ul className="mt-4 space-y-1">
+            {brandLinks.map((link) => (
+              <li key={link.label}>
+                {link.href.startsWith("mailto:") ? (
+                  <a href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                    {link.label}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {footerGroups.map((group) => (
-          <section key={group.title} className="min-h-[185px] border-r border-b border-black px-5 py-[15px]">
+          <section
+            key={group.title}
+            className="min-h-[185px] border-r border-b border-black px-5 py-[15px]"
+          >
             <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">{group.title}</h2>
             <ul className="mt-4 space-y-1">
               {group.links.map((link) => (
@@ -91,7 +111,10 @@ export function SiteFooter() {
           <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">Contact us</h2>
           <ul className="mt-4 space-y-1">
             <li>
-              <a href="tel:+44123456789" className="flex items-center gap-2 text-[14px] leading-4 hover:underline">
+              <a
+                href="tel:+44123456789"
+                className="flex items-center gap-2 text-[14px] leading-4 hover:underline"
+              >
                 <img src="/landing/phone.svg" width={17} height={17} alt="" />
                 123456789
               </a>

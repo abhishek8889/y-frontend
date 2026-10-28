@@ -8,8 +8,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import PhoneInput, { parsePhoneNumber } from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+import { parsePhoneNumber } from "react-phone-number-input";
 
 import {
   useRegisterOrganiserMutation,
@@ -17,6 +16,7 @@ import {
   type RegisterOrganiserRequest,
 } from "@/apis/auth/authApi";
 import { AuthPage } from "@/components/auth/AuthPage";
+import { LOGIN_COUNTRY_CODES } from "@/components/public/PublicLoginForm";
 import IconCard, {
   CLOSE_ICON,
   EMAIL_SENT_ICON,
@@ -154,6 +154,24 @@ function buildRegisterPayload(
   return payload;
 }
 
+function toE164(callingCode: string, national: string) {
+  const digits = national.replace(/\D/g, "");
+  if (!digits) return "";
+  return `${callingCode}${digits}`;
+}
+
+function splitPhoneValue(value: string) {
+  const parsed = value ? parsePhoneNumber(value) : undefined;
+  if (parsed?.countryCallingCode && parsed.nationalNumber) {
+    return {
+      callingCode: `+${parsed.countryCallingCode}`,
+      national: parsed.nationalNumber,
+    };
+  }
+
+  return { callingCode: "+1", national: value.replace(/\D/g, "") };
+}
+
 function PhoneField({
   id,
   label,
@@ -167,24 +185,82 @@ function PhoneField({
   onChange: (value: string) => void;
   required?: boolean;
 }) {
+  const { callingCode, national } = splitPhoneValue(value);
+  const selected =
+    LOGIN_COUNTRY_CODES.find((country) => country.value === callingCode) ??
+    LOGIN_COUNTRY_CODES[0];
+
+  function emit(nextCode: string, nextNational: string) {
+    onChange(toE164(nextCode, nextNational));
+  }
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-[16px] font-bold uppercase leading-6 text-[#161616]">
+    <div className="auth-phone-field">
+      <label htmlFor={id} className="input-heading">
         {label}
         {required ? <span className="sr-only"> (required)</span> : null}
       </label>
-      <div className="overflow-hidden rounded-[4px] border border-black bg-white">
-        <PhoneInput
+      <div className="auth-phone-box">
+        <div className="auth-phone-country">
+          <span className="auth-phone-flag" aria-hidden="true">
+            {selected.flag}
+          </span>
+          <span className="auth-phone-code">{selected.value}</span>
+          <select
+            aria-label={`${label} country code`}
+            value={selected.value}
+            onChange={(event) => emit(event.target.value, national)}
+            className="auth-phone-country-select"
+          >
+            {LOGIN_COUNTRY_CODES.map((country) => (
+              <option key={country.value} value={country.value}>
+                {country.flag} {country.value} {country.name}
+              </option>
+            ))}
+          </select>
+          <svg
+            width="10"
+            height="6"
+            viewBox="0 0 10 6"
+            aria-hidden="true"
+            className="auth-phone-chevron"
+          >
+            <path
+              d="M1 1 5 5 9 1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <input
           id={id}
-          international
-          defaultCountry="US"
-          value={value || undefined}
-          onChange={(next) => onChange(next ?? "")}
-          placeholder="(000) 000 - 0000"
-          className="phone-input"
+          type="tel"
+          name={id}
+          inputMode="tel"
+          autoComplete="tel-national"
+          required={required}
+          placeholder="1234567890"
+          value={national}
+          onChange={(event) =>
+            emit(selected.value, event.target.value.replace(/\D/g, "").slice(0, 15))
+          }
+          className="auth-phone-input"
         />
       </div>
     </div>
+  );
+}
+
+function LogoPlaceholder() {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="auth-logo-icon">
+      <rect x="3" y="3" width="42" height="42" rx="4" fill="currentColor" />
+      <path d="m9 34 9-10 6 6 5-5 10 9H9Z" fill="white" />
+      <circle cx="17" cy="16" r="3" fill="white" />
+    </svg>
   );
 }
 
@@ -199,8 +275,14 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [verificationCode, setVerificationCode] = useState(initialCode);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const logoInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    };
+  }, [logoPreviewUrl]);
 
   const editableOtpIndex = (() => {
     const firstEmpty = verificationCode.findIndex((digit) => !digit);
@@ -608,40 +690,54 @@ export default function SignupPage() {
             />
 
             <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="orgLogo"
-                className="text-[16px] font-bold uppercase leading-6 text-[#161616]"
-              >
+              <span className="input-heading">
                 Organisation Logo{" "}
                 <span className="font-normal normal-case text-black/55">(optional)</span>
-              </label>
-              <div className="flex h-[48px] items-center gap-3 rounded-[4px] border border-black bg-white px-5">
+              </span>
+              <label htmlFor="orgLogo" className="auth-logo-upload relative">
+                {logoPreviewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={logoPreviewUrl}
+                    alt="Organisation logo preview"
+                    className="auth-logo-preview"
+                  />
+                ) : (
+                  <LogoPlaceholder />
+                )}
+                <span className="auth-logo-title">
+                  {step2.orgLogo ? step2.orgLogo : "Upload organisation logo"}
+                </span>
+                <span className="auth-logo-hint">
+                  {step2.orgLogo ? "Click to replace image" : "PNG, JPG or SVG · max 2MB"}
+                </span>
                 <input
-                  ref={logoInputRef}
                   id="orgLogo"
                   name="orgLogo"
                   type="file"
-                  accept="image/*"
-                  className="sr-only"
+                  accept="image/png,image/jpeg,image/svg+xml,.png,.jpg,.jpeg,.svg"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
-                    updateStep2("orgLogo", file?.name ?? "");
+                    event.target.value = "";
+                    if (!file) {
+                      if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+                      setLogoPreviewUrl(null);
+                      updateStep2("orgLogo", "");
+                      return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                      appToast.error("Logo must be 2 MB or smaller.");
+                      return;
+                    }
+                    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+                    setLogoPreviewUrl(URL.createObjectURL(file));
+                    updateStep2("orgLogo", file.name);
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="cursor-pointer text-[14px] font-normal text-black underline underline-offset-2"
-                >
-                  {step2.orgLogo ? "Change file" : "Choose file"}
-                </button>
-                <span className="truncate text-[14px] text-black/60">
-                  {step2.orgLogo || "No file selected"}
-                </span>
-              </div>
+              </label>
             </div>
 
-            <p className="text-[16px] font-normal leading-6 text-black/80">
+            <p className="text-[14px] font-normal leading-6 text-black/80">
               By completing your profile, you are agreeing to our{" "}
               <a href="/#terms" className="font-heading text-black">
                 Terms and Conditions
@@ -653,19 +749,19 @@ export default function SignupPage() {
               on YOURLIST.
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="auth-form-actions">
               <button
                 type="button"
                 onClick={() => setStep(1)}
                 disabled={isRegistering}
-                className="flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-white text-[14px] font-normal uppercase leading-6 text-black transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+                className="auth-secondary-button w-full"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={isRegistering}
-                className="auth-primary-button flex-1"
+                className="auth-primary-button"
               >
                 {isRegistering ? "Submitting..." : "Submit"}
               </button>

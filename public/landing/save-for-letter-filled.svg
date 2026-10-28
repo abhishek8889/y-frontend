@@ -1,0 +1,7 @@
+<svg width="14" height="17" viewBox="0 0 14 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M0 0H14V17L7 9.63333L0 17V0Z" fill="black"/>
+  <mask id="stroke0_1553_1078" fill="white">
+    <path d="M0 0H14V17L7 9.63333L0 17V0Z"/>
+  </mask>
+  <path d="M0 0H14V17L7 9.63333L0 17V0Z" stroke-width="2.33333" stroke="black" mask="url(#stroke0_1553_1078)"/>
+</svg>

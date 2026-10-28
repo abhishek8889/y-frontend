@@ -5,6 +5,7 @@ import Link from "next/link";
 import eventCover from "@/assets/event-cover.jpg";
 import type { PublicEventListItem } from "@/apis/public/publicEventsApi";
 import { MediaPlayer } from "@/components/common";
+import { WishlistIcon } from "@/components/public/WishlistIcon";
 import { isVideoMedia } from "@/lib/media/isVideoMedia";
 import { toEventCardModel } from "@/lib/events/publicEventFormat";
 
@@ -30,31 +31,31 @@ export function EventCard({
     mediaType !== "image" && Boolean(model.banner?.url) && isVideoMedia(model.banner);
 
   return (
-    <article className="min-w-0 border-r border-b border-black bg-white">
-      <div className="relative aspect-[360/417] overflow-hidden bg-black">
+    <article className="event-card">
+      <div className="event-card__media">
         {bannerIsVideo ? (
           <>
             <MediaPlayer
               media={model.banner}
               alt={model.name}
               active
-              frameClassName="absolute inset-0 h-full w-full"
+              frameClassName="event-card__player"
             />
             {/* Navigate on media click, but leave bottom control bar free */}
             <Link
               href={href}
               aria-label={`View ${model.name}`}
-              className="absolute inset-x-0 top-0 bottom-14 z-[1]"
+              className="event-card__media-hit"
             />
           </>
         ) : (
-          <Link href={href} aria-label={`View ${model.name}`} className="absolute inset-0">
+          <Link href={href} aria-label={`View ${model.name}`} className="event-card__image-link">
             <Image
               src={imageSrc}
               alt={model.name}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1279px) 50vw, 25vw"
-              className="object-cover"
+              sizes="(max-width: 639px) 78vw, (max-width: 1279px) 50vw, 25vw"
+              className="event-card__image"
               unoptimized={typeof imageSrc === "string"}
             />
           </Link>
@@ -70,30 +71,17 @@ export function EventCard({
               clickEvent.stopPropagation();
               onToggleWishlist(event.id);
             }}
-            className="absolute top-[14px] right-[15px] z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="event-card__wishlist"
           >
-            <svg
-              width="19"
-              height="19"
-              viewBox="0 0 24 24"
-              fill={isWishlisted ? "currentColor" : "none"}
-              aria-hidden="true"
-            >
-              <path
-                d="M20.8 8.6c0 4.1-8.8 10.1-8.8 10.1S3.2 12.7 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <WishlistIcon size={14} filled={isWishlisted} />
           </button>
         ) : null}
       </div>
-      <Link href={href} className="flex flex-col items-center gap-2 px-3 pt-2 pb-6 text-center">
-        <h2 className="text-[16px] leading-[13.8px] text-black">{model.name}</h2>
-        <span className="flex flex-col items-center gap-0.5">
-          <span className="text-[14px] leading-[19.6px] text-black">{model.dateLabel}</span>
-          <span className="font-body-bold text-[14px] leading-[19.6px] text-black">{model.venueName}</span>
+      <Link href={href} className="event-card__body">
+        <h2 className="event-card__title">{model.name}</h2>
+        <span className="event-card__meta">
+          <span className="event-card__date">{model.dateLabel}</span>
+          <span className="event-card__venue font-body-bold">{model.venueName}</span>
         </span>
       </Link>
     </article>

@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import homeHeroImage from "@/assets/home-hero.jpg";
 import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
+import { MediaPlayer } from "@/components/common";
 import { EventCard } from "@/components/public/EventCard";
 import { PUBLIC_SEARCH_EVENT } from "@/components/public/PublicSiteHeader";
 import { SelectField } from "@/components/ui/SelectField";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
+
+const HOME_HERO_VIDEO = "/landing/home-hero-2.mp4";
 
 const SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
@@ -118,12 +119,15 @@ export default function HomePage() {
   }
 
   return (
-    <main className="bg-white text-black">
-      <form
-        onSubmit={handleSearchSubmit}
-        className="public-bar hidden items-center gap-3 border-b border-black bg-white px-5 sm:flex sm:px-10"
-      >
-        <img src="/landing/search.svg" width={26} height={26} alt="" className="shrink-0 -scale-y-100" />
+    <main className="home-page">
+      <form onSubmit={handleSearchSubmit} className="public-bar home-search">
+        <img
+          src="/landing/search.svg"
+          width={26}
+          height={26}
+          alt=""
+          className="home-search__icon"
+        />
         <input
           type="search"
           name="search"
@@ -131,38 +135,26 @@ export default function HomePage() {
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder="What are you looking for?"
           aria-label="Search events"
-          className="h-full min-w-0 flex-1 bg-transparent text-[12px] uppercase leading-[15.6px] text-black placeholder:text-black/60 focus:outline-none"
+          className="home-search__input"
         />
       </form>
 
-      <section aria-label="Discover live events" className="relative aspect-[2/1] w-full overflow-hidden bg-black">
-        <Image
-          src={homeHeroImage}
+      <section aria-label="Discover live events" className="home-hero">
+        <MediaPlayer
+          media={{ url: HOME_HERO_VIDEO, media_type: "video" }}
           alt="A crowd enjoying a live concert beneath bright stage lights"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
+          active
+          showProgress={false}
+          frameClassName="home-hero__player"
+          controlsClassName="home-hero-media-controls"
         />
-        <Link href="#events" className="absolute inset-0" aria-label="Explore events" />
-        <div className="pointer-events-none absolute right-6 bottom-[26px] z-10 flex items-center gap-[9px] sm:right-[43px]">
-          <span className="relative block h-[31px] w-[31px]">
-            <img src="/landing/hero-pause-bg.svg" width={30.8695} height={30.8695} alt="" />
-            <img
-              src="/landing/hero-pause.svg"
-              width={13.8913}
-              height={13.8913}
-              alt=""
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            />
-          </span>
-          <img src="/landing/hero-next.svg" width={30.8695} height={30.8695} alt="" />
-        </div>
+        {/* Leave bottom control bar free for play / mute */}
+        <Link href="#events" className="home-hero__hit" aria-label="Explore events" />
       </section>
 
-      <section id="events" aria-label="Upcoming events" className="bg-white">
-        <div className="flex h-11 items-center justify-between border-t border-black px-5">
-          <p aria-live="polite" className="text-[14px] leading-[14px]">
+      <section id="events" aria-label="Upcoming events" className="home-events">
+        <div className="home-events__toolbar">
+          <p aria-live="polite" className="home-events__count">
             {isLoading
               ? "Loading events…"
               : `${sortedEvents.length} Event${sortedEvents.length === 1 ? "" : "s"}`}
@@ -171,31 +163,31 @@ export default function HomePage() {
             name="eventSort"
             aria-label="Sort events"
             label="Sort by"
-            labelClassName="!mb-0 shrink-0 !text-[11.6px] !font-normal !uppercase !leading-[15.6px] !tracking-[0.36px]"
+            labelClassName="home-events__sort-label"
             value={sortBy}
             options={SORT_OPTIONS}
             density="compact"
             onChange={(event) => setSortBy(event.target.value)}
-            wrapperClassName="!flex-row !items-center !gap-2"
-            containerClassName="!h-[32px] min-w-[128px] !rounded-[3px] !border-black"
-            className="!h-[32px] !text-[11.6px] !uppercase !tracking-[0.36px]"
+            wrapperClassName="home-events__sort-wrap"
+            containerClassName="home-events__sort-box"
+            className="home-events__sort-select"
           />
         </div>
 
         {isError ? (
-          <p role="alert" className="px-5 py-10 text-center text-[14px] text-[#b42318] md:px-8">
+          <p role="alert" className="home-events__status home-events__status--error">
             Unable to load events. Please try again.
           </p>
         ) : isLoading ? (
-          <p role="status" className="px-5 py-10 text-center text-[14px] text-black/60 md:px-8">
+          <p role="status" className="home-events__status">
             Loading events…
           </p>
         ) : sortedEvents.length === 0 ? (
-          <p className="px-5 py-10 text-center text-[14px] text-black/60 md:px-8">
+          <p className="home-events__status">
             {search ? "No events match your search." : "No published events yet."}
           </p>
         ) : (
-          <div className="-mb-px grid grid-cols-1 border-t border-black sm:grid-cols-2 xl:grid-cols-4">
+          <div className="home-events__grid">
             {sortedEvents.map((event) => (
               <EventCard
                 key={event.id}
@@ -210,13 +202,9 @@ export default function HomePage() {
       </section>
 
       {searching ? (
-        <div
-          role="status"
-          aria-live="assertive"
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-white"
-        >
-          <span className="flex flex-col items-center gap-4 text-[12px] uppercase tracking-[0.08em] text-black">
-            <span className="h-9 w-9 animate-spin rounded-full border-2 border-black/15 border-t-black" />
+        <div role="status" aria-live="assertive" className="home-searching">
+          <span className="home-searching__label">
+            <span className="home-searching__spinner" />
             Searching
           </span>
         </div>

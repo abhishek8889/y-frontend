@@ -132,7 +132,7 @@ export function PublicSiteHeader({
       onClick={onToggleFavorite}
       className="relative flex size-5 items-center justify-center"
     >
-      <img src="/landing/header-badge-icon.svg" width={20} height={20} alt="" />
+      <img src="/landing/save-for-letter.svg" width={14} height={17} alt="" />
       {savedCount > 0 ? (
         <span className="absolute -right-1.5 -top-1.5 flex h-[12px] min-w-[12px] items-center justify-center rounded-full bg-black px-[2px] text-[8px] leading-[8px] text-white">
           {savedCount}

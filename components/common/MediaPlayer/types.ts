@@ -30,9 +30,14 @@ export type MediaPlayerProps = {
   className?: string;
   /**
    * Aspect / sizing classes for the frame.
-   * Default: `aspect-[1.75] w-full`
+   * Default: `aspect-[1.75] w-full` (override with page CSS classes on home/detail).
    */
   frameClassName?: string;
+  /**
+   * Extra classes on the video controls shell (play/pause + mute).
+   * Use with `.media-player__control` to size buttons responsively.
+   */
+  controlsClassName?: string;
   /** Optional placeholder when there is no media URL. */
   placeholder?: ReactNode;
 };

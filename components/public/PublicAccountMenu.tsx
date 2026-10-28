@@ -9,6 +9,7 @@ import { getDisplayName, type AuthUser } from "@/lib/auth/session";
 import { buildSurfaceUrl, defaultPathForSurface, getSurfaceHost } from "@/lib/hosts";
 import { baseApi } from "@/lib/store/baseApi";
 import { useAppDispatch } from "@/lib/store/hooks";
+import { WishlistIcon } from "@/components/public/WishlistIcon";
 import IconCard, { LOGOUT_ICON, VIEW_TICKETS_ICON } from "@/components/ui/IconCard";
 
 /**
@@ -49,19 +50,6 @@ function UserIcon({ className = "h-5 w-5" }: { className?: string }) {
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function HeartIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M20.8 8.6c0 4.1-8.8 10.1-8.8 10.1S3.2 12.7 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -210,7 +198,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
               onClick={() => setOpen(false)}
               className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-black/[0.04]"
             >
-              <HeartIcon className="h-4 w-4 text-black" />
+              <WishlistIcon size={14} className="text-black" />
               <span className="min-w-0 flex-1 text-[14px] leading-5">My Favourites</span>
               <span className="text-black/40" aria-hidden="true">
                 ›

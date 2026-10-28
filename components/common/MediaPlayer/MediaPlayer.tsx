@@ -6,7 +6,7 @@ import type { MediaPlayerProps } from "./types";
 
 function PauseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
       <rect x="6" y="5" width="4" height="14" rx="1" />
       <rect x="14" y="5" width="4" height="14" rx="1" />
     </svg>
@@ -15,7 +15,7 @@ function PauseIcon() {
 
 function PlayIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
       <path d="M8 5.5v13l11-6.5L8 5.5Z" />
     </svg>
   );
@@ -23,7 +23,7 @@ function PlayIcon() {
 
 function MuteIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
       <path d="M5.5 9.5h2.3L12 5.8v12.4l-4.2-3.7H5.5a1 1 0 0 1-1-1v-2.5a1 1 0 0 1 1-1Z" />
       <path
         d="M15.1 9.2a3.1 3.1 0 0 1 0 5.6M17.4 7a5.6 5.6 0 0 1 0 10"
@@ -45,7 +45,7 @@ function MuteIcon() {
 
 function UnmuteIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
       <path d="M5.5 9.5h2.3L12 5.8v12.4l-4.2-3.7H5.5a1 1 0 0 1-1-1v-2.5a1 1 0 0 1 1-1Z" />
       <path
         d="M15.1 9.2a3.1 3.1 0 0 1 0 5.6M17.4 7a5.6 5.6 0 0 1 0 10"
@@ -71,6 +71,7 @@ export function MediaPlayer({
   loop = true,
   className = "",
   frameClassName = "aspect-[1.75] w-full",
+  controlsClassName = "",
   placeholder = null,
 }: MediaPlayerProps) {
   const src = media?.url?.trim() || "";
@@ -81,7 +82,7 @@ export function MediaPlayer({
   const [muted, setMuted] = useState(true);
   const [progress, setProgress] = useState(0);
 
-  const frameClass = `relative overflow-hidden bg-[#dedede] ${frameClassName} ${className}`.trim();
+  const frameClass = `media-player ${frameClassName} ${className}`.trim();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -177,7 +178,7 @@ export function MediaPlayer({
     return (
       <div className={frameClass} role="img" aria-label={alt}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={src} alt={alt} className="media-player__image" />
       </div>
     );
   }
@@ -187,7 +188,7 @@ export function MediaPlayer({
       <video
         ref={videoRef}
         src={src}
-        className="absolute inset-0 h-full w-full object-cover"
+        className="media-player__video"
         muted
         playsInline
         preload="metadata"
@@ -197,9 +198,7 @@ export function MediaPlayer({
 
       {showControls ? (
         <div
-          className={`pointer-events-none absolute inset-x-0 bottom-0 px-2.5 pb-2.5 ${
-            showProgress ? "bg-gradient-to-t from-black/55 to-transparent pt-8" : "pt-2"
-          }`}
+          className={`media-player__controls${showProgress ? " media-player__controls--progress" : ""} ${controlsClassName}`.trim()}
         >
           {showProgress ? (
             <div
@@ -209,7 +208,7 @@ export function MediaPlayer({
               aria-valuemax={100}
               aria-valuenow={Math.round(progress)}
               tabIndex={0}
-              className="pointer-events-auto h-[3px] w-full cursor-pointer rounded-full bg-white/35"
+              className="media-player__progress"
               onClick={seek}
               onKeyDown={(event) => {
                 const video = videoRef.current;
@@ -227,23 +226,21 @@ export function MediaPlayer({
               }}
             >
               <div
-                className="h-full rounded-full bg-white transition-[width] duration-75"
+                className="media-player__progress-bar"
                 style={{ width: `${progress}%` }}
               />
             </div>
           ) : null}
 
           <div
-            className={`pointer-events-auto flex items-center justify-end gap-1.5 ${
-              showProgress ? "mt-1.5" : ""
-            }`}
+            className={`media-player__control-row${showProgress ? " media-player__control-row--with-progress" : ""}`}
           >
             <button
               type="button"
               aria-label={paused ? "Play video" : "Pause video"}
               onClick={togglePlay}
               onPointerDown={stopBubble}
-              className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[hsla(0,0%,100%,.5)] text-black transition hover:bg-[hsla(0,0%,100%,.65)]"
+              className="media-player__control"
             >
               {paused ? <PlayIcon /> : <PauseIcon />}
             </button>
@@ -252,7 +249,7 @@ export function MediaPlayer({
               aria-label={muted ? "Unmute video" : "Mute video"}
               onClick={toggleMute}
               onPointerDown={stopBubble}
-              className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[hsla(0,0%,100%,.5)] text-black transition hover:bg-[hsla(0,0%,100%,.65)]"
+              className="media-player__control"
             >
               {muted ? <MuteIcon /> : <UnmuteIcon />}
             </button>

@@ -13,6 +13,7 @@ import {
 } from "@/apis/public/publicEventsApi";
 import { Breadcrumb, MediaPlayer } from "@/components/common";
 import { EventTicketBooking } from "@/components/public/EventTicketBooking";
+import { WishlistIcon } from "@/components/public/WishlistIcon";
 import {
   formatUtcDateTime,
   formatTicketPriceRange,
@@ -265,20 +266,7 @@ export default function PublicEventPage() {
             onClick={() => void toggleWishlist(event.id, event.organisation_id)}
             className="absolute right-5 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black transition hover:bg-white disabled:opacity-60"
           >
-            <svg
-              width="19"
-              height="19"
-              viewBox="0 0 24 24"
-              fill={isWishlisted ? "currentColor" : "none"}
-              aria-hidden="true"
-            >
-              <path
-                d="M20.8 8.6c0 4.1-8.8 10.1-8.8 10.1S3.2 12.7 3.2 8.6A4.6 4.6 0 0 1 12 6.2a4.6 4.6 0 0 1 8.8 2.4Z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <WishlistIcon size={14} filled={isWishlisted} />
           </button>
         </section>
 
