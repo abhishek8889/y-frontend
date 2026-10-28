@@ -168,6 +168,67 @@ export default function PublicEventPage() {
     return () => observer.disconnect();
   }, [galleryMedia]);
 
+  // Mobile: vertical swipe on the banner scrolls the page; sideways swipe slides images.
+  useEffect(() => {
+    const track = galleryScrollRef.current;
+    if (!track || !galleryMedia.length) return;
+
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    if (desktop.matches) return;
+
+    let startX = 0;
+    let startY = 0;
+    let lastX = 0;
+    let axis: "x" | "y" | null = null;
+
+    function clearAxis() {
+      axis = null;
+      track?.removeAttribute("data-scroll-axis");
+    }
+
+    function onStart(event: TouchEvent) {
+      if (event.touches.length !== 1) return;
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      lastX = startX;
+      clearAxis();
+    }
+
+    function onMove(event: TouchEvent) {
+      if (event.touches.length !== 1 || !track) return;
+      const x = event.touches[0].clientX;
+      const y = event.touches[0].clientY;
+
+      if (!axis) {
+        const dx = Math.abs(x - startX);
+        const dy = Math.abs(y - startY);
+        if (dx < 8 && dy < 8) return;
+        axis = dx > dy ? "x" : "y";
+        track.dataset.scrollAxis = axis;
+      }
+
+      if (axis === "x") {
+        track.scrollLeft += lastX - x;
+        lastX = x;
+        if (event.cancelable) event.preventDefault();
+      }
+      // axis === "y" → let the document scroll (touch-action: pan-y)
+    }
+
+    track.addEventListener("touchstart", onStart, { passive: true });
+    track.addEventListener("touchmove", onMove, { passive: false });
+    track.addEventListener("touchend", clearAxis, { passive: true });
+    track.addEventListener("touchcancel", clearAxis, { passive: true });
+
+    return () => {
+      track.removeEventListener("touchstart", onStart);
+      track.removeEventListener("touchmove", onMove);
+      track.removeEventListener("touchend", clearAxis);
+      track.removeEventListener("touchcancel", clearAxis);
+      clearAxis();
+    };
+  }, [galleryMedia]);
+
   const locationLabel = useMemo(() => {
     const address = event?.venue?.address;
     if (!address) return null;
