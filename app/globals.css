@@ -561,7 +561,7 @@ input[type="password"]::placeholder {
 }
 
 /* Scroll track only — save button stays pinned on the outer gallery.
-   Default pan-y so a vertical swipe on the banner scrolls the page. */
+   touch-action: pan-y lets the page scroll; JS handles horizontal slide swipes. */
 .event-detail-gallery__track {
   display: flex;
   width: 100%;
@@ -574,11 +574,6 @@ input[type="password"]::placeholder {
   scrollbar-width: none;
 }
 
-.event-detail-gallery__track[data-scroll-axis="y"] {
-  overflow-x: hidden;
-  touch-action: pan-y;
-}
-
 .event-detail-gallery__track[data-scroll-axis="x"] {
   touch-action: none;
 }
@@ -589,8 +584,11 @@ input[type="password"]::placeholder {
 
 .event-detail-gallery__slide {
   position: relative;
+  box-sizing: border-box;
   flex: 0 0 100%;
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   aspect-ratio: 4 / 5;
   scroll-snap-align: start;
   scroll-snap-stop: always;

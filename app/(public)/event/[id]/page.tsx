@@ -168,10 +168,10 @@ export default function PublicEventPage() {
     return () => observer.disconnect();
   }, [galleryMedia]);
 
-  // Mobile: vertical swipe on the banner scrolls the page; sideways swipe slides images.
+  // Mobile: sideways swipe changes slides; vertical swipe scrolls the page.
   useEffect(() => {
     const track = galleryScrollRef.current;
-    if (!track || !galleryMedia.length) return;
+    if (!track || galleryMedia.length < 2) return;
 
     const desktop = window.matchMedia("(min-width: 1024px)");
     if (desktop.matches) return;
@@ -180,18 +180,24 @@ export default function PublicEventPage() {
     let startY = 0;
     let lastX = 0;
     let axis: "x" | "y" | null = null;
+    const slidesCount = galleryMedia.length;
 
-    function clearAxis() {
-      axis = null;
-      track?.removeAttribute("data-scroll-axis");
+    function snapToNearest() {
+      if (!track) return;
+      const width = track.clientWidth || 1;
+      const index = Math.max(0, Math.min(slidesCount - 1, Math.round(track.scrollLeft / width)));
+      track.scrollTo({ left: index * width, behavior: "smooth" });
+      setActiveSlide(index);
     }
 
     function onStart(event: TouchEvent) {
-      if (event.touches.length !== 1) return;
+      if (event.touches.length !== 1 || !track) return;
       startX = event.touches[0].clientX;
       startY = event.touches[0].clientY;
       lastX = startX;
-      clearAxis();
+      axis = null;
+      track.dataset.scrollAxis = "";
+      track.style.scrollSnapType = "none";
     }
 
     function onMove(event: TouchEvent) {
@@ -202,9 +208,12 @@ export default function PublicEventPage() {
       if (!axis) {
         const dx = Math.abs(x - startX);
         const dy = Math.abs(y - startY);
-        if (dx < 8 && dy < 8) return;
+        if (dx < 10 && dy < 10) return;
         axis = dx > dy ? "x" : "y";
         track.dataset.scrollAxis = axis;
+        if (axis === "y") {
+          track.style.scrollSnapType = "";
+        }
       }
 
       if (axis === "x") {
@@ -212,20 +221,30 @@ export default function PublicEventPage() {
         lastX = x;
         if (event.cancelable) event.preventDefault();
       }
-      // axis === "y" → let the document scroll (touch-action: pan-y)
+    }
+
+    function onEnd() {
+      if (!track) return;
+      if (axis === "x") {
+        snapToNearest();
+      }
+      track.style.scrollSnapType = "";
+      axis = null;
+      track.removeAttribute("data-scroll-axis");
     }
 
     track.addEventListener("touchstart", onStart, { passive: true });
     track.addEventListener("touchmove", onMove, { passive: false });
-    track.addEventListener("touchend", clearAxis, { passive: true });
-    track.addEventListener("touchcancel", clearAxis, { passive: true });
+    track.addEventListener("touchend", onEnd, { passive: true });
+    track.addEventListener("touchcancel", onEnd, { passive: true });
 
     return () => {
       track.removeEventListener("touchstart", onStart);
       track.removeEventListener("touchmove", onMove);
-      track.removeEventListener("touchend", clearAxis);
-      track.removeEventListener("touchcancel", clearAxis);
-      clearAxis();
+      track.removeEventListener("touchend", onEnd);
+      track.removeEventListener("touchcancel", onEnd);
+      track.style.scrollSnapType = "";
+      track.removeAttribute("data-scroll-axis");
     };
   }, [galleryMedia]);
 
