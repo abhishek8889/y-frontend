@@ -517,14 +517,49 @@ input[type="password"]::placeholder {
   object-fit: cover;
 }
 
-.event-card__wishlist {
+/* Shared inset/size for wishlist + play/mute (same corner padding). */
+.event-card,
+.event-media-controls {
+  --event-control-inset: 0.75rem;
+  --event-control-size: 2.25rem;
+}
+
+/* Play / mute match save-for-later size and edge padding. */
+.event-media-controls {
+  padding: 0 var(--event-control-inset) var(--event-control-inset);
+  background: none;
+}
+
+.event-media-controls .media-player__control-row {
+  gap: 0.5rem;
+}
+
+.event-media-controls .media-player__control {
+  width: var(--event-control-size);
+  height: var(--event-control-size);
+  background: rgb(255 255 255 / 80%);
+}
+
+.event-media-controls .media-player__control:hover {
+  background: #fff;
+}
+
+.event-media-controls .media-player__icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.event-card__wishlist,
+.event-detail__wishlist {
+  --event-control-inset: 0.75rem;
+  --event-control-size: 2.25rem;
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: var(--event-control-inset);
+  right: var(--event-control-inset);
   z-index: 10;
   display: flex;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--event-control-size);
+  height: var(--event-control-size);
   align-items: center;
   justify-content: center;
   border: 0;
@@ -535,11 +570,13 @@ input[type="password"]::placeholder {
   transition: background 150ms ease;
 }
 
-.event-card__wishlist:hover {
+.event-card__wishlist:hover,
+.event-detail__wishlist:hover {
   background: #fff;
 }
 
-.event-card__wishlist:disabled {
+.event-card__wishlist:disabled,
+.event-detail__wishlist:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -752,11 +789,15 @@ input[type="password"]::placeholder {
   font-size: 0.75rem;
 }
 
-.home-events__grid .event-card__wishlist {
-  width: 2rem;
-  height: 2rem;
-  top: 0.65rem;
-  right: 0.65rem;
+.home-events__grid .event-card,
+.home-events__grid .event-media-controls {
+  --event-control-inset: 0.65rem;
+  --event-control-size: 2rem;
+}
+
+.home-events__grid .event-media-controls .media-player__icon {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 .home-searching {
@@ -881,11 +922,15 @@ input[type="password"]::placeholder {
     font-size: 0.875rem;
   }
 
-  .home-events__grid .event-card__wishlist {
-    width: 2.25rem;
-    height: 2.25rem;
-    top: 0.875rem;
-    right: 0.9375rem;
+  .home-events__grid .event-card,
+  .home-events__grid .event-media-controls {
+    --event-control-inset: 0.75rem;
+    --event-control-size: 2.25rem;
+  }
+
+  .home-events__grid .event-media-controls .media-player__icon {
+    width: 0.875rem;
+    height: 0.875rem;
   }
 
   .event-card__title {

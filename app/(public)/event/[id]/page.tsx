@@ -91,7 +91,9 @@ function EventGallerySlide({
         media={media}
         alt={alt}
         active={active}
+        showProgress={false}
         frameClassName="absolute inset-0 h-full w-full"
+        controlsClassName="event-media-controls"
       />
     );
   }
@@ -264,7 +266,7 @@ export default function PublicEventPage() {
             aria-pressed={isWishlisted}
             disabled={isMutating}
             onClick={() => void toggleWishlist(event.id, event.organisation_id)}
-            className="absolute right-5 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-black transition hover:bg-white disabled:opacity-60"
+            className="event-detail__wishlist"
           >
             <WishlistIcon size={14} filled={isWishlisted} />
           </button>

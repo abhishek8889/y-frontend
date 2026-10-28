@@ -39,7 +39,9 @@ export function EventCard({
               media={model.banner}
               alt={model.name}
               active
+              showProgress={false}
               frameClassName="event-card__player"
+              controlsClassName="event-media-controls"
             />
             {/* Navigate on media click, but leave bottom control bar free */}
             <Link
