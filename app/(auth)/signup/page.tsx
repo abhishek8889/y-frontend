@@ -18,7 +18,6 @@ import {
 import { AuthPage } from "@/components/auth/AuthPage";
 import { LOGIN_COUNTRY_CODES } from "@/components/public/PublicLoginForm";
 import IconCard, {
-  CLOSE_ICON,
   EMAIL_SENT_ICON,
   EYE_OFF_ICON,
   EYE_OPEN_ICON,
@@ -46,9 +45,6 @@ const countryNameToIso: Record<string, string> = {
 };
 
 const initialCode = ["", "", "", "", "", ""];
-
-const otpFieldClass =
-  "aspect-square h-auto w-full max-h-[54px] rounded-none border border-[#A9A9A9] bg-white text-center text-[24px] font-normal uppercase leading-[44px] text-black outline-none focus:border-black disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/70 sm:text-[30px]";
 
 type Step1Values = {
   firstName: string;
@@ -771,43 +767,40 @@ export default function SignupPage() {
       </AuthPage>
 
       {isVerificationOpen ? (
-        <div className="auth-site fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+        <div className="auth-site auth-dialog-overlay">
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="verify-email-title"
-            className="relative w-full max-w-[500px] overflow-hidden rounded-[4px] bg-white px-5 pb-[30px] pt-10 shadow-[0_35px_90px_rgba(0,0,0,0.28)] sm:px-10"
+            className="auth-dialog"
           >
             <button
               type="button"
               aria-label="Close modal"
               disabled={isOtpBusy}
               onClick={() => setIsVerificationOpen(false)}
-              className="absolute right-5 top-5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-[5px] border border-[#e5e5e5] bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="auth-dialog__close"
             >
-              <IconCard name={CLOSE_ICON} className="h-3.5 w-3.5" />
+              ×
             </button>
 
-            <div className="mx-auto flex h-[52px] w-[52px] items-center justify-center rounded-[10px] bg-black text-white">
-              <IconCard name={EMAIL_SENT_ICON} className="h-8 w-8" />
+            <div className="auth-dialog__icon" aria-hidden="true">
+              <IconCard name={EMAIL_SENT_ICON} />
             </div>
 
-            <h2
-              id="verify-email-title"
-              className="font-heading mt-[30px] text-center text-[24px] uppercase leading-[38px] text-black"
-            >
+            <h2 id="verify-email-title" className="auth-dialog__title">
               Verify your email
             </h2>
 
-            <p className="mt-2.5 text-center text-[16px] font-normal leading-6 text-black">
+            <p className="auth-dialog__copy">
               We&apos;ve sent you a verification code to{" "}
-              <span className="font-heading">{step1.email.trim()}</span>
+              <span className="auth-dialog__email">{step1.email.trim()}</span>
               <br />
               Enter it below to verify your email address.
             </p>
 
-            <div className="mt-[30px] border-t border-[#E5E5E5] pt-[27px]">
-              <div className="mx-auto grid max-w-[420px] grid-cols-6 gap-[10px] sm:gap-[18px]">
+            <div className="auth-dialog__otp">
+              <div className="auth-dialog__otp-grid">
                 {verificationCode.map((digit, index) => {
                   const isEditable = index === editableOtpIndex;
                   return (
@@ -825,7 +818,7 @@ export default function SignupPage() {
                       onChange={(event) => handleCodeChange(index, event.target.value)}
                       onPaste={handleCodePaste}
                       onKeyDown={(event) => handleKeyDown(index, event)}
-                      className={otpFieldClass}
+                      className="auth-dialog__otp-input"
                       aria-label={`Verification code character ${index + 1}`}
                     />
                   );
@@ -833,20 +826,20 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <p className="mt-5 text-center text-[16px] font-normal leading-6 text-black">
+            <p className="auth-dialog__resend">
               Didn&apos;t get your code?{" "}
               <button
                 type="button"
                 disabled={isOtpBusy}
                 onClick={handleResendCode}
-                className="font-heading cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                className="auth-dialog__resend-btn"
               >
                 {isRegistering ? "Sending..." : "Send a new code"}
               </button>
             </p>
 
-            <div className="mt-[30px] flex items-start gap-2.5 rounded-[4px] border border-[#e5e5e5] bg-[#F5F5F5] px-[22px] py-3 text-left text-[14px] font-normal leading-5 text-black/80">
-              <IconCard name={INFO_ICON} className="mt-0.5 h-4 w-4 shrink-0 text-[#949494]" />
+            <div className="auth-dialog__notice">
+              <IconCard name={INFO_ICON} className="auth-dialog__notice-icon" />
               <span>
                 The code expires in 10 minutes. If you don&apos;t see the email, check your spam
                 folder or use the resend option above.
@@ -857,7 +850,7 @@ export default function SignupPage() {
               type="button"
               disabled={isOtpBusy}
               onClick={handleVerifyEmail}
-              className="mt-[30px] flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black text-[14px] font-normal uppercase tracking-[0.02em] text-white disabled:cursor-not-allowed disabled:opacity-60"
+              className="auth-primary-button auth-dialog__cta"
             >
               {isVerifying ? "Verifying..." : "Verify & continue"}
             </button>

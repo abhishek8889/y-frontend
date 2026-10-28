@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import IconCard, { CLOSE_ICON } from "@/components/ui/IconCard";
 
 type OrganiserModalProps = {
   open: boolean;
@@ -25,7 +24,7 @@ export function OrganiserModal({
   titleId,
   showClose = false,
   onClose,
-  panelClassName = "max-w-[500px]",
+  panelClassName = "",
 }: OrganiserModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -48,7 +47,7 @@ export function OrganiserModal({
 
   return (
     <div
-      className="organiser-modal fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8"
+      className="organiser-modal"
       role="presentation"
       onClick={(event) => {
         if (onClose && event.target === event.currentTarget) onClose();
@@ -58,16 +57,16 @@ export function OrganiserModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`organiser-modal__panel relative w-full overflow-hidden rounded-[4px] bg-white ${panelClassName}`.trim()}
+        className={["organiser-modal__panel", panelClassName].filter(Boolean).join(" ")}
       >
         {showClose && onClose ? (
           <button
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="organiser-modal__close absolute right-4 top-4 z-[2] flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-black/15 bg-white text-black/70 transition hover:bg-black/[0.04] hover:text-black"
+            className="organiser-modal__close"
           >
-            <IconCard name={CLOSE_ICON} className="h-3.5 w-3.5" />
+            ×
           </button>
         ) : null}
         {children}

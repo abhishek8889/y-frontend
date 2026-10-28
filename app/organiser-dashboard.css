@@ -1488,10 +1488,11 @@
 }
 
 .organiser-dashboard .event-status-select-badge {
-  font-size: 12px;
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  line-height: 16px;
+  line-height: 18px;
 }
 
 .organiser-dashboard .event-status-select-chevron {
@@ -1531,10 +1532,10 @@
   border-radius: 3px;
   background: transparent;
   padding: 8px 10px;
-  font-family: var(--font-univers), sans-serif;
-  font-size: 12px;
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 18px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   text-align: left;
@@ -2118,28 +2119,7 @@
 
 /* ── Organiser modal ── */
 
-.organiser-dashboard .organiser-modal__close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 2;
-  display: flex;
-  height: 28px;
-  width: 28px;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-  background: var(--white);
-  color: rgba(0, 0, 0, 0.7);
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.organiser-dashboard .organiser-modal__close:hover {
-  color: var(--black);
-  background: rgba(0, 0, 0, 0.04);
-}
+/* Close chrome lives in globals.css (.organiser-modal__close) — matches SideDrawer × */
 
 /* ── Order details ── */
 

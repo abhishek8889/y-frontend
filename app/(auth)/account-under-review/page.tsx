@@ -54,34 +54,31 @@ export default function AccountUnderReviewPage() {
         <AuthHeader />
 
         <div className="flex flex-1 flex-col items-center justify-center px-5 py-12 sm:px-10">
-          <div className="flex w-full max-w-[551px] flex-col items-center text-center">
-            <div
-              aria-hidden="true"
-              className="flex h-[50px] w-[50px] items-center justify-center rounded-full border-[2.5px] border-black text-[28px] font-bold leading-none text-black"
-            >
+          <div className="auth-review">
+            <div className="auth-review__icon" aria-hidden="true">
               i
             </div>
 
-            <h1 className="font-heading mt-8 text-[22px] leading-8 text-black sm:text-[24px] sm:leading-[38px]">
+            <h1 className="auth-review__title">
               Hi {greetingName}, your account is under review
             </h1>
 
-            <p className="mt-3 max-w-[540px] text-[15px] font-normal leading-[26px] text-black sm:text-[16px]">
+            <p className="auth-review__copy">
               Thanks for registering as an organiser on Yourlist. Our team is reviewing your account
               and the details you submitted. You&apos;ll be notified when it&apos;s approved — until
               then the organiser dashboard stays locked.
             </p>
 
             {user?.email ? (
-              <p className="mt-4 text-[14px] font-normal leading-5 text-black/65">
+              <p className="auth-review__email">
                 We&apos;ll send updates to{" "}
-                <span className="font-heading text-black">{user.email}</span>
+                <span className="auth-review__email-value">{user.email}</span>
               </p>
             ) : null}
 
             <a
               href="mailto:support@yourlist.com"
-              className="mt-6 inline-flex h-10 items-center justify-center gap-[7px] rounded-[4px] border border-black bg-white px-2.5 text-[14px] font-normal leading-[19.6px] text-black transition hover:bg-black hover:text-white"
+              className="auth-secondary-button auth-review__support"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path

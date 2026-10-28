@@ -88,7 +88,7 @@ function StripeWordmark() {
       alt="Stripe"
       width={112}
       height={47}
-      className="mx-auto h-[47px] w-[112px] object-contain"
+      className="organiser-modal__brand"
       priority
     />
   );
@@ -102,7 +102,7 @@ function StatusMark({ variant }: { variant: StripeConnectModalVariant }) {
         alt=""
         width={80}
         height={80}
-        className="mx-auto mt-4 h-20 w-20 object-contain"
+        className="organiser-modal__status organiser-modal__status--success"
         aria-hidden
       />
     );
@@ -116,7 +116,7 @@ function StatusMark({ variant }: { variant: StripeConnectModalVariant }) {
         alt=""
         width={89}
         height={89}
-        className="mx-auto mt-3 h-[89px] w-[89px] object-contain"
+        className="organiser-modal__status organiser-modal__status--warning"
         aria-hidden
       />
     );
@@ -147,36 +147,32 @@ export function StripeConnectModal({
       titleId={content.titleId}
       showClose={content.showClose && !isBusy}
       onClose={isBusy ? undefined : onClose}
-      panelClassName="px-10 pb-8 pt-[61px]"
     >
-      <StripeWordmark />
-      <StatusMark variant={variant} />
+      <div className="organiser-modal__body">
+        <StripeWordmark />
+        <StatusMark variant={variant} />
 
-      <h2
-        id={content.titleId}
-        className="font-heading mt-[18px] text-center text-[20px] leading-[38px] text-black"
-      >
-        {content.title}
-      </h2>
+        <h2 id={content.titleId} className="organiser-modal__title">
+          {content.title}
+        </h2>
 
-      <div className="mt-2 space-y-2 text-center text-[16px] font-normal leading-6 text-black">
-        {content.paragraphs.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
+        <div className="organiser-modal__copy">
+          {content.paragraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          disabled={isBusy}
+          onClick={handlePrimary}
+          className="organiser-modal__cta"
+        >
+          {primaryLabel}
+        </button>
+
+        <p className="organiser-modal__footnote">{content.footnote}</p>
       </div>
-
-      <button
-        type="button"
-        disabled={isBusy}
-        onClick={handlePrimary}
-        className="mt-10 flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[4px] bg-black px-4 text-[14px] font-normal uppercase leading-6 text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {primaryLabel}
-      </button>
-
-      <p className="mt-[13px] whitespace-pre-line text-center text-[14px] font-normal leading-[18px] text-black/80">
-        {content.footnote}
-      </p>
     </OrganiserModal>
   );
 }

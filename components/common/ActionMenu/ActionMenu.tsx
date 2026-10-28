@@ -218,9 +218,20 @@ export function ActionMenu<T>({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen(!open)}
-        className="flex size-[27px] items-center justify-center rounded-[5px] text-[16px] leading-none text-black transition hover:bg-black/[0.04]"
+        className="action-menu-trigger"
       >
-        ⋮
+        <svg
+          className="action-menu-trigger-icon"
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle cx="9" cy="3.5" r="1.75" fill="currentColor" />
+          <circle cx="9" cy="9" r="1.75" fill="currentColor" />
+          <circle cx="9" cy="14.5" r="1.75" fill="currentColor" />
+        </svg>
       </button>
       {menu}
     </div>
