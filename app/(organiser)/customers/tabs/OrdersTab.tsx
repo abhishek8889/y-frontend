@@ -145,7 +145,6 @@ export default function OrdersTab() {
         id: "actions",
         header: "Action",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}

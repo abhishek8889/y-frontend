@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import IconCard, { SEARCH_ICON } from "@/components/ui/IconCard";
+// import IconCard, { SEARCH_ICON } from "@/components/ui/IconCard";
 
 type DashboardShellProps = {
   header: ReactNode;
   sidebar: ReactNode;
   children: ReactNode;
   rightRail?: ReactNode;
-  /** Show the Figma search strip above page content. Default true. */
+  /** Show the Figma search strip above page content. Currently disabled. */
   showSearch?: boolean;
 };
 
@@ -21,7 +21,7 @@ export function DashboardShell({
   sidebar,
   children,
   rightRail,
-  showSearch = true,
+  // showSearch = true,
 }: DashboardShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -61,12 +61,14 @@ export function DashboardShell({
           </div>
 
           <div className="organiser-dashboard__main flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/* Top search strip temporarily commented out
             {showSearch ? (
               <div className="organiser-dashboard__search flex shrink-0 items-center gap-2.5 border-b border-black bg-white pl-14 pr-4 md:pl-4">
                 <IconCard name={SEARCH_ICON} className="h-5 w-5 shrink-0 text-black" />
                 <span className="text-[14px] font-normal uppercase leading-5 text-black">Search</span>
               </div>
             ) : null}
+            */}
 
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#fafbfc]">
               <div className="flex min-h-full lg:h-full">

@@ -121,11 +121,11 @@ export function DashboardSidebar({ items }: DashboardSidebarProps) {
       </nav>
 
       <div className="sidebar-footer">
-        <button type="button" onClick={handleLogout} className="sidebar-logout">
-          <span className="sidebar-icon text-[#ff383c]">
+        <button type="button" onClick={handleLogout} className="sidebar-item sidebar-logout">
+          <span className="sidebar-icon">
             <IconCard name={LOGOUT_ICON} className="h-5 w-5" />
           </span>
-          <span>Log Out</span>
+          <span className="sidebar-label">Log Out</span>
         </button>
       </div>
     </aside>

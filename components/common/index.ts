@@ -37,6 +37,8 @@ export type { BreadcrumbItem, BreadcrumbVariant } from "./Breadcrumb";
 export { RichTextEditor } from "./RichTextEditor";
 export type { RichTextEditorProps } from "./RichTextEditor";
 
+export { RichTextHtml } from "./RichTextHtml";
+
 export { MediaPlayer } from "./MediaPlayer";
 export type { MediaPlayerMedia, MediaPlayerProps } from "./MediaPlayer";
 

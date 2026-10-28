@@ -54,6 +54,21 @@ function formatZoned(
   }
 }
 
+/** Parse API UTC values (`YYYY-MM-DD HH:mm:ss` or ISO) as an absolute UTC instant. */
+function parseUtcInstant(utcTime: string) {
+  const trimmed = utcTime.trim();
+  if (!trimmed) return null;
+
+  const isoCandidate = trimmed.includes("T") ? trimmed : trimmed.replace(" ", "T");
+  const withZone =
+    /(?:Z|[+-]\d{2}:?\d{2})$/i.test(isoCandidate) || isoCandidate.endsWith("Z")
+      ? isoCandidate
+      : `${isoCandidate}Z`;
+  const ms = Date.parse(withZone);
+  if (Number.isNaN(ms)) return null;
+  return new Date(ms);
+}
+
 /** Convert a UTC timestamp into `timeZone` and render it with `format`. */
 export function formatUtcDateTime(
   utcTime: string | null | undefined,
@@ -62,8 +77,8 @@ export function formatUtcDateTime(
 ) {
   if (!utcTime) return null;
 
-  const date = new Date(utcTime);
-  if (Number.isNaN(date.getTime())) return null;
+  const date = parseUtcInstant(utcTime);
+  if (!date) return null;
 
   const zone = timeZone?.trim() || undefined;
 

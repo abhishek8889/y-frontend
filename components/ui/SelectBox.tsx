@@ -15,6 +15,8 @@ export type SelectBoxOption = {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Extra text used when `searchable` filters options (e.g. aliases). */
+  keywords?: string;
 };
 
 type SelectChangeEvent = {
@@ -34,6 +36,9 @@ export type SelectBoxProps = {
   disabled?: boolean;
   required?: boolean;
   density?: "default" | "compact";
+  /** Show a search field and filter options as the user types. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
   prefix?: ReactNode;
   className?: string;
   containerClassName?: string;
@@ -57,6 +62,8 @@ export function SelectBox({
   disabled = false,
   required = false,
   density = "default",
+  searchable = false,
+  searchPlaceholder = "Search…",
   prefix,
   className = "",
   containerClassName = "",
@@ -70,8 +77,10 @@ export function SelectBox({
   const triggerId = id ?? generatedId;
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [internalValue, setInternalValue] = useState(String(defaultValue ?? ""));
   const selectedValue = value !== undefined ? String(value) : internalValue;
 
@@ -80,6 +89,16 @@ export function SelectBox({
     [options, selectedValue],
   );
 
+  const filteredOptions = useMemo(() => {
+    if (!searchable) return options;
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return options;
+    return options.filter((option) => {
+      const haystack = `${option.label} ${option.value} ${option.keywords ?? ""}`.toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [options, searchQuery, searchable]);
+
   useEffect(() => {
     onOpenChange?.(open);
   }, [open, onOpenChange]);
@@ -87,6 +106,16 @@ export function SelectBox({
   useEffect(() => {
     return () => onOpenChange?.(false);
   }, [onOpenChange]);
+
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery("");
+      return;
+    }
+    if (!searchable) return;
+    const frame = window.requestAnimationFrame(() => searchInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, searchable]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -146,6 +175,7 @@ export function SelectBox({
   function commitValue(nextValue: string) {
     onOpenChange?.(false);
     setOpen(false);
+    setSearchQuery("");
     if (value === undefined) setInternalValue(nextValue);
     onChange?.({ target: { name, value: nextValue } });
   }
@@ -224,46 +254,78 @@ export function SelectBox({
       </button>
 
       {open ? (
-        <ul
-          ref={listRef}
-          id={listboxId}
-          role="listbox"
-          aria-labelledby={triggerId}
-          className={`absolute left-0 right-0 z-[80] max-h-[240px] overflow-auto rounded-[4px] border border-black bg-white py-1 shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
+        <div
+          className={`absolute left-0 right-0 z-[80] overflow-hidden rounded-[4px] border border-black bg-white shadow-[0_4px_16px_rgba(0,0,0,0.08)] ${
             openAbove ? "bottom-[calc(100%+4px)] top-auto" : "top-[calc(100%+4px)] bottom-auto"
           }`}
         >
-          {placeholder ? (
-            <li
-              role="option"
-              aria-selected={!selectedOption}
-              aria-disabled="true"
-              className="cursor-default px-4 py-2 text-[13px] text-black/40"
-            >
-              {placeholder}
-            </li>
+          {searchable ? (
+            <div className="border-b border-black/15 px-3 py-2">
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setOpen(false);
+                  }
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    const first = filteredOptions.find((option) => !option.disabled && option.value);
+                    if (first) commitValue(first.value);
+                  }
+                }}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                className="h-9 w-full border-0 bg-transparent text-[14px] text-black outline-none placeholder:text-black/40"
+              />
+            </div>
           ) : null}
-          {options.map((option) => {
-            const isSelected = option.value === selectedValue;
-            return (
-              <li key={option.value} role="none">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  disabled={option.disabled}
-                  onClick={() => commitValue(option.value)}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-left text-[14px] leading-5 text-black transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    isSelected ? "bg-black/[0.04] font-medium" : ""
-                  }`.trim()}
-                >
-                  <span className="min-w-0 flex-1">{option.label}</span>
-                  {isSelected ? <span aria-hidden="true">✓</span> : null}
-                </button>
+          <ul
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            aria-labelledby={triggerId}
+            className="max-h-[240px] overflow-auto py-1"
+          >
+            {!searchQuery && placeholder ? (
+              <li
+                role="option"
+                aria-selected={!selectedOption}
+                aria-disabled="true"
+                className="cursor-default px-4 py-2 text-[13px] text-black/40"
+              >
+                {placeholder}
               </li>
-            );
-          })}
-        </ul>
+            ) : null}
+            {filteredOptions.length === 0 ? (
+              <li className="cursor-default px-4 py-3 text-[13px] text-black/45">No matches</li>
+            ) : (
+              filteredOptions.map((option) => {
+                const isSelected = option.value === selectedValue;
+                return (
+                  <li key={option.value} role="none">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      disabled={option.disabled}
+                      onClick={() => commitValue(option.value)}
+                      className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-left text-[14px] leading-5 text-black transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 ${
+                        isSelected ? "bg-black/[0.04] font-medium" : ""
+                      }`.trim()}
+                    >
+                      <span className="min-w-0 flex-1">{option.label}</span>
+                      {isSelected ? <span aria-hidden="true">✓</span> : null}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
       ) : null}
     </div>
   );

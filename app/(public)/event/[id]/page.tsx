@@ -11,7 +11,7 @@ import {
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
 } from "@/apis/public/publicEventsApi";
-import { Breadcrumb, MediaPlayer } from "@/components/common";
+import { Breadcrumb, MediaPlayer, RichTextHtml } from "@/components/common";
 import { EventTicketBooking } from "@/components/public/EventTicketBooking";
 import { WishlistIcon } from "@/components/public/WishlistIcon";
 import {
@@ -426,9 +426,15 @@ export default function PublicEventPage() {
                 About the event
                 <AccordionChevron />
               </summary>
-              <p className="pb-10 pt-5 text-[13px] leading-5 text-black/70 whitespace-pre-wrap">
-                {event.description?.trim() || "More details for this event will appear here."}
-              </p>
+              <div className="pb-10 pt-5 text-[13px] leading-5 text-black/70">
+                <RichTextHtml
+                  html={event.description}
+                  className="event-public-description"
+                  emptyFallback="More details for this event will appear here."
+                  collapsible
+                  maxLines={6}
+                />
+              </div>
             </details>
             <details className="group border-b border-[#d8d8d8]">
               <summary className="flex h-[60px] cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase [&::-webkit-details-marker]:hidden">

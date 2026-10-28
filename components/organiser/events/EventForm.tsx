@@ -12,7 +12,12 @@ import {
 } from "@/apis/events/eventsApi";
 import { useUploadMediaMutation } from "@/apis/media/mediaApi";
 import { useGetVenuesForEventsQuery } from "@/apis/organisation/venuesApi";
+import {
+  timezoneSearchKeywords,
+  useGetPublicTimezonesQuery,
+} from "@/apis/public/timezonesApi";
 import { FormSectionTabs } from "@/components/organiser/FormSectionTabs";
+import { RichTextEditor } from "@/components/common";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
@@ -94,6 +99,7 @@ export function EventForm({ mode, eventId }: EventFormProps) {
 
   const { data: categoriesData, isLoading: isLoadingCategories } = useGetEventCategoriesQuery();
   const { data: venuesForEventsData, isLoading: isLoadingVenues } = useGetVenuesForEventsQuery();
+  const { data: timezonesData, isLoading: isLoadingTimezones } = useGetPublicTimezonesQuery();
   const {
     data: eventDetailsData,
     isLoading: isEventLoading,
@@ -146,6 +152,23 @@ export function EventForm({ mode, eventId }: EventFormProps) {
     ],
     [isLoadingVenues, venues],
   );
+
+  const timezoneOptions = useMemo(() => {
+    const items = timezonesData?.data ?? [];
+    const options = items.map((item) => ({
+      value: item.timezone,
+      label: item.country ? `${item.timezone} (${item.country})` : item.timezone,
+      keywords: timezoneSearchKeywords(item),
+    }));
+    if (values.timezone && !options.some((option) => option.value === values.timezone)) {
+      options.unshift({
+        value: values.timezone,
+        label: values.timezone,
+        keywords: values.timezone.toLowerCase(),
+      });
+    }
+    return options;
+  }, [timezonesData?.data, values.timezone]);
 
   function patchValues(patch: Partial<EventFormValues>) {
     setValues((current) => ({ ...current, ...patch }));
@@ -380,14 +403,14 @@ export function EventForm({ mode, eventId }: EventFormProps) {
                 )}
               </div>
 
-              <InputField
-                as="textarea"
+              <RichTextEditor
+                id="event-description"
                 label="Event Description"
-                name="eventDescription"
-                rows={4}
-                value={values.description}
-                onChange={(event) => patchValues({ description: event.target.value })}
+                labelClassName="input-heading mb-2"
+                valueHtml={values.description}
+                onChangeHtml={(html) => patchValues({ description: html })}
                 placeholder="Provide a detailed description of the event, scheduled performances, lineup, and custom rules..."
+                minHeightClassName="min-h-[140px]"
               />
             </div>
 
@@ -557,15 +580,24 @@ export function EventForm({ mode, eventId }: EventFormProps) {
             />
 
             <div>
-              <InputField
+              <SelectField
                 label="Timezone"
                 name="timezone"
                 value={values.timezone}
-                readOnly
-                containerClassName="bg-black/[0.02]"
+                onChange={(event) => {
+                  const nextTimezone = event.target.value;
+                  // Keep the same wall-clock start/end; they are converted to UTC with this zone on save.
+                  patchValues({ timezone: nextTimezone });
+                }}
+                options={timezoneOptions}
+                searchable
+                searchPlaceholder="Search timezone or country…"
+                placeholder={isLoadingTimezones ? "Loading timezones..." : "Select timezone"}
+                disabled={isLoadingTimezones}
               />
               <p className="form-helper-text">
-                Detected from your local region. Times are entered locally and sent to the API as UTC.
+                Defaults to your local machine timezone. Start/end times are saved as UTC using this
+                timezone (create and update).
               </p>
             </div>
 

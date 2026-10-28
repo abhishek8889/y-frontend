@@ -6,6 +6,7 @@ import { SelectBox, type SelectBoxOption } from "@/components/ui/SelectBox";
 interface SelectOption {
   value: string;
   label: string;
+  keywords?: string;
 }
 
 type SelectFieldProps = {
@@ -20,6 +21,8 @@ type SelectFieldProps = {
   wrapperClassName?: string;
   className?: string;
   density?: "default" | "compact";
+  searchable?: boolean;
+  searchPlaceholder?: string;
   value?: string | number;
   defaultValue?: string | number;
   disabled?: boolean;
@@ -39,6 +42,8 @@ export function SelectField({
   containerClassName = "",
   wrapperClassName = "",
   density = "default",
+  searchable = false,
+  searchPlaceholder,
   id,
   name,
   value,
@@ -71,6 +76,8 @@ export function SelectField({
         placeholder={placeholder}
         prefix={prefix}
         density={density}
+        searchable={searchable}
+        searchPlaceholder={searchPlaceholder}
         disabled={disabled}
         required={required}
         className={className}

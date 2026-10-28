@@ -386,7 +386,6 @@ export default function VenuesPage() {
         id: "actions",
         header: "ACTION",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}

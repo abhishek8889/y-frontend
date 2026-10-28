@@ -3,6 +3,7 @@ import type {
   EventPayload,
   OrganisationEvent,
 } from "@/apis/events/eventsApi";
+import { normalizeRichTextHtml } from "@/components/organiser/venues/venueFormHelpers";
 
 export type EventFormImage = {
   id?: number;
@@ -98,8 +99,24 @@ function getTimeZoneOffsetMs(utcMs: number, timeZone: string) {
   return asUtc - utcMs;
 }
 
-/** Convert a datetime-local value in `timeZone` to UTC `YYYY-MM-DD HH:mm:ss`. */
+function assertValidTimeZone(timeZone: string) {
+  const zone = timeZone.trim();
+  if (!zone) throw new Error("Timezone is required.");
+  try {
+    // Throws RangeError for unknown IANA zones.
+    new Intl.DateTimeFormat("en-US", { timeZone: zone }).format(new Date());
+  } catch {
+    throw new Error(`Invalid timezone: ${zone}`);
+  }
+  return zone;
+}
+
+/**
+ * Convert a datetime-local wall-clock value in `timeZone` to UTC SQL `YYYY-MM-DD HH:mm:ss`.
+ * Used on both event create and update so starts_at / ends_at are always stored in UTC.
+ */
 export function localDateTimeInZoneToUtcSql(localDateTime: string, timeZone: string) {
+  const zone = assertValidTimeZone(timeZone);
   const normalized = localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
   const [datePart, timePart] = normalized.split("T");
   if (!datePart || !timePart) {
@@ -108,11 +125,16 @@ export function localDateTimeInZoneToUtcSql(localDateTime: string, timeZone: str
 
   const [year, month, day] = datePart.split("-").map(Number);
   const [hour, minute, second = 0] = timePart.split(":").map(Number);
+  if ([year, month, day, hour, minute, second].some((part) => Number.isNaN(part))) {
+    throw new Error("Invalid datetime value.");
+  }
 
+  // Interpret the wall clock in `zone`, then resolve to the matching UTC instant
+  // (two-pass offset correction handles DST transitions).
   const utcGuess = Date.UTC(year, month - 1, day, hour, minute, second);
-  const offset1 = getTimeZoneOffsetMs(utcGuess, timeZone);
+  const offset1 = getTimeZoneOffsetMs(utcGuess, zone);
   const utcMs = utcGuess - offset1;
-  const offset2 = getTimeZoneOffsetMs(utcMs, timeZone);
+  const offset2 = getTimeZoneOffsetMs(utcMs, zone);
   const corrected = utcGuess - offset2;
 
   const date = new Date(corrected);
@@ -216,8 +238,10 @@ export function validateEventForm(values: EventFormValues): string | null {
 }
 
 export function buildEventPayload(values: EventFormValues): EventPayload {
-  const starts_at = localDateTimeInZoneToUtcSql(values.starts_at_local, values.timezone);
-  const ends_at = localDateTimeInZoneToUtcSql(values.ends_at_local, values.timezone);
+  const timezone = assertValidTimeZone(values.timezone);
+  // Create + update both send UTC instants derived from wall-clock times in `timezone`.
+  const starts_at = localDateTimeInZoneToUtcSql(values.starts_at_local, timezone);
+  const ends_at = localDateTimeInZoneToUtcSql(values.ends_at_local, timezone);
 
   const images = [
     ...(values.banner
@@ -243,12 +267,12 @@ export function buildEventPayload(values: EventFormValues): EventPayload {
   return {
     name: values.name.trim(),
     event_category_id: Number(values.event_category_id),
-    description: values.description.trim() || null,
+    description: normalizeRichTextHtml(values.description),
     venue_id: Number(values.venue_id),
     capacity: Number(values.capacity),
     starts_at,
     ends_at,
-    timezone: values.timezone,
+    timezone,
     status: values.status,
     ...(images.length ? { images } : {}),
   };

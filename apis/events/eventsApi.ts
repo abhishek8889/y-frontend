@@ -447,6 +447,16 @@ export const eventsApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { success: true, error: true });
       },
     }),
+    duplicateEvent: build.mutation<EventMutationResponse, number | string>({
+      query: (eventId) => ({
+        url: `organisation/event/duplicate/${eventId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Events"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { success: true, error: true });
+      },
+    }),
   }),
 });
 
@@ -465,4 +475,5 @@ export const {
   useUpdateEventTicketOfferMutation,
   useDeleteEventTicketOfferMutation,
   useManageEventStatusMutation,
+  useDuplicateEventMutation,
 } = eventsApi;

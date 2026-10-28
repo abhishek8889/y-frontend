@@ -517,7 +517,6 @@ export default function CustomersPage() {
         id: "actions",
         header: "Action",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}

@@ -254,7 +254,6 @@ export default function StaffPage() {
         id: "actions",
         header: "Action",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}

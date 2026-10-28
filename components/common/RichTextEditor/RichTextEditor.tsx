@@ -130,8 +130,63 @@ export function RichTextEditor({
     emitChange();
   }
 
+  function closestBlock(tagName: string) {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return null;
+
+    let node: Node | null = selection.getRangeAt(0).commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+    while (node && node !== editor) {
+      if (node instanceof HTMLElement && node.tagName.toLowerCase() === tagName) {
+        return node;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function unwrapBlockQuote() {
+    const quote = closestBlock("blockquote");
+    if (!quote) return false;
+    const parent = quote.parentNode;
+    if (!parent) return false;
+    while (quote.firstChild) {
+      parent.insertBefore(quote.firstChild, quote);
+    }
+    parent.removeChild(quote);
+    return true;
+  }
+
   function applyBlock(tag: "p" | "h2" | "blockquote") {
+    // Switching back to paragraph/heading should also clear an active quote.
+    if ((tag === "p" || tag === "h2") && unwrapBlockQuote()) {
+      runCommand("formatBlock", `<${tag}>`);
+      return;
+    }
     runCommand("formatBlock", `<${tag}>`);
+  }
+
+  function toggleBlockQuote() {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    ensureEditableSelection(editor);
+    if (savedSelectionRef.current) {
+      restoreSelection(savedSelectionRef.current);
+      savedSelectionRef.current = null;
+    }
+
+    if (unwrapBlockQuote()) {
+      // After removing quote, normalize to paragraphs where needed.
+      document.execCommand("formatBlock", false, "<p>");
+      emitChange();
+      return;
+    }
+
+    document.execCommand("formatBlock", false, "<blockquote>");
+    emitChange();
   }
 
   function toggleList(ordered: boolean) {
@@ -231,7 +286,7 @@ export function RichTextEditor({
           <EditorButton label="Add link" onClick={addLink}>
             ↗
           </EditorButton>
-          <EditorButton label="Block quote" onClick={() => applyBlock("blockquote")}>
+          <EditorButton label="Block quote" onClick={toggleBlockQuote}>
             ❝
           </EditorButton>
         </div>

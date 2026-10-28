@@ -31,10 +31,7 @@ function isCustomFacility(facility: VenueFacility) {
 
 function FacilitiesLogo() {
   return (
-    <div
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] bg-black text-white"
-      aria-hidden="true"
-    >
+    <div className="side-drawer-logo" aria-hidden="true">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path
           d="M4 10h16v10H4V10Zm2-6h4v4H6V4Zm6 0h4v4h-4V4Zm6 0h2v4h-2V4Z"

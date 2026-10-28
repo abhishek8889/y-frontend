@@ -156,7 +156,7 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
         header: "ORDER ID",
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-[14px] font-normal text-black">
-            {row.unique_id}
+            {`#${row.unique_id}`}
           </span>
         ),
       },
@@ -202,7 +202,6 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
         id: "actions",
         header: "ACTION",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}

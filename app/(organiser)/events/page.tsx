@@ -6,6 +6,7 @@ import {
   normalizeEventTickets,
   useGetEventCategoriesQuery,
   useGetEventTicketsQuery,
+  useDuplicateEventMutation,
   useGetOrganisationEventsQuery,
   useManageEventStatusMutation,
   type EventLifecycleStatus,
@@ -159,6 +160,7 @@ export default function EventsPage() {
     ends_at: endsAtUtc || undefined,
   });
   const [manageEventStatus, { isLoading: isManagingStatus }] = useManageEventStatusMutation();
+  const [duplicateEvent, { isLoading: isDuplicatingEvent }] = useDuplicateEventMutation();
 
   const hasMore = Boolean(nextCursor);
   const hasSearch = Boolean(debouncedSearch.trim());
@@ -287,6 +289,32 @@ export default function EventsPage() {
         },
       },
       {
+        key: "duplicate",
+        label: isDuplicatingEvent ? "Duplicating…" : "Duplicate",
+        disabled: isDuplicatingEvent,
+        onClick: (event) => {
+          if (isDuplicatingEvent) return;
+          void (async () => {
+            try {
+              const result = await duplicateEvent(event.id).unwrap();
+              const duplicated = result.data;
+              if (duplicated?.id != null) {
+                setEvents((current) => {
+                  const exists = current.some((item) => item.id === duplicated.id);
+                  return exists ? current : [duplicated, ...current];
+                });
+                setActiveEventId(duplicated.id);
+              }
+              setListCursor(undefined);
+              setNextCursor(null);
+              loadMoreLockRef.current = false;
+            } catch {
+              // toast handled by mutation
+            }
+          })();
+        },
+      },
+      {
         key: "publish",
         label: "Set Published",
         hidden: (event) => toEventLifecycleStatus(event.status) === "published",
@@ -324,7 +352,7 @@ export default function EventsPage() {
         },
       },
     ],
-    [router],
+    [duplicateEvent, isDuplicatingEvent, router],
   );
 
   function dismissSearchFocus() {
@@ -346,10 +374,10 @@ export default function EventsPage() {
         />
       ) : null}
 
-      <div className="relative z-[50] mt-4 flex w-full min-w-0 items-center gap-2">
+      <div className={`mt-4 flex w-full min-w-0 items-center gap-2${searchFocused ? " relative z-[50]" : ""}`}>
         <label
-          className={`events-search-bar ${
-            searchFocused ? "relative z-[50] bg-white text-black shadow-[0_0_0_1px_black]" : ""
+          className={`events-search-bar${
+            searchFocused ? " relative z-[50] bg-white text-black shadow-[0_0_0_1px_black]" : ""
           }`}
         >
           <button

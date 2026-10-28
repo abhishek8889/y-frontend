@@ -383,23 +383,20 @@
 }
 
 .organiser-dashboard .sidebar-logout {
-  display: flex;
+  width: 100%;
+  flex: none;
   cursor: pointer;
-  align-items: center;
-  gap: 8px;
-  border-radius: 4px;
-  border: 0;
-  background: transparent;
-  padding: 8px;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  color: var(--od-danger);
-  transition: background-color 0.15s ease;
+  border: 1px solid var(--black);
+  background: var(--white);
 }
 
 .organiser-dashboard .sidebar-logout:hover {
-  background: rgba(255, 56, 60, 0.06);
+  background: var(--black);
+  color: var(--white);
+}
+
+.organiser-dashboard .sidebar-logout:hover .sidebar-icon {
+  filter: brightness(0) invert(1);
 }
 
 /* ── Grid cards ── */
@@ -574,13 +571,15 @@
 .organiser-dashboard .datatable-column-title {
   white-space: nowrap;
   background: var(--od-datatable-header-bg);
-  padding: 12.8px 12px;
+  /* Match cell horizontal padding so header text lines up with values */
+  padding: 12.8px 12px 12.8px 0;
   font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
   font-size: var(--od-table-header-size);
   font-weight: 700;
   line-height: normal;
   letter-spacing: var(--od-table-tracking);
   text-transform: uppercase;
+  text-align: left;
   color: var(--black);
   font-feature-settings: "kern" 0;
 }
@@ -996,6 +995,175 @@
 .organiser-dashboard .form-footer-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* ── Side drawer ── */
+
+.organiser-dashboard .side-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.organiser-dashboard .side-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+}
+
+.organiser-dashboard .side-drawer-panel {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  max-width: 560px;
+  flex-direction: column;
+  border-left: 1px solid #000000;
+  background: #ffffff;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.08);
+}
+
+.organiser-dashboard .side-drawer-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #000000;
+  padding: 16px 20px;
+}
+
+.organiser-dashboard .side-drawer-header-main {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.organiser-dashboard .side-drawer-logo {
+  display: flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #000000;
+  color: #ffffff;
+}
+
+.organiser-dashboard .side-drawer-title {
+  font-family: var(--font-univers-condensed), var(--font-univers), sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+@media (min-width: 640px) {
+  .organiser-dashboard .side-drawer-title {
+    font-size: 20px;
+  }
+}
+
+.organiser-dashboard .side-drawer-subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 19.6px;
+  color: #6f6e69;
+}
+
+.organiser-dashboard .side-drawer-close {
+  display: flex;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  color: #000000;
+  transition: background-color 0.15s ease;
+}
+
+.organiser-dashboard .side-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.organiser-dashboard .side-drawer-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.organiser-dashboard .side-drawer-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #000000;
+  padding: 16px 20px;
+}
+
+.organiser-dashboard .side-drawer-footer .form-footer-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .organiser-dashboard .side-drawer-footer .form-footer-btn {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.organiser-dashboard .ticket-drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.organiser-dashboard .ticket-drawer-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .organiser-dashboard .ticket-drawer-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.organiser-dashboard .ticket-drawer-form .input-box-textarea {
+  min-height: 88px;
+}
+
+.organiser-dashboard .ticket-offer-summary {
+  background: #ececec;
+  padding: 16px 20px;
+}
+
+.organiser-dashboard .ticket-offer-summary-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 15px;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.organiser-dashboard .ticket-offer-summary-meta {
+  margin: 4px 0;
+  font-size: 14px;
+  line-height: 15px;
+  color: #6e6b69;
 }
 
 /* ── Events page (Hednesford 1488:1279) ── */

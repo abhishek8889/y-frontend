@@ -386,6 +386,97 @@ input[type="password"]::placeholder {
   text-transform: none;
 }
 
+/* Shared rich-text HTML output (event / venue descriptions). */
+.rich-text-html-wrap {
+  min-width: 0;
+}
+
+.rich-text-html {
+  font-size: inherit;
+  line-height: 1.5;
+  color: inherit;
+  word-break: break-word;
+}
+
+.rich-text-html--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--rich-text-lines, 6);
+  overflow: hidden;
+}
+
+.rich-text-html__toggle {
+  margin-top: 0.5rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #000;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-text-html__toggle:hover {
+  opacity: 0.7;
+}
+
+.rich-text-html > *:first-child {
+  margin-top: 0;
+}
+
+.rich-text-html > *:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-html p {
+  margin: 0 0 0.75em;
+}
+
+.rich-text-html ul,
+.rich-text-html ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.25em;
+}
+
+.rich-text-html li {
+  margin: 0.15em 0;
+}
+
+.rich-text-html a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.rich-text-html strong,
+.rich-text-html b {
+  font-weight: 700;
+}
+
+.rich-text-html em,
+.rich-text-html i {
+  font-style: italic;
+}
+
+.rich-text-html u {
+  text-decoration: underline;
+}
+
+.event-detail-description {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--black, #000);
+}
+
+.event-public-description {
+  font-size: 13px;
+  line-height: 20px;
+  color: rgb(0 0 0 / 70%);
+}
+
 /* Shared public chrome: header, home search, and breadcrumb. */
 .public-bar {
   box-sizing: border-box;

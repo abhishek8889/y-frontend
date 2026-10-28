@@ -92,7 +92,7 @@ export function DataTable<T>({
                     <th
                       key={column.id}
                       scope="col"
-                      className={`datatable-column-title ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
+                      className={`datatable-column-title text-left ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button

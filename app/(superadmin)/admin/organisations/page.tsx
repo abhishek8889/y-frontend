@@ -266,7 +266,6 @@ export default function AdminOrganisationsPage() {
         id: "actions",
         header: "ACTION",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <div className="flex items-center justify-center gap-2">
             {!row.approve_status ? (

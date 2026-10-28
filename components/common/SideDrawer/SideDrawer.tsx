@@ -52,11 +52,11 @@ export function SideDrawer({
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex justify-end bg-black/40 ${className}`.trim()}>
+    <div className={`side-drawer ${className}`.trim()}>
       <button
         type="button"
         aria-label="Close drawer overlay"
-        className="absolute inset-0 cursor-default"
+        className="side-drawer-overlay"
         onClick={onClose}
       />
 
@@ -64,26 +64,16 @@ export function SideDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="side-drawer-title"
-        className={[
-          "relative z-10 flex h-full w-full max-w-[560px] flex-col border-l border-black bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.08)]",
-          panelClassName,
-        ].join(" ")}
+        className={`side-drawer-panel ${panelClassName}`.trim()}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-black px-5 py-4">
-          <div className="flex min-w-0 items-start gap-3">
+        <header className="side-drawer-header">
+          <div className="side-drawer-header-main">
             {logo ? <div className="shrink-0">{logo}</div> : null}
             <div className="min-w-0">
-              <h2
-                id="side-drawer-title"
-                className="font-heading text-[18px] font-bold uppercase leading-[26px] text-black sm:text-[20px]"
-              >
+              <h2 id="side-drawer-title" className="side-drawer-title">
                 {title}
               </h2>
-              {subtitle ? (
-                <p className="mt-1 text-[14px] font-normal leading-[19.6px] text-[#6f6e69]">
-                  {subtitle}
-                </p>
-              ) : null}
+              {subtitle ? <p className="side-drawer-subtitle">{subtitle}</p> : null}
             </div>
           </div>
 
@@ -91,25 +81,22 @@ export function SideDrawer({
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center text-[24px] leading-none text-black transition hover:bg-black/5"
+            className="side-drawer-close"
           >
             ×
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="side-drawer-body">{children}</div>
 
         {renderFooter ? (
-          <footer className="flex shrink-0 items-center gap-3 border-t border-black px-5 py-4">
+          <footer className="side-drawer-footer">
             {showCancel ? (
               <Button
                 type="button"
                 onClick={handleCancel}
                 disabled={isSubmitting}
-                className={[
-                  "h-[46px] cursor-pointer rounded-[4px] border border-black bg-white px-5 text-[12px] font-normal uppercase leading-none text-black transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-60",
-                  showSubmit ? "flex-1" : "w-full",
-                ].join(" ")}
+                className="form-footer-btn form-footer-btn-secondary"
               >
                 {cancelLabel}
               </Button>
@@ -120,10 +107,7 @@ export function SideDrawer({
                 type="button"
                 onClick={onSubmit}
                 disabled={isSubmitting}
-                className={[
-                  "h-[46px] cursor-pointer rounded-[4px] border border-black bg-black px-5 text-[12px] font-normal uppercase leading-none text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
-                  showCancel ? "flex-1" : "w-full",
-                ].join(" ")}
+                className="form-footer-btn form-footer-btn-primary"
               >
                 {isSubmitting ? "Saving..." : submitLabel}
               </Button>

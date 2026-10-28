@@ -1,7 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   normalizeEventTickets,
   useCreateEventTicketMutation,
@@ -17,6 +16,7 @@ import {
 import {
   ActionMenu,
   DataTable,
+  SideDrawer,
   StatusBadge,
   WarningAlertIcon,
   YourlistAlert,
@@ -29,7 +29,6 @@ import {
 } from "@/components/organiser/events/eventFormHelpers";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
-import { RadioGroup } from "@/components/ui/RadioGroup";
 import { SelectField } from "@/components/ui/SelectField";
 import { appToast } from "@/lib/ui/toast";
 
@@ -104,6 +103,11 @@ const statusOptions = [
   { value: "draft", label: "Draft" },
   { value: "inactive", label: "Inactive" },
   { value: "sold_out", label: "Sold out" },
+];
+
+const accessOptions = [
+  { value: "public", label: "Public" },
+  { value: "members_only", label: "Members only" },
 ];
 
 function toApiCurrency(value: string) {
@@ -186,75 +190,35 @@ function mapApiTicket(ticket: EventTicket, timeZone: string): TicketType {
   };
 }
 
-function TicketDialogFrame({
-  title,
-  subtitle,
-  onClose,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  if (typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-2"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ticket-dialog-title"
-        className="flex max-h-[calc(100dvh-24px)] h-[min(680px,calc(100dvh-24px))] w-full max-w-[560px] flex-col overflow-hidden rounded-[4px] border border-black bg-white shadow-[-8px_0_24px_rgba(0,0,0,0.08)]"
-      >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-black px-5 py-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <span
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] bg-black text-white"
-              aria-hidden="true"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M4 8h16v10H4V8Zm3-4h10v3H7V4Z"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div className="min-w-0">
-              <h3
-                id="ticket-dialog-title"
-                className="event-panel-section-title truncate"
-              >
-                {title}
-              </h3>
-              <p className="event-panel-subtitle">{subtitle}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="ml-3 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center text-[24px] leading-none text-black transition hover:bg-black/5"
-          >
-            ×
-          </button>
-        </header>
-        {children}
-      </section>
-    </div>,
-    document.body,
+function TicketDrawerLogo() {
+  return (
+    <div className="side-drawer-logo" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 8h16v10H4V8Zm3-4h10v3H7V4Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
   );
 }
 
-function TicketFormDialog({
+function OfferDrawerLogo() {
+  return (
+    <div className="side-drawer-logo" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M21.41 11.58 12.41 2.58A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42ZM6.5 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"
+          fill="currentColor"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function TicketFormDrawer({
   ticket,
   isSubmitting,
   onClose,
@@ -265,112 +229,95 @@ function TicketFormDialog({
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const isEdit = Boolean(ticket);
 
   return (
-    <TicketDialogFrame
+    <SideDrawer
+      isOpen
+      onClose={onClose}
       title={isEdit ? "Edit ticket" : "Create ticket"}
       subtitle={isEdit ? "Update ticket for event" : "Create ticket for event"}
-      onClose={onClose}
+      logo={<TicketDrawerLogo />}
+      cancelLabel="Cancel"
+      onCancel={onClose}
+      submitLabel={isEdit ? "Save changes" : "Create ticket"}
+      onSubmit={() => formRef.current?.requestSubmit()}
+      isSubmitting={isSubmitting}
     >
-      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto px-5 py-[14px]">
+      <form ref={formRef} onSubmit={onSubmit} className="ticket-drawer-form">
+        <InputField
+          label="Ticket name"
+          name="ticketName"
+          required
+          defaultValue={ticket?.name}
+          placeholder="e.g. Adult Standing 2025/26"
+          labelClassName="input-heading"
+        />
+        <InputField
+          label="Description"
+          as="textarea"
+          name="ticketDescription"
+          rows={4}
+          defaultValue={ticket?.description}
+          placeholder="Type here..."
+          labelClassName="input-heading"
+        />
+        <div className="ticket-drawer-form-row">
           <InputField
-            label="Ticket name"
-            name="ticketName"
+            name="ticketPrice"
+            type="number"
+            min="0"
+            label="Base price"
+            step="0.01"
+            defaultValue={String(ticket?.price ?? 0)}
+            prefix="$"
+            labelClassName="input-heading"
+          />
+          <InputField
+            name="quantityCap"
+            label="Quantity cap"
+            type="number"
+            min="1"
+            defaultValue={String(ticket?.quantityCap ?? 500)}
             required
-            defaultValue={ticket?.name}
-            placeholder="e.g. Adult Standing 2025/26"
-            density="compact"
-            containerClassName="mb-[20px]"
-          />
-          <InputField
-            label="Description"
-            as="textarea"
-            name="ticketDescription"
-            rows={4}
-            defaultValue={ticket?.description}
-            placeholder="Type here..."
-            containerClassName="mt-1 !h-[86px] !min-h-0 !rounded-[3px] mb-[20px] focus-within:!ring-0"
-          />
-          <div className="mb-[20px] grid grid-cols-2 gap-2">
-            <InputField
-              name="ticketPrice"
-              type="number"
-              min="0"
-              label="Base price"
-              step="0.01"
-              defaultValue={String(ticket?.price ?? 0)}
-              density="compact"
-              prefix="$"
-              className="!pl-0"
-            />
-            <InputField
-              name="quantityCap"
-              label="Quantity cap"
-              type="number"
-              min="1"
-              defaultValue={String(ticket?.quantityCap ?? 500)}
-              required
-              density="compact"
-            />
-          </div>
-          <SelectField
-            name="ticketCurrency"
-            defaultValue={toApiCurrency(ticket?.currency ?? "USD")}
-            label="Currency"
-            wrapperClassName="mb-[20px]"
-            options={currencyOptions}
-            density="compact"
-          />
-          <InputField
-            label="Badge label"
-            name="badgeLabel"
-            defaultValue={ticket?.badgeLabel ?? ""}
-            placeholder="e.g. Most Popular"
-            density="compact"
-            containerClassName="mb-[20px]"
-          />
-          <InputField
-            label="Entitlement"
-            name="entitlement"
-            defaultValue={ticket?.entitlement}
-            placeholder="Add entitlement"
-            density="compact"
-            containerClassName="mb-[20px]"
-          />
-          <SelectField
-            label="Status"
-            name="ticketStatus"
-            defaultValue={toApiStatus(ticket?.status ?? "active")}
-            wrapperClassName="mb-[50px]"
-            options={statusOptions}
-            density="compact"
+            labelClassName="input-heading"
           />
         </div>
-        <footer className="grid shrink-0 grid-cols-2 gap-2 border-t border-black/70 px-[14px] py-4">
-          <Button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="form-footer-btn form-footer-btn-secondary disabled:opacity-50"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="form-footer-btn form-footer-btn-primary disabled:opacity-50"
-          >
-            {isSubmitting ? "Saving..." : isEdit ? "Save changes" : "Create ticket"}
-          </Button>
-        </footer>
+        <SelectField
+          name="ticketCurrency"
+          defaultValue={toApiCurrency(ticket?.currency ?? "USD")}
+          label="Currency"
+          options={currencyOptions}
+          labelClassName="input-heading"
+        />
+        <InputField
+          label="Badge label"
+          name="badgeLabel"
+          defaultValue={ticket?.badgeLabel ?? ""}
+          placeholder="e.g. Most Popular"
+          labelClassName="input-heading"
+        />
+        <InputField
+          label="Entitlement"
+          name="entitlement"
+          defaultValue={ticket?.entitlement}
+          placeholder="Add entitlement"
+          labelClassName="input-heading"
+        />
+        <SelectField
+          label="Status"
+          name="ticketStatus"
+          defaultValue={toApiStatus(ticket?.status ?? "active")}
+          options={statusOptions}
+          labelClassName="input-heading"
+        />
       </form>
-    </TicketDialogFrame>
+    </SideDrawer>
   );
 }
 
-function CreateOfferDialog({
+function OfferFormDrawer({
   ticket,
   offer,
   timeZone,
@@ -385,6 +332,7 @@ function CreateOfferDialog({
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const isEditing = Boolean(offer);
   const saleStartDefault = offer?.saleStartsAt
     ? utcSqlToLocalDateTimeInZone(offer.saleStartsAt, timeZone)
@@ -394,131 +342,100 @@ function CreateOfferDialog({
     : "";
 
   return (
-    <TicketDialogFrame
-      title={isEditing ? "Edit offer" : "Create new offer"}
-      subtitle={isEditing ? "Update offer details" : "Create new offer"}
+    <SideDrawer
+      isOpen
       onClose={onClose}
+      title={isEditing ? "Edit offer" : "Create new offer"}
+      subtitle={isEditing ? "Update offer details" : "Add a new offer for this ticket"}
+      logo={<OfferDrawerLogo />}
+      cancelLabel="Cancel"
+      onCancel={onClose}
+      submitLabel={isEditing ? "Save changes" : "Create offer"}
+      onSubmit={() => formRef.current?.requestSubmit()}
+      isSubmitting={isSubmitting}
     >
-      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 space-y-[14px] overflow-y-auto px-5 py-[14px]">
-          <div className="bg-[#ECECEC] py-4 px-5">
-            <h4 className="text-[14px] font-bold uppercase leading-[15px] text-black">{ticket.name}</h4>
-            <p className="my-[4px] text-[14px] leading-[15px] text-[#6E6B69]">Base Price : ${ticket.price.toFixed(2)}</p>
-            <p className="my-[4px] text-[14px] leading-[15px] text-[#6E6B69]">Total Qty Available : {ticket.quantityCap}</p>
-          </div>
+      <form ref={formRef} onSubmit={onSubmit} className="ticket-drawer-form">
+        <div className="ticket-offer-summary">
+          <h4 className="ticket-offer-summary-title">{ticket.name}</h4>
+          <p className="ticket-offer-summary-meta">
+            Base Price : {currencySymbol(ticket.currency)}
+            {ticket.price.toFixed(2)}
+          </p>
+          <p className="ticket-offer-summary-meta">
+            Total Qty Available : {ticket.quantityCap}
+          </p>
+        </div>
+        <InputField
+          name="offerName"
+          label="Offer name"
+          required
+          placeholder="Early Birds"
+          defaultValue={offer?.name ?? ""}
+          labelClassName="input-heading"
+        />
+        <div className="ticket-drawer-form-row">
           <InputField
-            name="offerName"
-            label="Offer name"
-            required
-            placeholder="Early Birds"
-            defaultValue={offer?.name ?? ""}
-            density="compact"
-            containerClassName="mb-[20px]"
+            name="offerPrice"
+            label="Price"
+            type="number"
+            min="0"
+            step="0.01"
+            defaultValue={String(offer?.price ?? 0)}
+            prefix="$"
+            labelClassName="input-heading"
           />
-          <div className="grid grid-cols-2 gap-2 ">
-            <InputField
-              name="offerPrice"
-              label="Price"
-              type="number"
-              min="0"
-              step="0.01"
-              defaultValue={String(offer?.price ?? 0)}
-              density="compact"
-              prefix="$"
-              prefixClassName="ml-2 mr-0 text-[14px] text-[#777777]"
-              containerClassName="!h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
-              className="!px-2 !text-[14px]"
-            />
-            <InputField
-              name="offerQuantityCap"
-              label="Quantity cap"
-              type="number"
-              min="1"
-              defaultValue={String(offer?.quantityCap ?? 500)}
-              required
-              density="compact"
-              containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
-              className="!px-2 !text-[14px]"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <InputField
-              name="validFrom"
-              label="Sale start"
-              type="datetime-local"
-              required
-              defaultValue={saleStartDefault}
-              density="compact"
-              containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
-              className="!px-1.5 !text-[12px]"
-            />
-            <InputField
-              name="validTo"
-              label="Sale end"
-              type="datetime-local"
-              required
-              defaultValue={saleEndDefault}
-              density="compact"
-              containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
-              className="!px-1.5 !text-[12px]"
-            />
-          </div>
           <InputField
-            name="maxTicketsPerOrder"
-            label="Max tickets per order"
+            name="offerQuantityCap"
+            label="Quantity cap"
             type="number"
             min="1"
-            defaultValue={String(offer?.maxTicketsPerOrder ?? 6)}
-            density="compact"
-            containerClassName="mt-1 !h-10 !rounded-[3px] !border-[#777777] focus-within:!ring-0 mb-[20px]"
-            className="!px-2 !text-[14px]"
-          />
-          <RadioGroup
-            name="offerAccess"
-            legend="Access"
-            optionClassName="!text-[14px]"
-            defaultValue={toApiAccess(offer?.access ?? "public")}
-            options={[
-              { value: "public", label: "Public" },
-              { value: "members_only", label: "Members only" },
-            ]}
-          />
-          <SelectField
-            name="offerStatus"
-            label="Status"
-            defaultValue={toApiStatus(offer?.status ?? "active")}
-            options={statusOptions}
-            density="compact"
-            wrapperClassName="mb-[50px]"
-            containerClassName="mt-1 !h-10"
-            className="!rounded-[3px] !border-[#777777] !px-2 !text-[14px] !font-normal normal-case"
+            defaultValue={String(offer?.quantityCap ?? 500)}
+            required
+            labelClassName="input-heading"
           />
         </div>
-        <footer className="grid shrink-0 grid-cols-2 gap-2 border-t border-black/70 px-[14px] py-4">
-          <Button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="form-footer-btn form-footer-btn-secondary disabled:opacity-50"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="form-footer-btn form-footer-btn-primary disabled:opacity-50"
-          >
-            {isSubmitting
-              ? isEditing
-                ? "Saving..."
-                : "Creating..."
-              : isEditing
-                ? "Save changes"
-                : "Create offer"}
-          </Button>
-        </footer>
+        <div className="ticket-drawer-form-row">
+          <InputField
+            name="validFrom"
+            label="Sale start"
+            type="datetime-local"
+            required
+            defaultValue={saleStartDefault}
+            labelClassName="input-heading"
+          />
+          <InputField
+            name="validTo"
+            label="Sale end"
+            type="datetime-local"
+            required
+            defaultValue={saleEndDefault}
+            labelClassName="input-heading"
+          />
+        </div>
+        <InputField
+          name="maxTicketsPerOrder"
+          label="Max tickets per order"
+          type="number"
+          min="1"
+          defaultValue={String(offer?.maxTicketsPerOrder ?? 6)}
+          labelClassName="input-heading"
+        />
+        <SelectField
+          name="offerAccess"
+          label="Access"
+          defaultValue={toApiAccess(offer?.access ?? "public")}
+          options={accessOptions}
+          labelClassName="input-heading"
+        />
+        <SelectField
+          name="offerStatus"
+          label="Status"
+          defaultValue={toApiStatus(offer?.status ?? "active")}
+          options={statusOptions}
+          labelClassName="input-heading"
+        />
       </form>
-    </TicketDialogFrame>
+    </SideDrawer>
   );
 }
 
@@ -749,7 +666,6 @@ export default function TicketsTab({
         id: "actions",
         header: "Action",
         align: "center",
-        headerClassName: "text-center",
         cell: ({ row }) => (
           <ActionMenu
             row={row}
@@ -965,7 +881,7 @@ export default function TicketsTab({
       </div>
 
       {dialog?.type === "ticket" ? (
-        <TicketFormDialog
+        <TicketFormDrawer
           key={editingTicket?.id ?? "create-ticket"}
           ticket={editingTicket}
           isSubmitting={isSavingTicket}
@@ -976,7 +892,7 @@ export default function TicketsTab({
         />
       ) : null}
       {dialog?.type === "offer" && dialogTicket ? (
-        <CreateOfferDialog
+        <OfferFormDrawer
           key={editingOffer ? `offer-edit-${editingOffer.id}` : `offer-create-${dialog.ticketId}`}
           ticket={dialogTicket}
           offer={editingOffer}

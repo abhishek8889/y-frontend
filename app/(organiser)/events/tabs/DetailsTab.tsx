@@ -3,10 +3,10 @@
 import { useMemo, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import type { OrganisationEvent } from "@/apis/events/eventsApi";
-import { MediaPlayer, StatusBadge, type GalleryMediaItem } from "@/components/common";
+import { MediaPlayer, RichTextHtml, StatusBadge, type GalleryMediaItem } from "@/components/common";
 import { getEventBanner } from "@/components/organiser/events/EventBannerMedia";
 import { isVideoMedia } from "@/lib/media/isVideoMedia";
-import { formatDateTime } from "@/lib/events/formatDateTime";
+import { formatUtcDateTime } from "@/lib/events/publicEventFormat";
 
 const MediaGalleryLightbox = dynamic(
   () =>
@@ -45,10 +45,11 @@ export default function DetailsTab({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const dateTime = event.starts_at
-    ? `${formatDateTime(event.starts_at)}${event.ends_at ? ` - ${formatDateTime(event.ends_at)}` : ""}${
-        event.timezone ? ` (${event.timezone})` : ""
-      }`
+  const zone = event.timezone || undefined;
+  const startLabel = formatUtcDateTime(event.starts_at, zone, "datetime");
+  const endLabel = event.ends_at ? formatUtcDateTime(event.ends_at, zone, "datetime") : null;
+  const dateTime = startLabel
+    ? `${startLabel}${endLabel ? ` - ${endLabel}` : ""}${zone ? ` (${zone})` : ""}`
     : "Date not set";
 
   const banner = getEventBanner(event.images);
@@ -142,7 +143,15 @@ export default function DetailsTab({
         <dl>
           <DetailRow label="Event name" value={event.name} />
           <DetailRow label="Category" value={event.category?.name ?? ""} />
-          <DetailRow label="Description" value={event.description ?? ""} />
+          <DetailRow label="Description">
+            <RichTextHtml
+              html={event.description}
+              className="event-detail-description"
+              emptyFallback="Not provided"
+              collapsible
+              maxLines={6}
+            />
+          </DetailRow>
           <DetailRow label="Venue" value={event.venue?.name ?? ""} />
           <DetailRow label="Capacity" value={event.capacity != null ? String(event.capacity) : ""} />
           <DetailRow label="Status">

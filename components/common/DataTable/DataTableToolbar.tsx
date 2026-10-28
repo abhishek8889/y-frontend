@@ -65,13 +65,11 @@ export function DataTableToolbar({
         />
       ) : null}
 
-      <div className="datatable-toolbar relative z-[50]">
+      <div className={`datatable-toolbar${searchFocused ? " relative z-[50]" : ""}`}>
         {hasSearch ? (
           <label
-            className={`datatable-search-bar ${
-              searchFocused
-                ? "relative z-[50] bg-white text-black shadow-[0_0_0_1px_black]"
-                : ""
+            className={`datatable-search-bar${
+              searchFocused ? " relative z-[50] bg-white text-black shadow-[0_0_0_1px_black]" : ""
             }`}
           >
             <button
