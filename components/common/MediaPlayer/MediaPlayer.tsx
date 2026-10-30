@@ -6,55 +6,53 @@ import type { MediaPlayerProps } from "./types";
 
 function PauseIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
-      <rect x="6" y="5" width="4" height="14" rx="1" />
-      <rect x="14" y="5" width="4" height="14" rx="1" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/landing/media-controls/pause.svg"
+      alt=""
+      width={28}
+      height={28}
+      className="media-player__icon media-player__icon--asset"
+    />
   );
 }
 
 function PlayIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
-      <path d="M8 5.5v13l11-6.5L8 5.5Z" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/landing/media-controls/play.svg"
+      alt=""
+      width={28}
+      height={28}
+      className="media-player__icon media-player__icon--asset"
+    />
   );
 }
 
 function MuteIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
-      <path d="M5.5 9.5h2.3L12 5.8v12.4l-4.2-3.7H5.5a1 1 0 0 1-1-1v-2.5a1 1 0 0 1 1-1Z" />
-      <path
-        d="M15.1 9.2a3.1 3.1 0 0 1 0 5.6M17.4 7a5.6 5.6 0 0 1 0 10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-      <path
-        d="M4.2 4.2 19.8 19.8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/landing/media-controls/mute.svg"
+      alt=""
+      width={28}
+      height={28}
+      className="media-player__icon media-player__icon--asset"
+    />
   );
 }
 
 function UnmuteIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="media-player__icon">
-      <path d="M5.5 9.5h2.3L12 5.8v12.4l-4.2-3.7H5.5a1 1 0 0 1-1-1v-2.5a1 1 0 0 1 1-1Z" />
-      <path
-        d="M15.1 9.2a3.1 3.1 0 0 1 0 5.6M17.4 7a5.6 5.6 0 0 1 0 10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/landing/media-controls/unmute.svg"
+      alt=""
+      width={28}
+      height={28}
+      className="media-player__icon media-player__icon--asset"
+    />
   );
 }
 

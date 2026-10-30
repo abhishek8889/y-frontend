@@ -18,8 +18,8 @@ export function SiteFooter() {
       {
         title: "Customer",
         links: [
-          { label: "Explore Events", href: "/" },
-          { label: "My tickets", href: "/login" },
+          { label: "Explore Events", href: "/#events" },
+          { label: "My tickets", href: "/orders" },
         ],
       },
       {
@@ -54,25 +54,27 @@ export function SiteFooter() {
   ];
 
   return (
-    <footer className="border-t border-black bg-white text-black">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
-        <section className="min-h-[185px] border-r border-b border-black px-5 py-[15px]">
-          <Link href="/" aria-label="Yourlist home" className="inline-flex">
+    <footer className="site-footer">
+      <div className="site-footer__grid">
+        <section className="site-footer__col">
+          <Link href="/" aria-label="Yourlist home" className="site-footer__logo">
             <Image
               src={yourlistLogo}
               alt="Yourlist"
-              className="h-[31px] w-[97px] object-contain"
+              width={52}
+              height={17}
+              className="site-footer__logo-img"
             />
           </Link>
-          <ul className="mt-4 space-y-1">
+          <ul className="site-footer__links">
             {brandLinks.map((link) => (
               <li key={link.label}>
                 {link.href.startsWith("mailto:") ? (
-                  <a href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                  <a href={link.href} className="site-footer__link">
                     {link.label}
                   </a>
                 ) : (
-                  <Link href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                  <Link href={link.href} className="site-footer__link">
                     {link.label}
                   </Link>
                 )}
@@ -82,22 +84,19 @@ export function SiteFooter() {
         </section>
 
         {footerGroups.map((group) => (
-          <section
-            key={group.title}
-            className="min-h-[185px] border-r border-b border-black px-5 py-[15px]"
-          >
-            <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">{group.title}</h2>
-            <ul className="mt-4 space-y-1">
+          <section key={group.title} className="site-footer__col">
+            <h2 className="site-footer__heading">{group.title}</h2>
+            <ul className="site-footer__links">
               {group.links.map((link) => (
                 <li key={link.label}>
                   {link.href.startsWith("http") ||
                   link.href.startsWith("mailto:") ||
                   link.href === "#" ? (
-                    <a href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                    <a href={link.href} className="site-footer__link">
                       {link.label}
                     </a>
                   ) : (
-                    <Link href={link.href} className="text-[14px] leading-[19.6px] hover:underline">
+                    <Link href={link.href} className="site-footer__link">
                       {link.label}
                     </Link>
                   )}
@@ -107,23 +106,17 @@ export function SiteFooter() {
           </section>
         ))}
 
-        <section className="min-h-[185px] border-b border-black px-5 py-[15px] sm:border-r">
-          <h2 className="text-[14px] leading-[15.6px] tracking-[0.36px]">Contact us</h2>
-          <ul className="mt-4 space-y-1">
+        <section className="site-footer__col">
+          <h2 className="site-footer__heading">Contact us</h2>
+          <ul className="site-footer__links">
             <li>
-              <a
-                href="tel:+44123456789"
-                className="flex items-center gap-2 text-[14px] leading-4 hover:underline"
-              >
+              <a href="tel:+44123456789" className="site-footer__contact">
                 <img src="/landing/phone.svg" width={17} height={17} alt="" />
                 123456789
               </a>
             </li>
             <li>
-              <a
-                href="mailto:yourlist@gmail.com"
-                className="flex items-center gap-2 text-[14px] leading-4 hover:underline"
-              >
+              <a href="mailto:yourlist@gmail.com" className="site-footer__contact">
                 <img src="/landing/email.svg" width={17} height={17} alt="" />
                 yourlist@gmail.com
               </a>
@@ -132,7 +125,7 @@ export function SiteFooter() {
         </section>
       </div>
 
-      <p className="px-3 py-2 text-center text-[12px] leading-[18px]">
+      <p className="public-bar site-footer__copy">
         © 2025 yourlist Ltd. All Rights Reserved.
       </p>
     </footer>

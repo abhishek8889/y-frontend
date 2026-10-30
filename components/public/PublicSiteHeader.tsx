@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import yourlistLogo from "@/assets/yourlist-logo.png";
+import { EventsCategoryDrawer } from "@/components/public/EventsCategoryDrawer";
 import { PublicAccountMenu } from "@/components/public/PublicAccountMenu";
 import { clearAuthSession, getAuthUser } from "@/lib/api/authStorage";
 import { AUTH_CHANGE_EVENT } from "@/lib/auth/constants";
@@ -54,7 +55,7 @@ function CloseIcon() {
 /**
  * Public header:
  * - Desktop guest → Login + Organiser
- * - Desktop signed in → wishlist + ACCOUNT menu
+ * - Desktop signed in → wishlist + My List menu
  * - Mobile → logo, wishlist, and a menu with search, name, and logout
  */
 export function PublicSiteHeader({
@@ -69,6 +70,7 @@ export function PublicSiteHeader({
   const { wishlistedIds } = useWishlistIds();
   const isLoggedIn = useHasAuthToken();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [eventsDrawerOpen, setEventsDrawerOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [displayName, setDisplayName] = useState("");
   const organiserSignupUrl = useSyncExternalStore(
@@ -79,9 +81,12 @@ export function PublicSiteHeader({
 
   const savedCount = favoriteCount || (isFavorite ? 1 : 0) || wishlistedIds.size;
   const showHeart = showFavorites || isLoggedIn;
+  const showDesktopSearch = !pathname?.startsWith("/event/");
 
   useEffect(() => {
     setMenuOpen(false);
+    setEventsDrawerOpen(false);
+    setMenuQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, [pathname]);
 
   useEffect(() => {
@@ -142,7 +147,9 @@ export function PublicSiteHeader({
   ) : null;
 
   return (
-    <div className="public-site-header">
+    <div
+      className={`public-site-header${showDesktopSearch ? " public-site-header--with-search" : ""}`}
+    >
       <header className="public-bar relative border-b border-black bg-white">
         <div className="flex h-full items-center justify-between px-4 sm:hidden">
           <Link href="/" aria-label="Yourlist home" className="shrink-0">
@@ -164,9 +171,16 @@ export function PublicSiteHeader({
         </div>
 
         <div className="hidden h-full items-center justify-between px-4 sm:flex sm:px-10">
-          <Link href="/" className="shrink-0 text-[12px] uppercase leading-[15.6px] text-black hover:opacity-60">
+          <button
+            type="button"
+            className="public-site-header__events-btn"
+            aria-expanded={eventsDrawerOpen}
+            aria-controls="public-events-drawer"
+            onClick={() => setEventsDrawerOpen((open) => !open)}
+            onMouseEnter={() => setEventsDrawerOpen(true)}
+          >
             Events
-          </Link>
+          </button>
 
           <Link
             href="/"
@@ -204,6 +218,34 @@ export function PublicSiteHeader({
           </nav>
         </div>
       </header>
+
+      {showDesktopSearch ? (
+        <form
+          onSubmit={submitMenuSearch}
+          className="public-bar home-search public-site-header__search"
+        >
+          <img
+            src="/landing/search.svg"
+            width={26}
+            height={26}
+            alt=""
+            className="home-search__icon"
+          />
+          <input
+            type="search"
+            value={menuQuery}
+            onChange={(event) => setMenuQuery(event.target.value)}
+            placeholder="What are you looking for?"
+            aria-label="Search events"
+            className="home-search__input"
+          />
+        </form>
+      ) : null}
+
+      <EventsCategoryDrawer
+        open={eventsDrawerOpen}
+        onClose={() => setEventsDrawerOpen(false)}
+      />
 
       {menuOpen ? (
         <div id="public-mobile-menu" className="border-b border-black bg-white sm:hidden">

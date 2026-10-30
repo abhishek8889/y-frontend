@@ -41,15 +41,44 @@ function workspacesForScope(scope: AuthScope | null, host: string) {
   return items;
 }
 
+/** Outline / border-type user glyph — head circle + shoulders arc, no fill. */
 function UserIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.6" />
-      <path
-        d="M5.5 18.5c1.6-3 4-4.5 6.5-4.5s4.9 1.5 6.5 4.5"
+      <circle
+        cx="12"
+        cy="8"
+        r="3.4"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="1.7"
         strokeLinecap="round"
+      />
+      <path
+        d="M5.2 19.2c1.7-3.2 4.2-4.8 6.8-4.8s5.1 1.6 6.8 4.8"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="10"
+      height="6"
+      viewBox="0 0 10 6"
+      fill="none"
+      aria-hidden="true"
+      className={`shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+    >
+      <path
+        d="M1 1.25 5 5.25 9 1.25"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -70,7 +99,7 @@ function ExternalIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
 }
 
 type PublicAccountMenuProps = {
-  /** Use black ACCOUNT button trigger (design) vs icon-only. */
+  /** `button` — outline user icon + “My List” + chevron; `icon` — icon only. */
   variant?: "button" | "icon";
 };
 
@@ -121,22 +150,30 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
   }
 
   return (
-    <div className="relative inline-flex">
+    <div className="relative inline-flex h-full items-center">
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Account menu"
+        aria-label="My List"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
         className={
           variant === "button"
-            ? "flex h-7 cursor-pointer items-center justify-center rounded-[4px] border border-black bg-black px-3 text-[10px] uppercase leading-[15.6px] tracking-[0.36px] text-white transition hover:bg-black/80 sm:min-w-[119px] sm:px-7"
+            ? "flex h-7 cursor-pointer items-center gap-2 border-0 bg-transparent px-0 text-[12px] uppercase leading-[15.6px] tracking-[0.36px] text-black transition hover:opacity-60"
             : "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-black transition hover:bg-black/5"
         }
       >
-        {variant === "button" ? "Account" : <UserIcon />}
+        {variant === "button" ? (
+          <>
+            <UserIcon className="h-[18px] w-[18px] shrink-0" />
+            <span>My List</span>
+            <ChevronIcon open={open} />
+          </>
+        ) : (
+          <UserIcon />
+        )}
       </button>
 
       {open ? (
@@ -145,7 +182,7 @@ export function PublicAccountMenu({ variant = "button" }: PublicAccountMenuProps
           id={menuId}
           role="menu"
           aria-label="Account"
-          className="absolute right-0 top-[calc(100%+9px)] z-[100] w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-[4px] border border-black bg-white text-black"
+          className="absolute right-0 top-full z-[100] -mt-px w-[min(280px,calc(100vw-2rem))] overflow-hidden rounded-none border border-black bg-white text-black shadow-none"
         >
           <div className="flex items-center gap-3 border-b border-[#d8d8d8] px-4 py-3.5">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black text-[12px] font-body-bold uppercase">

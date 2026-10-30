@@ -1,37 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
 import { MediaPlayer } from "@/components/common";
+import { CategoryNav } from "@/components/public/CategoryNav";
 import { EventCard } from "@/components/public/EventCard";
+import { HeroCtaButton } from "@/components/public/HeroCtaButton";
 import { PUBLIC_SEARCH_EVENT } from "@/components/public/PublicSiteHeader";
-import { SelectField } from "@/components/ui/SelectField";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 const HOME_HERO_VIDEO = "/landing/home-hero-2.mp4";
 
-const SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "oldest", label: "Oldest" },
-  { value: "name", label: "Name" },
-];
-
 function scrollToEvents() {
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? "auto"
+    : "smooth";
   document.getElementById("events")?.scrollIntoView({ behavior, block: "start" });
 }
 
 export default function HomePage() {
-  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
-  const [sortBy, setSortBy] = useState("featured");
   const scrollAfterSearch = useRef(false);
 
   function runSearch(value: string) {
     const next = value.trim();
-    setSearchInput(next);
     setSearch(next);
     if (!next) {
       scrollAfterSearch.current = false;
@@ -97,48 +90,11 @@ export default function HomePage() {
 
   const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
 
-  const sortedEvents = useMemo(() => {
-    const items = [...(data?.data?.items ?? [])];
-    if (sortBy === "name") {
-      return items.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
-    }
-    if (sortBy === "oldest") {
-      return items.sort((a, b) => {
-        const aTime = a.starts_at ? new Date(a.starts_at).getTime() : 0;
-        const bTime = b.starts_at ? new Date(b.starts_at).getTime() : 0;
-        return aTime - bTime || a.id - b.id;
-      });
-    }
-    // featured / newest first (API already orders by starts_at desc)
-    return items;
-  }, [data?.data?.items, sortBy]);
-
-  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    runSearch(searchInput);
-  }
+  const events = useMemo(() => data?.data?.items ?? [], [data?.data?.items]);
+  const [featuredEvent, ...restEvents] = events;
 
   return (
     <main className="home-page">
-      <form onSubmit={handleSearchSubmit} className="public-bar home-search">
-        <img
-          src="/landing/search.svg"
-          width={26}
-          height={26}
-          alt=""
-          className="home-search__icon"
-        />
-        <input
-          type="search"
-          name="search"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="What are you looking for?"
-          aria-label="Search events"
-          className="home-search__input"
-        />
-      </form>
-
       <section aria-label="Discover live events" className="home-hero">
         <MediaPlayer
           media={{ url: HOME_HERO_VIDEO, media_type: "video" }}
@@ -148,31 +104,21 @@ export default function HomePage() {
           frameClassName="home-hero__player"
           controlsClassName="home-hero-media-controls"
         />
-        {/* Leave bottom control bar free for play / mute */}
-        <Link href="#events" className="home-hero__hit" aria-label="Explore events" />
+        <div className="home-hero__content">
+          <h1 className="home-hero__title font-heading">
+            Make every moment special
+          </h1>
+          <div className="home-hero__actions">
+            <HeroCtaButton href="#events">Events</HeroCtaButton>
+            <HeroCtaButton href="/#categories">Discover more</HeroCtaButton>
+          </div>
+        </div>
       </section>
 
+      <CategoryNav className="home-categories" />
+
       <section id="events" aria-label="Upcoming events" className="home-events">
-        <div className="home-events__toolbar">
-          <p aria-live="polite" className="home-events__count">
-            {isLoading
-              ? "Loading events…"
-              : `${sortedEvents.length} Event${sortedEvents.length === 1 ? "" : "s"}`}
-          </p>
-          <SelectField
-            name="eventSort"
-            aria-label="Sort events"
-            label="Sort by"
-            labelClassName="home-events__sort-label"
-            value={sortBy}
-            options={SORT_OPTIONS}
-            density="compact"
-            onChange={(event) => setSortBy(event.target.value)}
-            wrapperClassName="home-events__sort-wrap"
-            containerClassName="home-events__sort-box"
-            className="home-events__sort-select"
-          />
-        </div>
+        <h2 className="home-events__heading">Explore Events</h2>
 
         {isError ? (
           <p role="alert" className="home-events__status home-events__status--error">
@@ -182,13 +128,23 @@ export default function HomePage() {
           <p role="status" className="home-events__status">
             Loading events…
           </p>
-        ) : sortedEvents.length === 0 ? (
+        ) : events.length === 0 ? (
           <p className="home-events__status">
             {search ? "No events match your search." : "No published events yet."}
           </p>
         ) : (
           <div className="home-events__grid">
-            {sortedEvents.map((event) => (
+            {featuredEvent ? (
+              <EventCard
+                key={featuredEvent.id}
+                event={featuredEvent}
+                featured
+                isWishlisted={wishlistedIds.has(featuredEvent.id)}
+                wishlistDisabled={isMutating}
+                onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
+              />
+            ) : null}
+            {restEvents.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}

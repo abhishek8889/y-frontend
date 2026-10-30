@@ -85,9 +85,9 @@ function EventGallerySlide({
         media={media}
         alt={alt}
         active={active}
+        controls={false}
         showProgress={false}
         frameClassName="event-detail-gallery__player"
-        controlsClassName="event-media-controls"
       />
     );
   }
@@ -131,8 +131,56 @@ export default function PublicEventPage() {
 
   const galleryMedia = useMemo(() => buildEventGalleryMedia(event?.images), [event?.images]);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [galleryPaused, setGalleryPaused] = useState(true);
+  const [galleryMuted, setGalleryMuted] = useState(true);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const galleryScrollRef = useRef<HTMLDivElement | null>(null);
+
+  function getActiveGalleryVideo() {
+    return slideRefs.current[activeSlide]?.querySelector("video") ?? null;
+  }
+
+  // Keep pinned gallery controls in sync with the active slide's video.
+  useEffect(() => {
+    let video = slideRefs.current[activeSlide]?.querySelector("video") ?? null;
+    let raf = 0;
+
+    const sync = () => {
+      if (!video) return;
+      setGalleryPaused(video.paused);
+      setGalleryMuted(video.muted);
+    };
+
+    const bind = (node: HTMLVideoElement | null) => {
+      video = node;
+      if (!video) {
+        setGalleryPaused(true);
+        setGalleryMuted(true);
+        return;
+      }
+      sync();
+      video.addEventListener("play", sync);
+      video.addEventListener("pause", sync);
+      video.addEventListener("volumechange", sync);
+    };
+
+    bind(video);
+    // Video may mount one frame after the slide becomes active.
+    if (!video) {
+      raf = window.requestAnimationFrame(() => {
+        bind(slideRefs.current[activeSlide]?.querySelector("video") ?? null);
+      });
+    }
+
+    return () => {
+      if (raf) window.cancelAnimationFrame(raf);
+      if (video) {
+        video.removeEventListener("play", sync);
+        video.removeEventListener("pause", sync);
+        video.removeEventListener("volumechange", sync);
+      }
+    };
+  }, [activeSlide, galleryMedia]);
 
   useEffect(() => {
     const root = galleryScrollRef.current;
@@ -293,10 +341,31 @@ export default function PublicEventPage() {
   const slides = galleryMedia.length
     ? galleryMedia
     : [{ url: eventCover.src, type: "banner", media_type: "image" } as PublicEventImage];
+  const activeSlideMedia = slides[activeSlide] ?? null;
+  const activeSlideIsVideo = Boolean(activeSlideMedia?.url) && isVideoMedia(activeSlideMedia);
+
+  function toggleGalleryPlay() {
+    const video = getActiveGalleryVideo();
+    if (!video) return;
+    if (video.paused) {
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  }
+
+  function toggleGalleryMute() {
+    const video = getActiveGalleryVideo();
+    if (!video) return;
+    video.muted = !video.muted;
+    setGalleryMuted(video.muted);
+  }
 
   return (
     <main className="bg-white text-black">
+      {/* Full-bleed bar under header — same pattern as Balenciaga product detail */}
       <Breadcrumb
+        className="event-detail-breadcrumb"
         items={[
           { label: "Events", href: "/" },
           { label: event.venue?.name || "Venue" },
@@ -328,6 +397,48 @@ export default function PublicEventPage() {
             ))}
           </div>
 
+          {/* Pinned over the gallery shell (same layer as save) — does not scroll with slides. */}
+          {activeSlideIsVideo ? (
+            <div className="event-detail__media-controls">
+              <button
+                type="button"
+                aria-label={galleryPaused ? "Play video" : "Pause video"}
+                onClick={toggleGalleryPlay}
+                className="event-detail__media-control"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    galleryPaused
+                      ? "/landing/media-controls/play.svg"
+                      : "/landing/media-controls/pause.svg"
+                  }
+                  alt=""
+                  width={28}
+                  height={28}
+                />
+              </button>
+              <button
+                type="button"
+                aria-label={galleryMuted ? "Unmute video" : "Mute video"}
+                onClick={toggleGalleryMute}
+                className="event-detail__media-control"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    galleryMuted
+                      ? "/landing/media-controls/mute.svg"
+                      : "/landing/media-controls/unmute.svg"
+                  }
+                  alt=""
+                  width={28}
+                  height={28}
+                />
+              </button>
+            </div>
+          ) : null}
+
           <button
             type="button"
             aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
@@ -340,8 +451,8 @@ export default function PublicEventPage() {
           </button>
         </section>
 
-        <section className="flex flex-col px-4 py-8 sm:px-8 lg:min-h-[calc(100svh-46px)] lg:px-[min(8vw,112px)] lg:py-12">
-          <div className="mx-auto w-full max-w-[540px]">
+        <section className="event-detail-panel flex flex-col">
+          <div className="mx-auto w-full max-w-[540px] px-4 py-8 sm:px-8 lg:px-[min(8vw,112px)] lg:py-12">
             <div className="text-center">
               <h1 className="break-words text-[20px] font-bold uppercase leading-6 sm:text-[23px] sm:leading-7">
                 {event.name}
@@ -436,7 +547,7 @@ export default function PublicEventPage() {
                 />
               </div>
             </details>
-            <details className="group border-b border-[#d8d8d8]">
+            <details className="group">
               <summary className="flex h-[60px] cursor-pointer list-none items-center justify-between text-[12px] font-bold uppercase [&::-webkit-details-marker]:hidden">
                 Terms &amp; conditions
                 <AccordionChevron />
@@ -448,10 +559,10 @@ export default function PublicEventPage() {
             </details>
           </div>
 
-          <p className="mt-auto pt-12 text-center text-[11px] leading-[17px] text-black/45">
+          {/* <p className="mt-auto pt-12 text-center text-[11px] leading-[17px] text-black/45">
             You can pay securely with credit card (VISA,
             <br className="hidden sm:block" /> Mastercard, American Express)
-          </p>
+          </p> */}
         </section>
       </div>
     </main>
