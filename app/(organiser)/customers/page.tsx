@@ -1,6 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  customerListPagination,
+  customerListSummary,
+  mapCustomerOverviewToCustomer,
+  mapOrganisationCustomer,
+  normalizeCustomerListItems,
+  useGetCustomerListQuery,
+  useGetCustomerOverviewQuery,
+} from "@/apis/organisation/customersApi";
 import {
   ActionMenu,
   Breadcrumb,
@@ -18,8 +27,9 @@ import { FormSectionTabs } from "@/components/organiser/FormSectionTabs";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { useOrganisationTimezone } from "@/lib/organisation/useOrganisationTimezone";
 import {
-  CUSTOMER_SEED,
   customerFullName,
   customerInitials,
   formatCustomerSpend,
@@ -223,25 +233,67 @@ function CustomerActionDrawer({
 }
 
 function CustomerPassport({
-  customer,
+  customer: listCustomer,
   onBack,
   onAction,
 }: {
   customer: Customer;
   onBack: () => void;
-  onAction: (action: CustomerAction) => void;
+  onAction: (action: CustomerAction, customer: Customer) => void;
 }) {
+  const organisationTimezone = useOrganisationTimezone();
   const [activeTab, setActiveTab] = useState("Overview");
   const [passportMenuOpen, setPassportMenuOpen] = useState(false);
+
+  const { data, isLoading, isFetching, isError } = useGetCustomerOverviewQuery({
+    customerId: listCustomer.id,
+  });
+
+  const customer = useMemo(() => {
+    if (!data?.data) return listCustomer;
+    return mapCustomerOverviewToCustomer(
+      data.data,
+      organisationTimezone,
+      listCustomer,
+    );
+  }, [data?.data, listCustomer, organisationTimezone]);
+
+  const summary = data?.data?.summary;
+  const organisationStatus =
+    data?.data?.customer?.organisation_customer_status?.trim() ||
+    customer.status;
+
   const fullName = customerFullName(customer);
   const initials = customerInitials(customer);
   const tabs = ["Overview", "Orders", "Products", "Attendance", "Activity"];
 
   const metrics = [
-    { label: "Total orders", value: String(customer.totalOrders) },
-    { label: "Total tickets purchased", value: String(customer.ticketsPurchased) },
-    { label: "Total spend", value: formatCustomerSpend(customer.totalSpend) },
-    { label: "Events attended", value: String(customer.attended) },
+    {
+      label: "Total orders",
+      value: String(summary?.total_orders ?? customer.totalOrders),
+    },
+    {
+      label: "Total tickets purchased",
+      value: String(
+        summary?.total_tickets_purchased ?? customer.ticketsPurchased,
+      ),
+    },
+    {
+      label: "Total spend",
+      value:
+        summary?.formatted_total_spent?.trim() ||
+        formatCustomerSpend(customer.totalSpend),
+    },
+    {
+      label: "Total refunded",
+      value:
+        summary?.formatted_total_refunded?.trim() ||
+        formatCustomerSpend(customer.totalRefunded),
+    },
+    {
+      label: "Events attended",
+      value: String(summary?.events_attended ?? customer.attended),
+    },
   ];
 
   const passportActions = useMemo<ActionMenuItem<Customer>[]>(
@@ -250,7 +302,7 @@ function CustomerPassport({
         key: "ticket",
         label: "Issue Complimentary Ticket",
         onClick: () => {
-          onAction("ticket");
+          onAction("ticket", customer);
           setPassportMenuOpen(false);
         },
       },
@@ -259,12 +311,12 @@ function CustomerPassport({
         label: "Suspend Account",
         variant: "danger",
         onClick: () => {
-          onAction("suspend");
+          onAction("suspend", customer);
           setPassportMenuOpen(false);
         },
       },
     ],
-    [onAction],
+    [customer, onAction],
   );
 
   return (
@@ -279,40 +331,49 @@ function CustomerPassport({
       />
 
       <section className="customer-passport" aria-label="Customer passport">
-        <div className="customer-passport-avatar" aria-hidden>
-          {initials}
-        </div>
-
-        <div className="customer-passport-main">
-          <div className="customer-passport-name-row">
-            <h1 className="customer-passport-name">{fullName}</h1>
-            <StatusBadge status={customer.status} className="text-[12px]" />
+        <div className="customer-passport-identity">
+          <div className="customer-passport-avatar" aria-hidden>
+            {initials}
           </div>
-          <p className="customer-passport-id">{customer.customerId}</p>
-          <div className="customer-passport-contacts">
-            <span className="customer-passport-contact">{customer.email}</span>
-            {customer.phone ? (
-              <span className="customer-passport-contact">{customer.phone}</span>
-            ) : null}
+
+          <div className="customer-passport-main">
+            <div className="customer-passport-name-row">
+              <h1 className="customer-passport-name">{fullName}</h1>
+              <StatusBadge
+                status={organisationStatus}
+                className="customer-passport-status"
+              />
+            </div>
+            <p className="customer-passport-id">{customer.customerId}</p>
+            <div className="customer-passport-contacts">
+              <span className="customer-passport-contact">{customer.email}</span>
+              {customer.phone ? (
+                <span className="customer-passport-contact">{customer.phone}</span>
+              ) : null}
+            </div>
           </div>
         </div>
 
         <div className="customer-passport-meta">
           <div>
             <p className="customer-passport-meta-label">Customer since</p>
-            <p className="customer-passport-meta-value">{customer.customerSince}</p>
+            <p className="customer-passport-meta-value">
+              {isLoading && !data ? "…" : customer.customerSince}
+            </p>
           </div>
           <div>
             <p className="customer-passport-meta-label">Last activity</p>
-            <p className="customer-passport-meta-value">{customer.lastActivity}</p>
+            <p className="customer-passport-meta-value">
+              {isLoading && !data ? "…" : customer.lastActivity}
+            </p>
           </div>
         </div>
 
         <div className="customer-passport-actions">
           <button
             type="button"
-            className="page-secondary-button"
-            onClick={() => onAction("message")}
+            className="page-primary-button-action"
+            onClick={() => onAction("message", customer)}
           >
             Send message
           </button>
@@ -326,11 +387,19 @@ function CustomerPassport({
         </div>
       </section>
 
+      {isError ? (
+        <p className="customer-panel-empty" role="alert">
+          Could not load customer overview.
+        </p>
+      ) : null}
+
       <section className="customer-metric-grid" aria-label="Customer statistics">
         {metrics.map((metric) => (
           <article key={metric.label} className="customer-metric-card">
             <p className="customer-metric-label">{metric.label}</p>
-            <p className="customer-metric-value">{metric.value}</p>
+            <p className="customer-metric-value">
+              {isLoading && !data ? "…" : metric.value}
+            </p>
           </article>
         ))}
       </section>
@@ -346,11 +415,15 @@ function CustomerPassport({
       />
 
       {activeTab === "Overview" ? (
-        <OverviewTab customer={customer} onAction={onAction} />
+        <OverviewTab
+          overview={data?.data}
+          isLoading={isLoading || isFetching}
+          onOpenTab={setActiveTab}
+        />
       ) : activeTab === "Orders" ? (
-        <OrdersTab />
+        <OrdersTab customerId={customer.id} />
       ) : activeTab === "Products" ? (
-        <TicketsTab />
+        <TicketsTab customerId={customer.id} />
       ) : activeTab === "Attendance" ? (
         <AttendanceTab />
       ) : (
@@ -361,7 +434,7 @@ function CustomerPassport({
 }
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(CUSTOMER_SEED);
+  const [localCustomers, setLocalCustomers] = useState<Customer[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeCustomerAction, setActiveCustomerAction] = useState<{
     action: CustomerAction;
@@ -369,36 +442,57 @@ export default function CustomersPage() {
   } | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const organisationTimezone = useOrganisationTimezone();
 
-  const filteredCustomers = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return customers.filter((customer) => {
-      const matchesSearch =
-        !query ||
-        `${customer.firstName} ${customer.lastName} ${customer.email} ${customer.phone} ${customer.customerId}`
-          .toLowerCase()
-          .includes(query);
-      const matchesStatus = statusFilter === "all" || customer.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [customers, search, statusFilter]);
+  const debouncedSearch = useDebouncedValue(search, 400);
 
-  const pagedCustomers = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredCustomers.slice(start, start + pageSize);
-  }, [filteredCustomers, page, pageSize]);
+  useEffect(() => {
+    setCursor(undefined);
+    setPage(1);
+  }, [debouncedSearch, statusFilter, pageSize]);
 
-  const stats = useMemo(() => {
-    const total = customers.length;
-    const active = customers.filter((customer) => customer.status === "active").length;
-    const inactive = customers.filter((customer) => customer.status === "inactive").length;
-    const suspended = customers.filter((customer) => customer.status === "suspended").length;
-    return { total, active, inactive, suspended };
-  }, [customers]);
+  const { data, isLoading, isFetching, isError } = useGetCustomerListQuery({
+    search: debouncedSearch.trim(),
+    status: statusFilter === "all" ? "" : statusFilter,
+    per_page: pageSize,
+    cursor,
+  });
+
+  const apiCustomers = useMemo(
+    () =>
+      normalizeCustomerListItems(data?.data).map((item) =>
+        mapOrganisationCustomer(item, organisationTimezone),
+      ),
+    [data?.data, organisationTimezone],
+  );
+
+  const customers = useMemo(() => {
+    const apiIds = new Set(apiCustomers.map((customer) => customer.id));
+    return [
+      ...localCustomers.filter((customer) => !apiIds.has(customer.id)),
+      ...apiCustomers,
+    ];
+  }, [apiCustomers, localCustomers]);
+
+  const pagination = customerListPagination(data?.data);
+  const canGoNext =
+    Boolean(pagination?.next_cursor) || Boolean(pagination?.has_more);
+  const paginationTotal =
+    pagination?.total != null
+      ? pagination.total
+      : canGoNext
+        ? page * pageSize + 1
+        : (page - 1) * pageSize + customers.length;
+
+  const stats = useMemo(
+    () => customerListSummary(data?.data, customers),
+    [customers, data?.data],
+  );
 
   const summaryItems = useMemo<GridCardItem[]>(
     () => [
@@ -406,7 +500,6 @@ export default function CustomersPage() {
         id: "total",
         label: "Total customers",
         value: stats.total.toLocaleString("en-GB"),
-        description: <span className="customer-stat-delta">+12% from last month</span>,
       },
       {
         id: "active",
@@ -422,11 +515,28 @@ export default function CustomersPage() {
         id: "suspended",
         label: "Suspended",
         value: stats.suspended.toLocaleString("en-GB"),
-        description: <span className="customer-stat-note">100 in this month</span>,
       },
     ],
     [stats],
   );
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage > page && pagination?.next_cursor) {
+      setCursor(pagination.next_cursor);
+      setPage(nextPage);
+      return;
+    }
+
+    if (nextPage < page && pagination?.prev_cursor) {
+      setCursor(pagination.prev_cursor);
+      setPage(nextPage);
+      return;
+    }
+
+    if (!pagination) {
+      setPage(nextPage);
+    }
+  }
 
   const orderActions = useMemo<ActionMenuItem<Customer>[]>(
     () => [
@@ -469,11 +579,6 @@ export default function CustomersPage() {
   const columns = useMemo<DataTableColumn<Customer>[]>(
     () => [
       {
-        id: "customerId",
-        header: "Customer ID",
-        accessorKey: "customerId",
-      },
-      {
         id: "name",
         header: "Name",
         cell: ({ row }) => (
@@ -489,6 +594,11 @@ export default function CustomersPage() {
         cell: ({ row }) => row.phone || "—",
       },
       {
+        id: "customerSince",
+        header: "Customer since",
+        accessorKey: "customerSince",
+      },
+      {
         id: "orders",
         header: "Total orders",
         cell: ({ row }) => String(row.totalOrders),
@@ -502,6 +612,11 @@ export default function CustomersPage() {
         id: "spend",
         header: "Total spend",
         cell: ({ row }) => formatCustomerSpend(row.totalSpend),
+      },
+      {
+        id: "refunded",
+        header: "Total refunded",
+        cell: ({ row }) => formatCustomerSpend(row.totalRefunded),
       },
       {
         id: "lastActivity",
@@ -533,24 +648,26 @@ export default function CustomersPage() {
 
   function exportCustomers() {
     const headers = [
-      "Customer ID",
       "Name",
       "Email",
       "Phone",
+      "Customer since",
       "Total orders",
       "Attended",
       "Total spend",
+      "Total refunded",
       "Last activity",
       "Status",
     ];
-    const rows = filteredCustomers.map((customer) => [
-      customer.customerId,
+    const rows = customers.map((customer) => [
       customerFullName(customer),
       customer.email,
       customer.phone,
+      customer.customerSince,
       customer.totalOrders,
       customer.attended,
       formatCustomerSpend(customer.totalSpend),
+      formatCustomerSpend(customer.totalRefunded),
       customer.lastActivity,
       customer.status,
     ]);
@@ -570,7 +687,9 @@ export default function CustomersPage() {
         <CustomerPassport
           customer={selectedCustomer}
           onBack={() => setSelectedCustomer(null)}
-          onAction={(action) => setActiveCustomerAction({ action, customer: selectedCustomer })}
+          onAction={(action, customer) =>
+            setActiveCustomerAction({ action, customer })
+          }
         />
       ) : (
         <main className="customer-page">
@@ -617,7 +736,7 @@ export default function CustomersPage() {
           <div className="mt-5">
             <DataTable
               columns={columns}
-              data={pagedCustomers}
+              data={customers}
               getRowId={(row) => row.id}
               features={{
                 search: true,
@@ -627,10 +746,7 @@ export default function CustomersPage() {
               }}
               search={{
                 value: search,
-                onChange: (value) => {
-                  setSearch(value);
-                  setPage(1);
-                },
+                onChange: setSearch,
                 placeholder: "Search..",
               }}
               filters={[
@@ -649,18 +765,16 @@ export default function CustomersPage() {
               ]}
               onFilterChange={(key, value) => {
                 if (key === "status") setStatusFilter(value);
-                setPage(1);
               }}
               pagination={{
                 page,
                 pageSize,
-                total: filteredCustomers.length,
+                total: paginationTotal,
               }}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setPage(1);
-              }}
+              onPageChange={handlePageChange}
+              onPageSizeChange={setPageSize}
+              isLoading={isLoading || isFetching}
+              isError={isError}
               bodyHeightClassName={false}
               emptyMessage="No customers found."
             />
@@ -673,7 +787,7 @@ export default function CustomersPage() {
         onClose={() => setIsDialogOpen(false)}
         onSubmit={(payload) => {
           const nextId = Date.now();
-          setCustomers((current) => [
+          setLocalCustomers((current) => [
             {
               id: nextId,
               customerId: `SUP-${String(nextId).slice(-4)}`,
@@ -686,6 +800,7 @@ export default function CustomersPage() {
               totalOrders: 0,
               attended: 0,
               totalSpend: 0,
+              totalRefunded: 0,
               ticketsPurchased: 0,
               lastActivity: "Just now",
               customerSince: new Intl.DateTimeFormat("en-GB", {
@@ -693,9 +808,11 @@ export default function CustomersPage() {
                 month: "short",
                 year: "numeric",
               }).format(new Date()),
+              lastOrder: null,
             },
             ...current,
           ]);
+          setCursor(undefined);
           setPage(1);
           setIsDialogOpen(false);
         }}

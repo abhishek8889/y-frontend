@@ -9,27 +9,26 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+
 type PaymentFormProps = {
   clientSecret: string;
   eventTitle: string;
   amount: number;
   summaryLines?: { label: string; qty: number }[];
   onSuccess: (paymentIntentId: string) => void;
+  onClose?: () => void;
+  showCloseButton?: boolean;
 };
-
-const fieldLabelClass = "block text-[13px] font-bold normal-case leading-5 text-black";
-const fieldBoxClass =
-  "mt-1.5 flex h-[44px] items-center overflow-hidden border border-black/45 px-3 focus-within:border-black";
 
 const stripeFieldOptions = {
   style: {
     base: {
-      color: "#111111",
-      fontFamily: "Arial, sans-serif",
+      color: "#000000",
+      fontFamily: "Univers, Arial, sans-serif",
       fontSize: "14px",
-      "::placeholder": { color: "#777777" },
+      "::placeholder": { color: "rgba(0, 0, 0, 0.4)" },
     },
-    invalid: { color: "#d92d20" },
+    invalid: { color: "#b42318" },
   },
 };
 
@@ -39,6 +38,8 @@ export function PaymentForm({
   amount,
   summaryLines = [],
   onSuccess,
+  onClose,
+  showCloseButton = false,
 }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -110,36 +111,32 @@ export function PaymentForm({
   }
 
   return (
-    <section aria-labelledby="payment-title" className="mt-5 border-t border-black/20 pt-5">
-      <h2 id="payment-title" className="text-center text-[20px] font-bold uppercase leading-7 text-black">Payment</h2>
-
-      <div className="mt-5 min-h-[44px]">
+    <div className="payment-form">
+      <div className="payment-form__express">
         <ExpressCheckoutElement
           onConfirm={handleExpressCheckout}
           options={{ buttonType: { applePay: "buy" } }}
         />
       </div>
 
-      <div className="my-5 flex items-center gap-4 text-[12px] font-bold uppercase text-black/70">
-        <span className="h-px flex-1 bg-black/20" />
-        <span>Or pay with card</span>
-        <span className="h-px flex-1 bg-black/20" />
+      <div className="payment-form__divider" role="presentation">
+        Or pay with card
       </div>
 
-      <form onSubmit={handleCardPayment} className="flex flex-col gap-4">
-        <label className={fieldLabelClass}>
-          Card Information
-          <span className={fieldBoxClass}>
+      <form onSubmit={handleCardPayment} className="payment-form__fields">
+        <label className="payment-form__label">
+          Card information
+          <span className="payment-form__field">
             <CardNumberElement
               options={{ ...stripeFieldOptions, showIcon: true, disableLink: true }}
-              className="min-w-0 w-full"
+              className="payment-form__field-el"
             />
           </span>
         </label>
 
-        <label className={fieldLabelClass} htmlFor="cardholderName">
-          Cardholder Name
-          <span className={fieldBoxClass}>
+        <label className="payment-form__label" htmlFor="cardholderName">
+          Cardholder name
+          <span className="payment-form__field">
             <input
               id="cardholderName"
               name="cardholderName"
@@ -147,49 +144,66 @@ export function PaymentForm({
               onChange={(event) => setCardholderName(event.target.value)}
               placeholder="Full name on card"
               autoComplete="cc-name"
-              className="h-full w-full border-0 bg-transparent text-[14px] font-normal normal-case text-black outline-none placeholder:text-[#777777]"
+              className="payment-form__input"
             />
           </span>
         </label>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className={fieldLabelClass}>
-            Expiry Date
-            <span className={fieldBoxClass}>
-              <CardExpiryElement options={stripeFieldOptions} className="min-w-0 w-full" />
+        <div className="payment-form__row">
+          <label className="payment-form__label">
+            Expiry date
+            <span className="payment-form__field">
+              <CardExpiryElement options={stripeFieldOptions} className="payment-form__field-el" />
             </span>
           </label>
-          <label className={fieldLabelClass}>
+          <label className="payment-form__label">
             CVC
-            <span className={fieldBoxClass}>
-              <CardCvcElement options={stripeFieldOptions} className="min-w-0 w-full" />
+            <span className="payment-form__field">
+              <CardCvcElement options={stripeFieldOptions} className="payment-form__field-el" />
             </span>
           </label>
         </div>
 
-        <div className="pt-1 text-[13px] leading-5 text-black">
-          <p className="font-bold">Total Amount: {formattedAmount}</p>
+        <div className="payment-form__summary">
+          <p className="payment-form__summary-total">Total amount: {formattedAmount}</p>
           {summaryLines.length ? (
             summaryLines.map((line) => (
-              <p key={line.label}>
+              <p key={line.label} className="payment-form__summary-line">
                 {line.qty} × {line.label}
               </p>
             ))
           ) : (
-            <p>{eventTitle}</p>
+            <p className="payment-form__summary-line">{eventTitle}</p>
           )}
         </div>
 
-        {errorMessage ? <p role="alert" className="text-[13px] leading-5 text-[#d92d20]">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <p role="alert" className="payment-form__error">
+            {errorMessage}
+          </p>
+        ) : null}
 
-        <button
-          type="submit"
-          disabled={!stripe || !elements || isSubmitting || !cardholderName.trim()}
-          className="h-[48px] w-full border border-black bg-black text-[14px] font-medium uppercase text-white transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isSubmitting ? "Processing payment..." : `Pay ${formattedAmount}`}
-        </button>
+        <div className="payment-form__actions">
+          <button
+            type="submit"
+            disabled={!stripe || !elements || isSubmitting || !cardholderName.trim()}
+            className="form-footer-btn form-footer-btn-primary"
+          >
+            {isSubmitting ? "Processing payment..." : `Pay ${formattedAmount}`}
+          </button>
+
+          {showCloseButton && onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="form-footer-btn form-footer-btn-secondary"
+            >
+              Close payment
+            </button>
+          ) : null}
+        </div>
       </form>
-    </section>
+    </div>
   );
 }

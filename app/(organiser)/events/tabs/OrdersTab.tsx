@@ -16,21 +16,11 @@ import {
   type ActionMenuItem,
   type DataTableColumn,
 } from "@/components/common";
-import { OrderDetailsModal } from "@/components/organiser/events/OrderDetailsModal";
+import { OrderDetailsDrawer } from "@/components/organiser/events/OrderDetailsDrawer";
+import { RefundOrderModal } from "@/components/organiser/events/RefundOrderModal";
+import { formatDateTime } from "@/lib/events/formatDateTime";
+import { useOrganisationTimezone } from "@/lib/organisation/useOrganisationTimezone";
 import { ExportButton, ResultNotice } from "./TabControls";
-
-function formatOrderDate(value: string | null | undefined) {
-  if (!value?.trim()) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
 
 type OrdersTabProps = {
   eventId: number;
@@ -38,6 +28,16 @@ type OrdersTabProps = {
 };
 
 export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
+  const organisationTimezone = useOrganisationTimezone();
+
+  function formatOrderDate(value: string | null | undefined) {
+    return formatDateTime(value, {
+      includeYear: true,
+      emptyLabel: "—",
+      timeZone: organisationTimezone,
+    });
+  }
+
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -47,6 +47,7 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
   const [notice, setNotice] = useState("");
   const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [detailsOrderId, setDetailsOrderId] = useState<number | null>(null);
+  const [refundOrderId, setRefundOrderId] = useState<number | null>(null);
 
   const { data, isLoading, isFetching, isError } = useGetEventOrdersQuery({
     eventId,
@@ -60,6 +61,11 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
   } = useGetEventOrderDetailsQuery(detailsOrderId as number, {
     skip: detailsOrderId == null,
   });
+
+  const { data: refundDetailsData } = useGetEventOrderDetailsQuery(
+    refundOrderId as number,
+    { skip: refundOrderId == null },
+  );
 
   const orders = useMemo(() => normalizeEventOrderList(data?.data), [data?.data]);
 
@@ -142,6 +148,19 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
         label: "Resend ticket email",
         onClick: (order) => {
           setNotice(`Resend email is not available yet for ${order.unique_id}.`);
+          setOpenActionId(null);
+        },
+      },
+      {
+        key: "refund",
+        label: "Issue refund",
+        variant: "danger",
+        hidden: (order) => {
+          const status = String(order.status ?? "").toLowerCase();
+          return status === "refunded" || status === "cancelled";
+        },
+        onClick: (order) => {
+          setRefundOrderId(order.id);
           setOpenActionId(null);
         },
       },
@@ -291,6 +310,7 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
               { value: "all", label: "All status" },
               { value: "paid", label: "Paid" },
               { value: "pending", label: "Pending" },
+              { value: "partially_refunded", label: "Partially refunded" },
               { value: "refunded", label: "Refunded" },
               { value: "cancelled", label: "Cancelled" },
             ],
@@ -332,30 +352,25 @@ export default function OrdersTab({ eventId, eventTitle }: OrdersTabProps) {
         bodyHeightClassName={false}
       />
 
-      <OrderDetailsModal
+      <OrderDetailsDrawer
         open={detailsOrderId != null}
         order={detailsData?.data ?? null}
         eventTitle={eventTitle}
         isLoading={isDetailsLoading || isDetailsFetching}
         isError={isDetailsError}
         onClose={() => setDetailsOrderId(null)}
-        onResend={() => {
-          const id = detailsData?.data?.unique_id;
-          setNotice(
-            id
-              ? `Resend email is not available yet for ${id}.`
-              : "Resend email is not available yet.",
-          );
-        }}
-        onRefundSubmit={({ amount }) => {
-          const id = detailsData?.data?.unique_id;
-          const sign = detailsData?.data?.currency_sign?.trim() || "£";
-          setNotice(
-            id
-              ? `Refund of ${sign}${amount} for ${id} is not connected to the API yet.`
-              : `Refund of ${sign}${amount} is not connected to the API yet.`,
-          );
-        }}
+      />
+
+      <RefundOrderModal
+        open={refundOrderId != null}
+        order={
+          refundDetailsData?.data?.id === refundOrderId
+            ? refundDetailsData.data
+            : null
+        }
+        eventTitle={eventTitle}
+        onClose={() => setRefundOrderId(null)}
+        onSuccess={() => setRefundOrderId(null)}
       />
     </section>
   );

@@ -1,11 +1,12 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { DataTableEmpty } from "./DataTableEmpty";
+import { DataTableInfoTip } from "./DataTableInfoTip";
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 import type { DataTableProps } from "./types";
-import { alignClass, getNestedValue } from "./utils";
+import { alignClass, getNestedValue, resolveColumnTooltip } from "./utils";
 
 export function DataTable<T>({
   columns,
@@ -31,6 +32,8 @@ export function DataTable<T>({
   className = "",
   bodyHeightClassName = "lg:h-[min(480px,calc(100vh-420px))]",
   headerBackground,
+  renderExpandedRows,
+  isRowExpanded,
 }: DataTableProps<T>) {
   const enableSearch = features?.search ?? true;
   const enableFilters = features?.filters ?? true;
@@ -92,7 +95,7 @@ export function DataTable<T>({
                     <th
                       key={column.id}
                       scope="col"
-                      className={`datatable-column-title text-left ${column.headerClassName ?? ""}`.trim()}
+                      className={`datatable-column-title ${alignClass(column.align)} ${column.headerClassName ?? ""}`.trim()}
                     >
                       {column.sortable && onSortingChange ? (
                         <button
@@ -154,25 +157,45 @@ export function DataTable<T>({
               {!isError &&
                 data.map((row, rowIndex) => {
                   const rowKey = getRowId?.(row, rowIndex) ?? rowIndex;
+                  const expanded = Boolean(isRowExpanded?.(row, rowIndex));
 
                   return (
-                    <tr key={rowKey}>
-                      {columns.map((column) => {
-                        const value = getNestedValue(row, column.accessorKey);
-                        const content = column.cell
-                          ? column.cell({ row, value, rowIndex })
-                          : ((value as ReactNode) ?? "—");
+                    <Fragment key={rowKey}>
+                      <tr className={expanded ? "datatable-row-expanded" : undefined}>
+                        {columns.map((column) => {
+                          const value = getNestedValue(row, column.accessorKey);
+                          const cellCtx = { row, value, rowIndex };
+                          const content = column.cell
+                            ? column.cell(cellCtx)
+                            : ((value as ReactNode) ?? "—");
+                          const tip = resolveColumnTooltip(column.tooltip, cellCtx);
 
-                        return (
-                          <td
-                            key={column.id}
-                            className={`datatable-column-value ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
-                          >
-                            {content}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                          return (
+                            <td
+                              key={column.id}
+                              className={`datatable-column-value ${alignClass(column.align)} ${column.className ?? ""}`.trim()}
+                            >
+                              {tip ? (
+                                <div className="datatable-cell-with-tip">
+                                  <div className="datatable-cell-with-tip__value">
+                                    {content}
+                                  </div>
+                                  <DataTableInfoTip
+                                    label={tip.label}
+                                    text={tip.text}
+                                  />
+                                </div>
+                              ) : (
+                                content
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                      {expanded && renderExpandedRows
+                        ? renderExpandedRows({ row, rowIndex })
+                        : null}
+                    </Fragment>
                   );
                 })}
             </tbody>

@@ -71,7 +71,9 @@ export function EventListCard({ event, selected, onSelect }: EventListCardProps)
       </div>
 
       <p className="event-list-card-meta">{event.category?.name || "Uncategorised"}</p>
-      <p className="event-list-card-datetime">{formatDateTime(event.starts_at)}</p>
+      <p className="event-list-card-datetime">
+        {formatDateTime(event.starts_at, { timeZone: event.timezone })}
+      </p>
 
       <div className="event-list-card-metrics">
         <div className="min-w-0">

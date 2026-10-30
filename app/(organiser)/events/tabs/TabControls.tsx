@@ -7,14 +7,22 @@ import { SelectField } from "@/components/ui/SelectField";
 
 export type FilterOption = { value: string; label: string };
 
-export function TabSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function TabSearch({
+  value,
+  onChange,
+  placeholder = "Search..",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div className="min-w-[220px] flex-1">
       <InputField
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search.."
+        placeholder={placeholder}
         aria-label="Search records"
         density="compact"
         prefix={(
@@ -72,6 +80,44 @@ export function MonthFilter({ value, onChange }: { value: string; onChange: (val
         aria-label="Filter by month"
         density="compact"
         containerClassName="input-box input-box-compact"
+        className="!px-2.5 !text-[12px] normal-case"
+      />
+    </div>
+  );
+}
+
+export function DateRangeFilter({
+  from,
+  to,
+  onFromChange,
+  onToChange,
+}: {
+  from: string;
+  to: string;
+  onFromChange: (value: string) => void;
+  onToChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <InputField
+        type="date"
+        value={from}
+        onChange={(event) => onFromChange(event.target.value)}
+        aria-label="Start date"
+        density="compact"
+        containerClassName="input-box input-box-compact !min-w-[132px]"
+        className="!px-2.5 !text-[12px] normal-case"
+      />
+      <span className="text-[11px] uppercase text-black/45" aria-hidden>
+        –
+      </span>
+      <InputField
+        type="date"
+        value={to}
+        onChange={(event) => onToChange(event.target.value)}
+        aria-label="End date"
+        density="compact"
+        containerClassName="input-box input-box-compact !min-w-[132px]"
         className="!px-2.5 !text-[12px] normal-case"
       />
     </div>

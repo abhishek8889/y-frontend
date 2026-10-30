@@ -17,11 +17,15 @@ export function normalizeStatusKey(status: string | null | undefined): StatusCol
     normalized === "soldout" ||
     normalized === "cancelled" ||
     normalized === "canceled" ||
-    normalized === "suspended"
+    normalized === "suspended" ||
+    normalized === "refunded"
   ) {
     return "soldout";
   }
-  // published / active / unknown → active (green)
+  if (normalized === "partially_refunded") return "inactive";
+  if (normalized === "failed" || normalized === "rejected") return "soldout";
+  if (normalized === "pending" || normalized === "processing") return "draft";
+  // published / active / succeeded / unknown → active (green)
   return "active";
 }
 
@@ -48,6 +52,12 @@ export function formatStatusLabel(status: string | null | undefined) {
   if (normalized === "inactive") return "Inactive";
   if (normalized === "active") return "Active";
   if (normalized === "suspended") return "Suspended";
+  if (normalized === "refunded") return "Refunded";
+  if (normalized === "partially_refunded") return "Partially refunded";
+  if (normalized === "succeeded") return "Succeeded";
+  if (normalized === "failed") return "Failed";
+  if (normalized === "pending") return "Pending";
+  if (normalized === "processing") return "Processing";
   return normalized
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

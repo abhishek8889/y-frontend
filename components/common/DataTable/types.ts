@@ -2,13 +2,46 @@ import type { ReactNode } from "react";
 
 export type SortDirection = "asc" | "desc";
 
+export type DataTableCellContext<T> = {
+  row: T;
+  value: unknown;
+  rowIndex: number;
+};
+
+/**
+ * Column tooltip config.
+ *
+ * - `true` → tip uses the accessor value (stringified)
+ * - `string` → static tip text
+ * - `fn` → dynamic tip text from the row
+ * - `{ content, label? }` → same, with optional aria-label
+ *
+ * Tip is omitted when resolved content is empty.
+ */
+export type DataTableColumnTooltip<T> =
+  | boolean
+  | string
+  | ((ctx: DataTableCellContext<T>) => string | null | undefined)
+  | {
+      content?:
+        | boolean
+        | string
+        | ((ctx: DataTableCellContext<T>) => string | null | undefined);
+      label?: string | ((ctx: DataTableCellContext<T>) => string);
+    };
+
 export type DataTableColumn<T> = {
   id: string;
   header: ReactNode;
   /** Dot-path into the row, e.g. `venue_type.name` */
   accessorKey?: string;
   /** Custom cell renderer. Takes precedence over accessorKey. */
-  cell?: (ctx: { row: T; value: unknown; rowIndex: number }) => ReactNode;
+  cell?: (ctx: DataTableCellContext<T>) => ReactNode;
+  /**
+   * Show an info tip beside the cell value.
+   * Portaled above the table so it is not clipped by overflow.
+   */
+  tooltip?: DataTableColumnTooltip<T>;
   sortable?: boolean;
   className?: string;
   headerClassName?: string;
@@ -116,4 +149,12 @@ export type DataTableProps<T> = {
    * e.g. `"#EEEEEE"` for light grey product offer tables.
    */
   headerBackground?: string;
+
+  /**
+   * Returns one or more `<tr>` nodes inserted after the parent when expanded.
+   * Pair with `isRowExpanded`.
+   */
+  renderExpandedRows?: (ctx: { row: T; rowIndex: number }) => ReactNode;
+  /** Whether expanded rows for this parent are visible. */
+  isRowExpanded?: (row: T, rowIndex: number) => boolean;
 };

@@ -1,9 +1,12 @@
 export { DataTable } from "./DataTable";
 export { DataTableEmpty } from "./DataTableEmpty";
+export { DataTableInfoTip } from "./DataTableInfoTip";
 export { DataTableToolbar } from "./DataTableToolbar";
 export { DataTablePagination } from "./DataTablePagination";
 export type {
+  DataTableCellContext,
   DataTableColumn,
+  DataTableColumnTooltip,
   DataTableEmptyState,
   DataTableFeatures,
   DataTableFilter,

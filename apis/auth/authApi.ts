@@ -33,6 +33,8 @@ export type RegisterOrganiserRequest = {
   org_address2?: string;
   org_website?: string;
   org_logo?: string;
+  /** IANA timezone, e.g. "Asia/Kolkata" */
+  org_timezone: string;
 };
 
 export type RegisterOrganiserResponse = {
@@ -94,6 +96,7 @@ export type AboutMeOrganisation = {
   name?: string | null;
   logo?: string | null;
   profile_image?: string | null;
+  timezone?: string | null;
 };
 
 export type AboutMeUser = AuthUser & {
@@ -105,6 +108,8 @@ export type AboutMeUser = AuthUser & {
   permissions?: PermissionMap;
   /** Flat organisation name when API does not nest `organisation`. */
   organisation_name?: string | null;
+  /** IANA timezone for the organisation, e.g. "Europe/London". */
+  organisation_timezone?: string | null;
   organisation?: AboutMeOrganisation | null;
 };
 

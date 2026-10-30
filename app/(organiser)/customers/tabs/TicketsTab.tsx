@@ -1,6 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  customerProductAmount,
+  customerProductLabel,
+  customerProductOrderId,
+  customerProductQuantity,
+  customerProductsPagination,
+  customerProductTicketId,
+  customerProductTicketStatus,
+  normalizeCustomerProducts,
+  useGetCustomerProductsQuery,
+  type CustomerProduct,
+} from "@/apis/organisation/customersApi";
 import {
   ActionMenu,
   DataTable,
@@ -8,197 +20,142 @@ import {
   type ActionMenuItem,
   type DataTableColumn,
 } from "@/components/common";
-import { ExportButton, MonthFilter } from "../../events/tabs/TabControls";
+import { formatDateTime } from "@/lib/events/formatDateTime";
+import { useDebouncedValue } from "@/lib/hooks/useDebouncedValue";
+import { useOrganisationTimezone } from "@/lib/organisation/useOrganisationTimezone";
+import {
+  DateRangeFilter,
+  ExportButton,
+} from "../../events/tabs/TabControls";
 
-type CustomerProduct = {
-  id: string;
-  product: string;
-  orderId: string;
-  offer: string;
-  amount: string;
-  event: string;
-  status: string;
-  date: string;
-  month: string;
+type TicketsTabProps = {
+  customerId: number;
 };
 
-const customerProducts: CustomerProduct[] = [
-  {
-    id: "#TCK-4821",
-    product: "Adult GA",
-    orderId: "#ORD-4821",
-    offer: "Late",
-    amount: "£18.00",
-    event: "The Closing Party",
-    status: "paid",
-    date: "Jul 1, 2026, 10:00 AM",
-    month: "2026-07",
-  },
-  {
-    id: "#TCK-4822",
-    product: "VIP",
-    orderId: "#ORD-4819",
-    offer: "General",
-    amount: "£25.00",
-    event: "Comedy Nights",
-    status: "paid",
-    date: "Jul 1, 2026, 10:00 AM",
-    month: "2026-07",
-  },
-  {
-    id: "#TCK-4823",
-    product: "VIP",
-    orderId: "#ORD-4806",
-    offer: "General",
-    amount: "£25.00",
-    event: "Summer Party",
-    status: "paid",
-    date: "Jul 1, 2026, 10:00 AM",
-    month: "2026-07",
-  },
-  {
-    id: "#TCK-4824",
-    product: "VIP",
-    orderId: "#ORD-4798",
-    offer: "General",
-    amount: "£25.00",
-    event: "Summer Party",
-    status: "refunded",
-    date: "Jul 1, 2026, 10:00 AM",
-    month: "2026-07",
-  },
-  {
-    id: "#TCK-4788",
-    product: "Adult GA",
-    orderId: "#ORD-4782",
-    offer: "General",
-    amount: "£9.00",
-    event: "Saturday Social",
-    status: "paid",
-    date: "Jun 18, 2026, 09:12 AM",
-    month: "2026-06",
-  },
-  {
-    id: "#TCK-4789",
-    product: "Adult GA",
-    orderId: "#ORD-4782",
-    offer: "General",
-    amount: "£9.00",
-    event: "Saturday Social",
-    status: "paid",
-    date: "Jun 18, 2026, 09:12 AM",
-    month: "2026-06",
-  },
-];
-
-function TicketQr() {
-  const size = 21;
-  const finder = (row: number, column: number) => {
-    const corners = [
-      [0, 0],
-      [0, 14],
-      [14, 0],
-    ];
-    return corners.some(([top, left]) => {
-      const inside = row >= top && row < top + 7 && column >= left && column < left + 7;
-      if (!inside) return false;
-      const edge = row === top || row === top + 6 || column === left || column === left + 6;
-      const center = row >= top + 2 && row <= top + 4 && column >= left + 2 && column <= left + 4;
-      return edge || center;
-    });
-  };
-  const modules = Array.from({ length: size }, (_, row) =>
-    Array.from({ length: size }, (_, column) => {
-      if (finder(row, column)) return true;
-      if ((row < 7 && column < 7) || (row < 7 && column > 13) || (row > 13 && column < 7)) {
-        return false;
-      }
-      return (row * 7 + column * 11 + row * column) % 5 < 2;
-    }),
-  );
-
-  return (
-    <svg
-      role="img"
-      aria-label="Ticket QR code"
-      viewBox={`0 0 ${size} ${size}`}
-      className="h-9 w-9 bg-white"
-      shapeRendering="crispEdges"
-    >
-      <rect width={size} height={size} fill="white" />
-      {modules.flatMap((row, rowIndex) =>
-        row.map((filled, columnIndex) =>
-          filled ? (
-            <rect
-              key={`${rowIndex}-${columnIndex}`}
-              x={columnIndex}
-              y={rowIndex}
-              width="1"
-              height="1"
-              fill="black"
-            />
-          ) : null,
-        ),
-      )}
-    </svg>
-  );
-}
-
-export default function TicketsTab() {
+export default function TicketsTab({ customerId }: TicketsTabProps) {
+  const organisationTimezone = useOrganisationTimezone();
   const [search, setSearch] = useState("");
-  const [eventFilter, setEventFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [month, setMonth] = useState("2026-06");
+  const [searchFrom, setSearchFrom] = useState("");
+  const [searchTo, setSearchTo] = useState("");
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [openActionId, setOpenActionId] = useState<number | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      customerProducts.filter(
-        (item) =>
-          `${item.id} ${item.product} ${item.orderId} ${item.event}`
-            .toLowerCase()
-            .includes(search.trim().toLowerCase()) &&
-          (eventFilter === "all" || item.event === eventFilter) &&
-          (statusFilter === "all" || item.status === statusFilter) &&
-          (!month || item.month === month),
-      ),
-    [search, eventFilter, statusFilter, month],
+  const debouncedSearch = useDebouncedValue(search, 400);
+
+  function formatProductDateTime(value: string | null | undefined) {
+    return formatDateTime(value, {
+      withAt: false,
+      includeYear: true,
+      emptyLabel: "—",
+      timeZone: organisationTimezone,
+    });
+  }
+
+  useEffect(() => {
+    setCursor(undefined);
+    setPage(1);
+  }, [debouncedSearch, statusFilter, searchFrom, searchTo, pageSize]);
+
+  const { data, isLoading, isFetching, isError } = useGetCustomerProductsQuery({
+    customerId,
+    search: debouncedSearch.trim(),
+    status: statusFilter === "all" ? "" : statusFilter,
+    search_from: searchFrom || undefined,
+    search_to: searchTo || undefined,
+    per_page: pageSize,
+    cursor,
+  });
+
+  const products = useMemo(
+    () => normalizeCustomerProducts(data?.data),
+    [data?.data],
   );
 
-  const paged = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  const pagination = customerProductsPagination(data?.data);
+  const canGoNext =
+    Boolean(pagination?.next_cursor) || Boolean(pagination?.has_more);
+  const paginationTotal =
+    pagination?.total != null
+      ? pagination.total
+      : canGoNext
+        ? page * pageSize + 1
+        : (page - 1) * pageSize + products.length;
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage > page && pagination?.next_cursor) {
+      setCursor(pagination.next_cursor);
+      setPage(nextPage);
+      return;
+    }
+
+    if (nextPage < page && pagination?.prev_cursor) {
+      setCursor(pagination.prev_cursor);
+      setPage(nextPage);
+    }
+  }
 
   const actions = useMemo<ActionMenuItem<CustomerProduct>[]>(
     () => [
-      { key: "view", label: "View ticket", onClick: () => setOpenActionId(null) },
-      { key: "resend", label: "Resend ticket email", onClick: () => setOpenActionId(null) },
+      {
+        key: "view",
+        label: "View product",
+        onClick: () => setOpenActionId(null),
+      },
     ],
     [],
   );
 
   const columns = useMemo<DataTableColumn<CustomerProduct>[]>(
     () => [
-      { id: "id", header: "Ticket ID", accessorKey: "id" },
-      { id: "product", header: "Product", accessorKey: "product" },
-      { id: "orderId", header: "Order ID", accessorKey: "orderId" },
-      { id: "offer", header: "Offer", accessorKey: "offer" },
-      { id: "amount", header: "Amount", accessorKey: "amount" },
-      { id: "event", header: "Event", accessorKey: "event" },
       {
-        id: "qr",
-        header: "QR code",
-        cell: () => <TicketQr />,
+        id: "ticketId",
+        header: "Ticket ID",
+        cell: ({ row }) => customerProductTicketId(row),
+      },
+      {
+        id: "orderId",
+        header: "Order ID",
+        cell: ({ row }) => customerProductOrderId(row),
+      },
+      {
+        id: "event",
+        header: "Event",
+        cell: ({ row }) => row.event_name?.trim() || "—",
+      },
+      {
+        id: "product",
+        header: "Product",
+        cell: ({ row }) => customerProductLabel(row),
+      },
+      {
+        id: "quantity",
+        header: "Quantity",
+        cell: ({ row }) => customerProductQuantity(row),
+      },
+      {
+        id: "totalPrice",
+        header: "Total price",
+        cell: ({ row }) => customerProductAmount(row),
       },
       {
         id: "status",
         header: "Ticket status",
-        cell: ({ row }) => <StatusBadge status={row.status} className="datatable-status" />,
+        cell: ({ row }) => (
+          <StatusBadge
+            status={customerProductTicketStatus(row)}
+            className="datatable-status"
+          />
+        ),
       },
-      { id: "date", header: "Date & time", accessorKey: "date" },
+      {
+        id: "date",
+        header: "Date & time",
+        cell: ({ row }) =>
+          formatProductDateTime(row.paid_at || row.created_at),
+      },
       {
         id: "actions",
         header: "Action",
@@ -209,12 +166,12 @@ export default function TicketsTab() {
             actions={actions}
             open={openActionId === row.id}
             onOpenChange={(next) => setOpenActionId(next ? row.id : null)}
-            ariaLabel={`Actions for ${row.id}`}
+            ariaLabel={`Actions for ${customerProductTicketId(row)}`}
           />
         ),
       },
     ],
-    [actions, openActionId],
+    [actions, openActionId, organisationTimezone],
   );
 
   return (
@@ -225,30 +182,30 @@ export default function TicketsTab() {
           fileName="customer-products"
           headers={[
             "Ticket ID",
-            "Product",
             "Order ID",
-            "Offer",
-            "Amount",
             "Event",
-            "Status",
-            "Date",
+            "Product",
+            "Quantity",
+            "Total price",
+            "Ticket status",
+            "Date & time",
           ]}
-          rows={filtered.map((item) => [
-            item.id,
-            item.product,
-            item.orderId,
-            item.offer,
-            item.amount,
-            item.event,
-            item.status,
-            item.date,
+          rows={products.map((item) => [
+            customerProductTicketId(item),
+            customerProductOrderId(item),
+            item.event_name?.trim() || "—",
+            customerProductLabel(item),
+            customerProductQuantity(item),
+            customerProductAmount(item),
+            customerProductTicketStatus(item),
+            formatProductDateTime(item.paid_at || item.created_at),
           ])}
         />
       </div>
 
       <DataTable
         columns={columns}
-        data={paged}
+        data={products}
         getRowId={(row) => row.id}
         features={{
           search: true,
@@ -258,58 +215,41 @@ export default function TicketsTab() {
         }}
         search={{
           value: search,
-          onChange: (value) => {
-            setSearch(value);
-            setPage(1);
-          },
+          onChange: setSearch,
           placeholder: "Search..",
         }}
         filters={[
-          {
-            key: "event",
-            label: "Event",
-            type: "select",
-            value: eventFilter,
-            options: [
-              { value: "all", label: "All events" },
-              ...Array.from(new Set(customerProducts.map((item) => item.event))).map((event) => ({
-                value: event,
-                label: event,
-              })),
-            ],
-          },
           {
             key: "status",
             label: "Status",
             type: "select",
             value: statusFilter,
             options: [
-              { value: "all", label: "All statuses" },
+              { value: "all", label: "All Status" },
               { value: "paid", label: "Paid" },
+              { value: "pending", label: "Pending" },
+              { value: "partially_refunded", label: "Partially refunded" },
               { value: "refunded", label: "Refunded" },
+              { value: "cancelled", label: "Cancelled" },
             ],
           },
         ]}
         onFilterChange={(key, value) => {
-          if (key === "event") setEventFilter(value);
           if (key === "status") setStatusFilter(value);
-          setPage(1);
         }}
         toolbarExtra={
-          <MonthFilter
-            value={month}
-            onChange={(value) => {
-              setMonth(value);
-              setPage(1);
-            }}
+          <DateRangeFilter
+            from={searchFrom}
+            to={searchTo}
+            onFromChange={setSearchFrom}
+            onToChange={setSearchTo}
           />
         }
-        pagination={{ page, pageSize, total: filtered.length }}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(1);
-        }}
+        pagination={{ page, pageSize, total: paginationTotal }}
+        onPageChange={handlePageChange}
+        onPageSizeChange={setPageSize}
+        isLoading={isLoading || isFetching}
+        isError={isError}
         bodyHeightClassName={false}
         emptyMessage="No products match these filters."
       />

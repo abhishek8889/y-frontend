@@ -29,8 +29,11 @@ export function Breadcrumb({
   const isDashboard = variant === "dashboard";
 
   const navClass = isDashboard
-    ? "flex items-center overflow-hidden text-[12px] font-normal uppercase leading-none tracking-[0.04em] text-black"
+    ? "dashboard-breadcrumb flex items-center overflow-hidden text-[12px] font-normal uppercase leading-none tracking-[0.04em] text-black"
     : "public-bar flex items-center overflow-hidden border-b border-black bg-white px-4 text-[10px] uppercase tracking-[0.04em] text-black sm:px-5 sm:text-[11px] sm:tracking-[0.08em]";
+
+  const crumbClass =
+    "breadcrumb-crumb truncate border-0 bg-transparent p-0 font-[inherit] text-[length:inherit] leading-[inherit] tracking-[inherit] text-inherit uppercase";
 
   return (
     <nav aria-label="Breadcrumb" className={`${navClass} ${className}`.trim()}>
@@ -45,7 +48,7 @@ export function Breadcrumb({
             >
               {index > 0 ? (
                 <span
-                  className={`shrink-0 text-black ${isDashboard ? "px-1.5" : "px-1.5 sm:px-2"}`}
+                  className={`breadcrumb-sep shrink-0 ${isDashboard ? "px-2" : "px-1.5 sm:px-2"}`}
                   aria-hidden="true"
                 >
                   /
@@ -55,19 +58,24 @@ export function Breadcrumb({
                 <button
                   type="button"
                   onClick={item.onClick}
-                  className="truncate text-black transition hover:opacity-60"
+                  className={`${crumbClass} breadcrumb-link cursor-pointer transition hover:opacity-60`}
                 >
                   {item.label}
                 </button>
               ) : item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="truncate text-black transition hover:opacity-60"
+                  className={`${crumbClass} breadcrumb-link transition hover:opacity-60`}
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className="truncate text-black">{item.label}</span>
+                <span
+                  className={`${crumbClass} breadcrumb-current`}
+                  aria-current={isLast ? "page" : undefined}
+                >
+                  {item.label}
+                </span>
               )}
             </li>
           );

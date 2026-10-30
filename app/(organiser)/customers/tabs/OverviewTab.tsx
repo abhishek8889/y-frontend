@@ -1,80 +1,214 @@
-import { Button } from "@/components/ui/Button";
-import type { Customer, CustomerAction } from "../customerTypes";
-import IconCard, { type IconName } from "@/components/ui/IconCard";
+"use client";
+
+import {
+  customerOrderAmount,
+  customerOrderEventNames,
+  customerOrderProductLines,
+  type CustomerOverviewActivity,
+  type CustomerOverviewData,
+  type CustomerOverviewUpcomingEvent,
+  type CustomerOrder,
+} from "@/apis/organisation/customersApi";
+import { formatDateTime } from "@/lib/events/formatDateTime";
+import { useOrganisationTimezone } from "@/lib/organisation/useOrganisationTimezone";
+
+type OverviewTabProps = {
+  overview: CustomerOverviewData | null | undefined;
+  isLoading?: boolean;
+  onOpenTab?: (tab: string) => void;
+};
+
+function activityDetails(item: CustomerOverviewActivity): string {
+  if (item.type === "refund" && item.refund) {
+    const amount = item.refund.amount?.trim();
+    const orderId = item.refund.order_unique_id?.trim();
+    const parts = [
+      item.description?.trim() || item.refund.unique_id?.trim(),
+      amount ? `£${amount}` : null,
+      orderId ? `Order #${orderId}` : null,
+    ].filter(Boolean);
+    return parts.join(" · ") || "—";
+  }
+
+  if (item.type === "order" && item.order) {
+    const amount = item.order.total_amount?.trim();
+    return [
+      item.description?.trim() || item.order.unique_id?.trim(),
+      amount ? `£${amount}` : null,
+      item.order.status?.trim(),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  return item.description?.trim() || "—";
+}
+
+function formatEventDate(
+  event: CustomerOverviewUpcomingEvent,
+  organisationTimezone: string,
+) {
+  return formatDateTime(event.starts_at, {
+    includeYear: true,
+    emptyLabel: "—",
+    timeZone: event.timezone || organisationTimezone,
+  });
+}
 
 export default function OverviewTab({
-  customer,
-  onAction,
-}: {
-  customer: Customer;
-  onAction: (action: CustomerAction) => void;
-}) {
-  const fullName = `${customer.firstName} ${customer.lastName}`;
+  overview,
+  isLoading,
+  onOpenTab,
+}: OverviewTabProps) {
+  const organisationTimezone = useOrganisationTimezone();
+
+  function formatWhen(value: string | null | undefined) {
+    return formatDateTime(value, {
+      withAt: true,
+      includeYear: true,
+      emptyLabel: "—",
+      timeZone: organisationTimezone,
+    });
+  }
+
+  const recentActivity = overview?.recent_activity ?? [];
+  const recentOrders = overview?.recent_orders ?? [];
+  const upcomingEvents = overview?.upcoming_events ?? [];
+
+  if (isLoading && !overview) {
+    return (
+      <div className="customer-overview" role="tabpanel" aria-label="Overview">
+        <p className="customer-panel-empty">Loading overview…</p>
+      </div>
+    );
+  }
 
   return (
-    <div role="tabpanel" className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(230px,0.82fr)]">
-      <div className="space-y-4">
-        <section className="border border-black p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[16px] font-bold uppercase text-black">Contact information</h2>
-            <Button type="button" className="h-7 border border-black cursor-pointer px-3 rounded text-[14px] text-black hover:bg-black hover:text-white">Edit</Button>
-          </div>
-          <dl className="mt-2 divide-y divide-black/20 text-[14px]">
-            {[
-              ["Full name", fullName],
-              ["Email", customer.email],
-              ["Phone", customer.phone || "-"],
-              ["Customer ID", `CUST-${String(customer.id).slice(-6)}`],
-              ["Date joined", "12 Jan 2024"],
-              ["Location", "Birmingham, UK"],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4 py-2">
-                <dt>{label}</dt><dd className="text-right">{value}</dd>
-              </div>
+    <div className="customer-overview" role="tabpanel" aria-label="Overview">
+      <section className="customer-panel" aria-label="Recent activity">
+        <div className="customer-panel-header">
+          <h2 className="customer-panel-title">Recent activity</h2>
+          <button
+            type="button"
+            className="customer-panel-link"
+            onClick={() => onOpenTab?.("Activity")}
+          >
+            View all →
+          </button>
+        </div>
+
+        {recentActivity.length ? (
+          <ul className="customer-overview-list">
+            {recentActivity.map((item, index) => (
+              <li
+                key={`${item.type}-${item.occurred_at}-${index}`}
+                className="customer-overview-list-item"
+              >
+                <div className="customer-overview-list-main">
+                  <p className="customer-overview-list-title">
+                    {item.title?.trim() || "Activity"}
+                  </p>
+                  <p className="customer-overview-list-meta">
+                    {activityDetails(item)}
+                  </p>
+                </div>
+                <p className="customer-overview-list-side">
+                  {formatWhen(item.occurred_at)}
+                </p>
+              </li>
             ))}
-          </dl>
-        </section>
-        <div className="grid gap-4 md:grid-cols-2">
-          <section className="border border-black p-6">
-            <div className="flex justify-between gap-3">
-              <h2 className="text-[16px] font-bold uppercase">Upcoming event</h2>
-              <span className="text-[14px] font-bold uppercase">View all tickets →</span>
-            </div>
-            <p className="mt-8 text-[12px] text-black/55">No upcoming events.</p>
-          </section>
-          <section className="border border-black p-6">
-            <div className="flex justify-between gap-3">
-              <h2 className="text-[16px] font-bold uppercase">Past events</h2>
-              <span className="text-[14px] font-bold uppercase">View all →</span>
-            </div>
-            <p className="mt-8 text-[12px] text-black/55">No past events.</p>
-          </section>
-        </div>
-      </div>
-      <aside className="h-fit border border-black p-6">
-        <h2 className="text-[16px] font-bold uppercase">Actions</h2>
-        <div className="mt-4 space-y-2">
-          {([
-            { label: "Send message", action: "message", icon: "send-message-icon" },
-            { label: "View orders", icon: "view-orders-icon" },
-            { label: "View tickets", icon: "view-tickets-icon" },
-            { label: "Issue complimentary ticket", action: "ticket", icon: "issue-ticket-icon" },
-            { label: "Suspend account", action: "suspend", icon: "suspend-account-icon" },
-          ] satisfies { label: string; action?: CustomerAction; icon: IconName }[]).map(({ label, action, icon }) => (
+          </ul>
+        ) : (
+          <p className="customer-panel-empty">No recent activity.</p>
+        )}
+      </section>
+
+      <div className="customer-events-grid">
+        <section className="customer-panel" aria-label="Recent order">
+          <div className="customer-panel-header">
+            <h2 className="customer-panel-title">Recent order</h2>
             <button
-              key={label}
               type="button"
-              onClick={() => {
-                if (action) onAction(action);
-              }}
-              className="flex min-h-[36px] gap-[12px] w-full items-center cursor-pointer border border-[#DFE3E8] rounded-[6px] px-2 text-left text-[14px] hover:bg-black/5"
+              className="customer-panel-link"
+              onClick={() => onOpenTab?.("Orders")}
             >
-              <IconCard name={icon} className="mr-2" />
-              {label}
+              View all →
             </button>
-          ))}
-        </div>
-      </aside>
+          </div>
+
+          {recentOrders.length ? (
+            <ul className="customer-overview-list">
+              {recentOrders.map((order: CustomerOrder) => {
+                const products = customerOrderProductLines(order);
+                return (
+                  <li
+                    key={order.id}
+                    className="customer-overview-list-item"
+                  >
+                    <div className="customer-overview-list-main">
+                      <p className="customer-overview-list-title">
+                        #{order.unique_id}
+                      </p>
+                      <p className="customer-overview-list-meta">
+                        {[
+                          customerOrderEventNames(order),
+                          products[0],
+                          products.length > 1
+                            ? `+${products.length - 1}`
+                            : null,
+                          customerOrderAmount(order),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                    <p className="customer-overview-list-side">
+                      {formatWhen(order.paid_at || order.created_at)}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="customer-panel-empty">No recent orders.</p>
+          )}
+        </section>
+
+        <section className="customer-panel" aria-label="Upcoming event">
+          <div className="customer-panel-header">
+            <h2 className="customer-panel-title">Upcoming event</h2>
+            <button
+              type="button"
+              className="customer-panel-link"
+              onClick={() => onOpenTab?.("Products")}
+            >
+              View all tickets →
+            </button>
+          </div>
+
+          {upcomingEvents.length ? (
+            <ul className="customer-overview-list">
+              {upcomingEvents.map((event) => (
+                <li key={event.id} className="customer-overview-list-item">
+                  <div className="customer-overview-list-main">
+                    <p className="customer-overview-list-title">
+                      {event.name?.trim() || "—"}
+                    </p>
+                    <p className="customer-overview-list-meta">
+                      {event.venue?.name?.trim() || "—"}
+                    </p>
+                  </div>
+                  <p className="customer-overview-list-side">
+                    {formatEventDate(event, organisationTimezone)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="customer-panel-empty">No upcoming events.</p>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

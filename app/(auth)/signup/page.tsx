@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ClipboardEvent,
@@ -15,6 +16,10 @@ import {
   useVerifyOrganiserEmailMutation,
   type RegisterOrganiserRequest,
 } from "@/apis/auth/authApi";
+import {
+  timezoneSearchKeywords,
+  useGetPublicTimezonesQuery,
+} from "@/apis/public/timezonesApi";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { LOGIN_COUNTRY_CODES } from "@/components/public/PublicLoginForm";
 import IconCard, {
@@ -26,6 +31,7 @@ import IconCard, {
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
 import { resolvePostLoginUrl, setAuthSession } from "@/lib/api/authStorage";
+import { getBrowserTimeZone } from "@/lib/organisation/dashboardTimezone";
 import { appToast } from "@/lib/ui/toast";
 
 const countryOptions = [
@@ -67,6 +73,7 @@ type Step2Values = {
   orgPostalCode: string;
   orgWebsite: string;
   orgLogo: string;
+  orgTimezone: string;
 };
 
 const emptyStep1: Step1Values = {
@@ -90,6 +97,7 @@ const emptyStep2: Step2Values = {
   orgPostalCode: "",
   orgWebsite: "",
   orgLogo: "",
+  orgTimezone: "",
 };
 
 function resolveCountryParts(phone: string, countryName: string) {
@@ -136,6 +144,7 @@ function buildRegisterPayload(
     org_city: step2.orgCity.trim(),
     org_address1: step2.orgAddress1.trim(),
     org_postal_code: step2.orgPostalCode.trim(),
+    org_timezone: step2.orgTimezone.trim() || getBrowserTimeZone(),
   };
 
   const address2 = step2.orgAddress2.trim();
@@ -263,6 +272,8 @@ function LogoPlaceholder() {
 export default function SignupPage() {
   const [registerOrganiser, { isLoading: isRegistering }] = useRegisterOrganiserMutation();
   const [verifyOrganiserEmail, { isLoading: isVerifying }] = useVerifyOrganiserEmailMutation();
+  const { data: timezonesData, isLoading: isLoadingTimezones } =
+    useGetPublicTimezonesQuery();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [step1, setStep1] = useState<Step1Values>(emptyStep1);
@@ -275,10 +286,42 @@ export default function SignupPage() {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
+    setStep2((current) =>
+      current.orgTimezone
+        ? current
+        : { ...current, orgTimezone: getBrowserTimeZone() },
+    );
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
     };
   }, [logoPreviewUrl]);
+
+  const timezoneOptions = useMemo(() => {
+    const items = timezonesData?.data ?? [];
+    const options = items.map((item) => ({
+      value: item.timezone,
+      label: item.country
+        ? `${item.timezone} (${item.country})`
+        : item.timezone,
+      keywords: timezoneSearchKeywords(item),
+    }));
+
+    if (
+      step2.orgTimezone &&
+      !options.some((option) => option.value === step2.orgTimezone)
+    ) {
+      options.unshift({
+        value: step2.orgTimezone,
+        label: step2.orgTimezone,
+        keywords: step2.orgTimezone.toLowerCase(),
+      });
+    }
+
+    return options;
+  }, [timezonesData?.data, step2.orgTimezone]);
 
   const editableOtpIndex = (() => {
     const firstEmpty = verificationCode.findIndex((digit) => !digit);
@@ -343,6 +386,7 @@ export default function SignupPage() {
       orgEmail: step1.email.trim(),
       orgCountry: step1.country,
       orgPhone: step1.phone,
+      orgTimezone: current.orgTimezone || getBrowserTimeZone(),
     }));
     setStep(2);
   };
@@ -614,6 +658,20 @@ export default function SignupPage() {
               required
             />
 
+            <SelectField
+              label="Organisation Timezone"
+              name="orgTimezone"
+              value={step2.orgTimezone}
+              onChange={(event) => updateStep2("orgTimezone", event.target.value)}
+              options={timezoneOptions}
+              searchable
+              searchPlaceholder="Search timezone or country…"
+              placeholder={
+                isLoadingTimezones ? "Loading timezones..." : "Select timezone"
+              }
+              required
+            />
+
             <PhoneField
               id="organisation-phone"
               label="Organisation Phone"
@@ -767,7 +825,7 @@ export default function SignupPage() {
       </AuthPage>
 
       {isVerificationOpen ? (
-        <div className="auth-site auth-dialog-overlay">
+        <div className="auth-dialog-overlay">
           <div
             role="dialog"
             aria-modal="true"

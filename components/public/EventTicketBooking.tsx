@@ -10,6 +10,7 @@ import {
   type PublicEventDetails,
   type PublicEventTicket,
 } from "@/apis/public/publicEventsApi";
+import { SideDrawer } from "@/components/common";
 import { SelectField } from "@/components/ui/SelectField";
 import { InputField } from "@/components/ui/InputField";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
@@ -74,6 +75,17 @@ function QuantityStepper({
       >
         +
       </button>
+    </div>
+  );
+}
+
+function PaymentDrawerLogo() {
+  return (
+    <div className="side-drawer-logo" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M3 10h18" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
     </div>
   );
 }
@@ -236,17 +248,16 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
   async function handleBookTicket() {
     if (!lines.length) return;
 
-    if (isPaymentOpen) {
-      setIsPaymentOpen(false);
-      return;
-    }
-
     if (!getAuthToken()) {
       setIsLoginOpen(true);
       return;
     }
 
     await beginCheckout();
+  }
+
+  function closePayment() {
+    setIsPaymentOpen(false);
   }
 
   function handleLoginSuccess() {
@@ -397,51 +408,68 @@ export function EventTicketBooking({ event, tickets, stripePromise }: EventTicke
         </>
       ) : null}
 
-      {isPaymentOpen ? (
-        <div className="mt-2">
-          {startBookingState.isLoading ? (
-            <p role="status" className="border-y border-black/20 py-4 text-center text-[13px] text-black/60">
-              Preparing secure checkout...
-            </p>
-          ) : paymentError ? (
-            <p role="alert" className="border-y border-[#d92d20]/40 py-4 text-[13px] leading-5 text-[#b42318]">
-              {paymentError}
-            </p>
-          ) : paymentClientSecret && stripePromise ? (
-            <Elements
-              key={paymentClientSecret}
-              stripe={stripePromise}
-              options={{
-                clientSecret: paymentClientSecret,
-                appearance: {
-                  theme: "stripe",
-                  variables: { colorPrimary: "#000000", borderRadius: "3px" },
-                },
-              }}
-            >
-              <PaymentForm
-                clientSecret={paymentClientSecret}
-                eventTitle={event.name}
-                amount={paidTotalCents}
-                summaryLines={lines.map((line) => ({
-                  label: `${line.option.ticketName} · ${line.option.offerName}`,
-                  qty: line.qty,
-                }))}
-                onSuccess={handlePaymentSuccess}
-              />
-            </Elements>
-          ) : null}
-        </div>
-      ) : null}
-
       <button
         type="button"
         disabled={!lines.length || startBookingState.isLoading}
         onClick={() => void handleBookTicket()}
-        className="mt-4 h-[44px] w-full rounded-[3px] bg-black text-[12px] font-medium uppercase text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:bg-black/35"
+        className="mt-4 form-footer-btn form-footer-btn-primary"
       >
-        {isPaymentOpen ? "Close payment" : "Book ticket"}
+        {startBookingState.isLoading ? "Preparing checkout..." : "Book ticket"}
       </button>
+
+      <SideDrawer
+        isOpen={isPaymentOpen}
+        onClose={closePayment}
+        title="Payment"
+        subtitle={event.name}
+        logo={<PaymentDrawerLogo />}
+        showFooter
+        showSubmitButton={false}
+        cancelLabel="Close payment"
+        onCancel={closePayment}
+        isSubmitting={startBookingState.isLoading}
+      >
+        {startBookingState.isLoading ? (
+          <p role="status" className="payment-form__status">
+            Preparing secure checkout...
+          </p>
+        ) : paymentError ? (
+          <p role="alert" className="payment-form__error">
+            {paymentError}
+          </p>
+        ) : paymentClientSecret && stripePromise ? (
+          <Elements
+            key={paymentClientSecret}
+            stripe={stripePromise}
+            options={{
+              clientSecret: paymentClientSecret,
+              appearance: {
+                theme: "stripe",
+                variables: {
+                  colorPrimary: "#000000",
+                  borderRadius: "4px",
+                  fontFamily: "Univers, Arial, sans-serif",
+                },
+              },
+            }}
+          >
+            <PaymentForm
+              clientSecret={paymentClientSecret}
+              eventTitle={event.name}
+              amount={paidTotalCents}
+              summaryLines={lines.map((line) => ({
+                label: `${line.option.ticketName} · ${line.option.offerName}`,
+                qty: line.qty,
+              }))}
+              onSuccess={handlePaymentSuccess}
+            />
+          </Elements>
+        ) : (
+          <p role="status" className="payment-form__status">
+            Preparing secure checkout...
+          </p>
+        )}
+      </SideDrawer>
 
       <PublicLoginModal
         isOpen={isLoginOpen}

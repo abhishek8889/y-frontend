@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { useGetAboutMeQuery } from "@/apis/auth/authApi";
+import { HeaderTimezoneClock } from "@/components/organiser/HeaderTimezoneClock";
 import IconCard, { CHEVRON_DOWN_ICON, NOTIFICATION_ICON } from "@/components/ui/IconCard";
 import hednesfordTownLogo from "@/assets/Hednesford-town.png";
 
 type DashboardHeaderProps = {
   /** Optional override; defaults to organisation name from about-me. */
   title?: string;
-  /** Optional override; defaults to owner first name from about-me. */
+  /** Optional override; defaults to owner name from about-me. */
   userName?: string;
 };
 
@@ -23,12 +24,16 @@ function resolveOrganisationName(user: {
   return "";
 }
 
-function resolveOwnerFirstName(user: {
+function resolveOwnerName(user: {
   first_name?: string | null;
+  last_name?: string | null;
   email?: string | null;
 } | null | undefined) {
-  const first = user?.first_name?.trim();
-  if (first) return first;
+  const name = [user?.first_name, user?.last_name]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (name) return name;
   return user?.email?.trim() || "";
 }
 
@@ -37,13 +42,15 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
   const user = data?.data?.user;
 
   const organisationName = title?.trim() || resolveOrganisationName(user);
-  const ownerName = userName?.trim() || resolveOwnerFirstName(user);
-  const organisationLogo = user?.organisation?.logo || user?.organisation?.profile_image || null;
-  const displayOrganisation = organisationName || (isLoading ? "" : "Organisation");
+  const ownerName = userName?.trim() || resolveOwnerName(user);
+  const organisationLogo =
+    user?.organisation?.logo || user?.organisation?.profile_image || null;
+  const displayOrganisation =
+    organisationName || (isLoading ? "" : "Organisation");
   const displayOwner = ownerName || (isLoading ? "" : "Owner");
 
   return (
-    <header className="organiser-dashboard__header flex items-center justify-between border-b border-black bg-white px-5 md:px-8">
+    <header className="organiser-dashboard__header flex items-center justify-between gap-3 border-b border-black bg-white px-5 md:px-8">
       <div className="flex min-w-0 items-center gap-2">
         <div className="relative h-5 w-5 shrink-0 overflow-hidden">
           {organisationLogo ? (
@@ -66,24 +73,30 @@ export function DashboardHeader({ title, userName }: DashboardHeaderProps) {
         <span className="sidebar-title truncate">{displayOrganisation}</span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-5">
+      <div className="flex h-full shrink-0 items-center gap-3 md:gap-5">
+        <HeaderTimezoneClock />
+
         <button
           type="button"
           aria-label="Notifications"
-          className="relative flex h-7 w-7 cursor-pointer items-center justify-center text-black transition hover:opacity-80"
+          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center text-black transition hover:opacity-80"
         >
-          <IconCard name={NOTIFICATION_ICON} className="h-7 w-7" />
+          <IconCard name={NOTIFICATION_ICON} className="h-5 w-5" size={20} />
         </button>
 
         <button
           type="button"
-          className="flex cursor-pointer items-center gap-2.5 text-black"
+          className="inline-flex h-8 cursor-pointer items-center gap-2 text-black transition hover:opacity-80"
           aria-label="Account menu"
         >
-          <span className="max-w-[140px] truncate text-[14px] font-normal leading-5 text-black">
+          <span className="max-w-[160px] truncate text-[14px] font-normal leading-5 text-black">
             {displayOwner}
           </span>
-          <IconCard name={CHEVRON_DOWN_ICON} className="h-4 w-4 shrink-0" />
+          <IconCard
+            name={CHEVRON_DOWN_ICON}
+            className="h-3.5 w-3.5 shrink-0"
+            size={14}
+          />
         </button>
       </div>
     </header>

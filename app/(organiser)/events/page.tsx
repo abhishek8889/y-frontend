@@ -700,7 +700,11 @@ function EventsPageContent() {
                       </p>
                     </div>
                     <p className="event-detail-meta-block">
-                      <span className="event-detail-meta">{formatDateTime(activeEvent.starts_at)}</span>
+                      <span className="event-detail-meta">
+                        {formatDateTime(activeEvent.starts_at, {
+                          timeZone: activeEvent.timezone,
+                        })}
+                      </span>
                       {activeEvent.venue?.name ? (
                         <span className="event-detail-venue">
                           <span aria-hidden="true">•</span>
@@ -763,7 +767,12 @@ function EventsPageContent() {
                   {activeTab === "Orders" ? (
                     <OrdersTab eventId={activeEvent.id} eventTitle={activeEvent.name} />
                   ) : null}
-                  {activeTab === "Refunds" ? <RefundsTab eventTitle={activeEvent.name} /> : null}
+                  {activeTab === "Refunds" ? (
+                    <RefundsTab
+                      eventId={activeEvent.id}
+                      eventTitle={activeEvent.name}
+                    />
+                  ) : null}
                   {activeTab === "Attendees" ? (
                     <AttendeesTab eventTitle={activeEvent.name} />
                   ) : null}

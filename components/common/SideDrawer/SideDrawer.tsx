@@ -10,6 +10,7 @@ export function SideDrawer({
   title,
   subtitle,
   logo,
+  headerActions,
   children,
   showFooter = true,
   showCancelButton = true,
@@ -77,23 +78,28 @@ export function SideDrawer({
       >
         <header className="side-drawer-header">
           <div className="side-drawer-header-main">
-            {logo ? <div className="shrink-0">{logo}</div> : null}
-            <div className="min-w-0">
+            {logo ? <div className="side-drawer-logo-wrap">{logo}</div> : null}
+            <div className="side-drawer-heading">
               <h2 id="side-drawer-title" className="side-drawer-title">
                 {title}
               </h2>
-              {subtitle ? <p className="side-drawer-subtitle">{subtitle}</p> : null}
+              {subtitle ? <div className="side-drawer-subtitle">{subtitle}</div> : null}
             </div>
           </div>
 
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="side-drawer-close"
-          >
-            ×
-          </button>
+          <div className="side-drawer-header-end">
+            {headerActions ? (
+              <div className="side-drawer-header-actions">{headerActions}</div>
+            ) : null}
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="side-drawer-close"
+            >
+              ×
+            </button>
+          </div>
         </header>
 
         <div className="side-drawer-body">{children}</div>

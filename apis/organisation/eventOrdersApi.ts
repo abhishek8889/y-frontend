@@ -67,11 +67,89 @@ export type EventOrderListItem = {
   items?: EventOrderLineItem[];
 };
 
+export type EventOrderRefundPerson = {
+  id?: number;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+};
+
+export type EventOrderRefund = {
+  id: number;
+  unique_id: string;
+  order_id?: number;
+  payment_id?: number | null;
+  amount?: string | null;
+  formatted_amount?: string | null;
+  currency?: string | null;
+  reason?: string | null;
+  status?: string | null;
+  stripe_refund_id?: string | null;
+  requested_by?: number | null;
+  approved_by?: number | null;
+  failure_reason?: string | null;
+  refunded_at?: string | null;
+  customer_notified_at?: string | null;
+  created_at?: string | null;
+  payment?: {
+    id?: number;
+    provider?: string | null;
+    amount?: string | null;
+    currency?: string | null;
+    payment_intent_id?: string | null;
+  } | null;
+  requester?: EventOrderRefundPerson | null;
+  approver?: EventOrderRefundPerson | null;
+};
+
+/** Order row in the event refunds list (may contain multiple refunds). */
+export type EventRefundOrderItem = {
+  id: number;
+  unique_id: string;
+  status: string;
+  currency?: string | null;
+  currency_sign?: string | null;
+  total_amount?: string | null;
+  formatted_total?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  paid_at?: string | null;
+  created_at?: string | null;
+  total_refunded?: string | null;
+  formatted_total_refunded?: string | null;
+  refunds?: EventOrderRefund[];
+};
+
+export type EventRefundListParams = {
+  eventId: number | string;
+  search?: string;
+  per_page?: number;
+  cursor?: string;
+};
+
+export type EventRefundListResponse = {
+  success: boolean;
+  message: string;
+  data:
+    | EventRefundOrderItem[]
+    | {
+        items: EventRefundOrderItem[];
+        pagination?: {
+          per_page?: number;
+          next_cursor?: string | null;
+          prev_cursor?: string | null;
+          has_more?: boolean;
+        };
+      };
+};
+
 export type EventOrderDetails = {
   id: number;
   unique_id: string;
   status: string;
   sales_channel?: string | null;
+  request_origin?: string | null;
   currency?: string | null;
   currency_sign?: string | null;
   subtotal?: string | null;
@@ -79,6 +157,8 @@ export type EventOrderDetails = {
   platform_fee_amount?: string | null;
   total_amount?: string | null;
   formatted_total?: string | null;
+  total_refunded?: string | null;
+  formatted_total_refunded?: string | null;
   notes?: string | null;
   paid_at?: string | null;
   created_at?: string | null;
@@ -87,7 +167,10 @@ export type EventOrderDetails = {
     name?: string | null;
     email?: string | null;
     phone?: string | null;
+    country_code?: string | null;
     user_id?: number | null;
+    orders_count?: number | string | null;
+    customer_since?: string | null;
   } | null;
   created_by?: {
     id?: number;
@@ -106,9 +189,12 @@ export type EventOrderDetails = {
     external_reference_id?: string | null;
     payment_intent_id?: string | null;
     charge_id?: string | null;
+    card_brand?: string | null;
+    card_last4?: string | null;
     notes?: string | null;
     paid_at?: string | null;
   } | null;
+  refunds?: EventOrderRefund[];
   items?: EventOrderLineItem[];
 };
 
@@ -143,9 +229,29 @@ export type EventOrderDetailsResponse = {
   data: EventOrderDetails;
 };
 
+export type IssueOrderRefundRequest = {
+  orderId: number | string;
+  amount: string | number;
+  reason: string;
+};
+
+export type IssueOrderRefundResponse = {
+  success: boolean;
+  message: string;
+  data?: unknown;
+};
+
 export function normalizeEventOrderList(
   data: EventOrderListResponse["data"] | undefined,
 ): EventOrderListItem[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return Array.isArray(data.items) ? data.items : [];
+}
+
+export function normalizeEventRefundList(
+  data: EventRefundListResponse["data"] | undefined,
+): EventRefundOrderItem[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
   return Array.isArray(data.items) ? data.items : [];
@@ -230,8 +336,55 @@ export const eventOrdersApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { error: true });
       },
     }),
+    getEventRefunds: build.query<EventRefundListResponse, EventRefundListParams>({
+      query: ({ eventId, search, per_page, cursor }) => {
+        const params = new URLSearchParams();
+        if (search?.trim()) params.set("search", search.trim());
+        if (per_page != null) params.set("per_page", String(per_page));
+        if (cursor) params.set("cursor", cursor);
+
+        const query = params.toString();
+        return {
+          url: query
+            ? `organisation/event/${eventId}/refunds?${query}`
+            : `organisation/event/${eventId}/refunds`,
+          method: "GET",
+        };
+      },
+      providesTags: (_result, _error, arg) => [
+        { type: "EventRefunds", id: String(arg.eventId) },
+      ],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { error: true });
+      },
+    }),
+    issueOrderRefund: build.mutation<
+      IssueOrderRefundResponse,
+      IssueOrderRefundRequest
+    >({
+      query: ({ orderId, amount, reason }) => ({
+        url: `organisation/orders/${orderId}/issue-refund`,
+        method: "POST",
+        body: {
+          amount,
+          reason,
+        },
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "EventOrders", id: `detail-${arg.orderId}` },
+        { type: "EventOrders" },
+        { type: "EventRefunds" },
+      ],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withQueryToast(queryFulfilled, { success: true, error: true });
+      },
+    }),
   }),
 });
 
-export const { useGetEventOrdersQuery, useGetEventOrderDetailsQuery } =
-  eventOrdersApi;
+export const {
+  useGetEventOrdersQuery,
+  useGetEventOrderDetailsQuery,
+  useGetEventRefundsQuery,
+  useIssueOrderRefundMutation,
+} = eventOrdersApi;

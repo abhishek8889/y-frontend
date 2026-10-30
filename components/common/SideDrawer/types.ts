@@ -4,9 +4,11 @@ export type SideDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
 
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   logo?: ReactNode;
+  /** Optional actions rendered in the header before the close control. */
+  headerActions?: ReactNode;
 
   children: ReactNode;
 
@@ -21,8 +23,8 @@ export type SideDrawerProps = {
   onSubmit?: () => void;
   isSubmitting?: boolean;
 
-  /** Optional class on the drawer panel */
+  /** Optional class on the outer drawer root */
   className?: string;
-  /** Optional wider panel; default max-w-[560px] */
+  /** Optional wider/narrower panel; default max-width comes from CSS */
   panelClassName?: string;
 };

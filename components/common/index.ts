@@ -1,11 +1,14 @@
 export {
   DataTable,
   DataTableEmpty,
+  DataTableInfoTip,
   DataTableToolbar,
   DataTablePagination,
 } from "./DataTable";
 export type {
+  DataTableCellContext,
   DataTableColumn,
+  DataTableColumnTooltip,
   DataTableEmptyState,
   DataTableEmptyProps,
   DataTableFeatures,
@@ -33,6 +36,8 @@ export { AppToast } from "./AppToast";
 export type { AppToastVariant } from "./AppToast";
 
 export { StatusBadge } from "./StatusBadge";
+
+export { CopyValue } from "./CopyValue";
 
 export { Breadcrumb } from "./Breadcrumb";
 export type { BreadcrumbItem, BreadcrumbVariant } from "./Breadcrumb";
