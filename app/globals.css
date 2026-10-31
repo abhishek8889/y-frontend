@@ -1566,14 +1566,55 @@ input[type="password"]::placeholder {
   text-transform: uppercase;
 }
 
+.public-categories__slider {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 8px;
+}
+
+@media (min-width: 640px) {
+  .public-categories__slider {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+}
+
+.public-categories__arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #000;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.public-categories__arrow:hover:not(:disabled) {
+  opacity: 0.55;
+}
+
+.public-categories__arrow:disabled {
+  cursor: default;
+  opacity: 0.2;
+}
+
 .public-categories__list {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: nowrap;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  min-width: 0;
   margin: 0;
-  padding: 0 16px;
+  padding: 0;
   list-style: none;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1589,12 +1630,6 @@ input[type="password"]::placeholder {
 
 .public-categories__list > li {
   flex: 0 0 auto;
-}
-
-@media (min-width: 640px) {
-  .public-categories__list {
-    padding-inline: 24px;
-  }
 }
 
 .public-categories__chip {
