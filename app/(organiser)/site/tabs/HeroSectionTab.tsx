@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { InputField } from "@/components/ui/InputField";
 import { SelectField } from "@/components/ui/SelectField";
 
 type HeroAsset = {
+  id: string;
   name: string;
   url: string;
   file: File;
 };
 
 type BannerType = "image" | "video";
+
+const MAX_HERO_VIDEOS = 5;
 
 function usePreview(asset: HeroAsset | null) {
   useEffect(() => {
@@ -39,9 +42,48 @@ function ImagePlaceholder() {
   );
 }
 
+function ChevronLeft() {
+  return (
+    <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+      <path
+        d="M8.5 1.25 1.75 8l6.75 6.75"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronRight() {
+  return (
+    <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+      <path
+        d="M1.5 1.25 8.25 8 1.5 14.75"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function cloneAsset(asset: HeroAsset): HeroAsset {
+  return {
+    id: crypto.randomUUID(),
+    name: asset.name,
+    file: asset.file,
+    url: URL.createObjectURL(asset.file),
+  };
+}
+
 export default function HeroSectionTab() {
+  const uploadId = useId();
   const [bannerType, setBannerType] = useState<BannerType>("image");
-  const [video, setVideo] = useState<HeroAsset | null>(null);
+  const [videos, setVideos] = useState<HeroAsset[]>([]);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [image, setImage] = useState<HeroAsset | null>(null);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -49,7 +91,7 @@ export default function HeroSectionTab() {
   const [buttonUrl, setButtonUrl] = useState("");
   const [saved, setSaved] = useState({
     bannerType: "image" as BannerType,
-    video: null as HeroAsset | null,
+    videos: [] as HeroAsset[],
     image: null as HeroAsset | null,
     title: "",
     subtitle: "",
@@ -59,58 +101,44 @@ export default function HeroSectionTab() {
   const [errors, setErrors] = useState({ media: "", form: "" });
   const [notice, setNotice] = useState("");
 
-  usePreview(video);
   usePreview(image);
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>, type: BannerType) {
+  const videosRef = useRef(videos);
+  videosRef.current = videos;
+  useEffect(() => {
+    return () => {
+      for (const asset of videosRef.current) URL.revokeObjectURL(asset.url);
+    };
+  }, []);
+
+  const activeVideo = videos[activeVideoIndex] ?? null;
+  const canAddMoreVideos = videos.length < MAX_HERO_VIDEOS;
+
+  function revokeAsset(asset: HeroAsset | null | undefined) {
+    if (asset?.url) URL.revokeObjectURL(asset.url);
+  }
+
+  function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
-    const isVideo = type === "video";
-    const validFormat = isVideo
-      ? ["video/mp4", "video/quicktime"].includes(file.type) || /\.(mp4|mov)$/i.test(file.name)
-      : ["image/jpeg", "image/png"].includes(file.type) || /\.(jpe?g|png)$/i.test(file.name);
+    const validFormat =
+      ["image/jpeg", "image/png"].includes(file.type) || /\.(jpe?g|png)$/i.test(file.name);
     if (!validFormat) {
-      setErrors((current) => ({
-        ...current,
-        media: isVideo ? "Upload an MP4 or MOV video." : "Upload a JPG or PNG image.",
-      }));
+      setErrors((current) => ({ ...current, media: "Upload a JPG or PNG image." }));
       return;
     }
-    const maxSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setErrors((current) => ({
-        ...current,
-        media: `File must be ${isVideo ? "100" : "5"} MB or smaller.`,
-      }));
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((current) => ({ ...current, media: "File must be 5 MB or smaller." }));
       return;
     }
 
     const url = URL.createObjectURL(file);
-    if (isVideo) {
-      const element = document.createElement("video");
-      element.preload = "metadata";
-      element.onloadedmetadata = () => {
-        if (!Number.isFinite(element.duration) || element.duration >= 60) {
-          URL.revokeObjectURL(url);
-          setErrors((current) => ({ ...current, media: "Video must be shorter than 60 seconds." }));
-          return;
-        }
-        setVideo({ name: file.name, url, file });
-        setErrors((current) => ({ ...current, media: "" }));
-      };
-      element.onerror = () => {
-        URL.revokeObjectURL(url);
-        setErrors((current) => ({ ...current, media: "This video could not be read." }));
-      };
-      element.src = url;
-      return;
-    }
-
     const element = new Image();
     element.onload = () => {
-      setImage({ name: file.name, url, file });
+      revokeAsset(image);
+      setImage({ id: crypto.randomUUID(), name: file.name, url, file });
       setErrors((current) => ({ ...current, media: "" }));
     };
     element.onerror = () => {
@@ -118,6 +146,102 @@ export default function HeroSectionTab() {
       setErrors((current) => ({ ...current, media: "This image could not be read." }));
     };
     element.src = url;
+  }
+
+  function handleVideoUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+
+    const remaining = MAX_HERO_VIDEOS - videos.length;
+    if (remaining <= 0) {
+      setErrors((current) => ({
+        ...current,
+        media: `You can upload up to ${MAX_HERO_VIDEOS} hero videos.`,
+      }));
+      return;
+    }
+
+    const selected = files.slice(0, remaining);
+    if (files.length > remaining) {
+      setErrors((current) => ({
+        ...current,
+        media: `Only ${MAX_HERO_VIDEOS} videos are allowed. Extra files were skipped.`,
+      }));
+    } else {
+      setErrors((current) => ({ ...current, media: "" }));
+    }
+
+    void (async () => {
+      const accepted: HeroAsset[] = [];
+      for (const file of selected) {
+        const validFormat =
+          ["video/mp4", "video/quicktime"].includes(file.type) || /\.(mp4|mov)$/i.test(file.name);
+        if (!validFormat) {
+          setErrors((current) => ({ ...current, media: "Upload MP4 or MOV videos only." }));
+          continue;
+        }
+        if (file.size > 100 * 1024 * 1024) {
+          setErrors((current) => ({
+            ...current,
+            media: "Each video must be 100 MB or smaller.",
+          }));
+          continue;
+        }
+
+        const url = URL.createObjectURL(file);
+        const ok = await new Promise<boolean>((resolve) => {
+          const element = document.createElement("video");
+          element.preload = "metadata";
+          element.onloadedmetadata = () => {
+            if (!Number.isFinite(element.duration) || element.duration >= 60) {
+              URL.revokeObjectURL(url);
+              setErrors((current) => ({
+                ...current,
+                media: "Each video must be shorter than 60 seconds.",
+              }));
+              resolve(false);
+              return;
+            }
+            resolve(true);
+          };
+          element.onerror = () => {
+            URL.revokeObjectURL(url);
+            setErrors((current) => ({ ...current, media: "A video could not be read." }));
+            resolve(false);
+          };
+          element.src = url;
+        });
+
+        if (ok) {
+          accepted.push({ id: crypto.randomUUID(), name: file.name, url, file });
+        }
+      }
+
+      if (!accepted.length) return;
+      setVideos((current) => {
+        const next = [...current, ...accepted].slice(0, MAX_HERO_VIDEOS);
+        setActiveVideoIndex(Math.max(0, next.length - accepted.length));
+        return next;
+      });
+      setNotice("");
+    })();
+  }
+
+  function removeVideo(index: number) {
+    setVideos((current) => {
+      const target = current[index];
+      revokeAsset(target);
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
+      setActiveVideoIndex((active) => {
+        if (!next.length) return 0;
+        if (active > index) return active - 1;
+        if (active >= next.length) return next.length - 1;
+        return active;
+      });
+      return next;
+    });
+    setErrors((current) => ({ ...current, media: "" }));
   }
 
   function saveHero(event: FormEvent<HTMLFormElement>) {
@@ -144,14 +268,14 @@ export default function HeroSectionTab() {
       setErrors((current) => ({ ...current, media: "Upload a banner image." }));
       return;
     }
-    if (bannerType === "video" && !video) {
-      setErrors((current) => ({ ...current, media: "Upload a banner video." }));
+    if (bannerType === "video" && videos.length === 0) {
+      setErrors((current) => ({ ...current, media: "Upload at least one banner video." }));
       return;
     }
 
     const next = {
       bannerType,
-      video,
+      videos: videos.map((asset) => ({ ...asset })),
       image,
       title: title.trim(),
       subtitle: subtitle.trim(),
@@ -165,9 +289,13 @@ export default function HeroSectionTab() {
   }
 
   function cancelChanges() {
+    videos.forEach(revokeAsset);
+    revokeAsset(image);
+    const restoredVideos = saved.videos.map(cloneAsset);
     setBannerType(saved.bannerType);
-    setVideo(saved.video ? { ...saved.video, url: URL.createObjectURL(saved.video.file) } : null);
-    setImage(saved.image ? { ...saved.image, url: URL.createObjectURL(saved.image.file) } : null);
+    setVideos(restoredVideos);
+    setActiveVideoIndex(0);
+    setImage(saved.image ? cloneAsset(saved.image) : null);
     setTitle(saved.title);
     setSubtitle(saved.subtitle);
     setButtonLabel(saved.buttonLabel);
@@ -198,22 +326,109 @@ export default function HeroSectionTab() {
 
       {bannerType === "video" ? (
         <div className="site-upload-section">
-          <label htmlFor="hero-video-upload" className="site-upload-box">
+          {videos.length > 0 ? (
+            <div className="site-hero-video-slider" aria-label="Hero video slider">
+              <div className="site-hero-video-stage">
+                <button
+                  type="button"
+                  className="site-hero-video-arrow"
+                  aria-label="Previous video"
+                  disabled={videos.length < 2}
+                  onClick={() =>
+                    setActiveVideoIndex((index) => (index - 1 + videos.length) % videos.length)
+                  }
+                >
+                  <ChevronLeft />
+                </button>
+
+                <div className="site-hero-video-frame">
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video
+                    key={activeVideo?.id}
+                    src={activeVideo?.url}
+                    className="site-hero-video-preview"
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+                  <p className="site-hero-video-caption">
+                    {activeVideoIndex + 1} / {videos.length}
+                    {activeVideo ? ` · ${activeVideo.name}` : ""}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="site-hero-video-arrow"
+                  aria-label="Next video"
+                  disabled={videos.length < 2}
+                  onClick={() => setActiveVideoIndex((index) => (index + 1) % videos.length)}
+                >
+                  <ChevronRight />
+                </button>
+              </div>
+
+              <div className="site-hero-video-thumbs" role="list">
+                {videos.map((video, index) => (
+                  <div key={video.id} className="site-hero-video-thumb" role="listitem">
+                    <button
+                      type="button"
+                      className={[
+                        "site-hero-video-thumb-btn",
+                        index === activeVideoIndex ? "is-active" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => setActiveVideoIndex(index)}
+                      aria-label={`Show video ${index + 1}`}
+                      aria-current={index === activeVideoIndex ? "true" : undefined}
+                    >
+                      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                      <video src={video.url} muted playsInline preload="metadata" />
+                      <span>{index + 1}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="site-hero-video-remove"
+                      aria-label={`Remove video ${index + 1}`}
+                      onClick={() => removeVideo(index)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <label
+            htmlFor={uploadId}
+            className={[
+              "site-upload-box",
+              !canAddMoreVideos ? "pointer-events-none opacity-50" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <PlayIcon />
-            <span className="site-upload-title">{video ? video.name : "Add Banner Video"}</span>
+            <span className="site-upload-title">
+              {videos.length ? "Add another banner video" : "Add banner videos"}
+            </span>
             <span className="site-upload-hint form-upload-hint">
-              Add a quick video highlight for your site. MP4 or MOV,
+              Add multiple quick video highlights for your site. MP4 or MOV,
               <br className="hidden sm:block" />
-              max 100MB. Keep it under 60 seconds.
+              max 100MB each. Keep each under 60 seconds.
               <br />
-              1440 × 720 px preferred
+              Up to {MAX_HERO_VIDEOS} videos · 1440 × 720 px preferred
             </span>
             <input
-              id="hero-video-upload"
+              id={uploadId}
               type="file"
               accept=".mp4,.mov,video/mp4,video/quicktime"
               className="sr-only"
-              onChange={(event) => handleUpload(event, "video")}
+              multiple
+              disabled={!canAddMoreVideos}
+              onChange={handleVideoUpload}
             />
           </label>
         </div>
@@ -242,7 +457,7 @@ export default function HeroSectionTab() {
               type="file"
               accept=".jpg,.jpeg,.png,image/jpeg,image/png"
               className="sr-only"
-              onChange={(event) => handleUpload(event, "image")}
+              onChange={handleImageUpload}
             />
           </label>
         </div>

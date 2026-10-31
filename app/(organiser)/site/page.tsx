@@ -75,10 +75,7 @@ function SiteEmptyState({ onCreate }: { onCreate: () => void }) {
       </p>
       <div className="site-create-empty-action">
         <Button type="button" onClick={onCreate} className="page-primary-button-action">
-          <span aria-hidden className="text-[18px] leading-none">
-            +
-          </span>
-          Create New Site
+          Setup your site.
         </Button>
       </div>
     </section>

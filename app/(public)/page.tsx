@@ -13,7 +13,17 @@ import { HeroCtaButton } from "@/components/public/HeroCtaButton";
 import { PUBLIC_SEARCH_EVENT } from "@/components/public/PublicSiteHeader";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
-const HOME_HERO_VIDEO = "/landing/home-hero-2.mp4";
+const HOME_HERO_VIDEOS = [
+  {
+    url: "/landing/home-hero-4.mp4",
+    alt: "Guests dancing at a packed night-time event",
+  },
+  {
+    url: "/landing/home-hero-2.mp4",
+    alt: "A crowd enjoying a live concert beneath bright stage lights",
+  },
+] as const;
+
 const PAGE_SIZE = 10;
 
 function scrollToEvents() {
@@ -26,12 +36,20 @@ function scrollToEvents() {
 export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
   const scrollAfterSearch = useRef(false);
   const [extraEvents, setExtraEvents] = useState<PublicEventListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const loadMoreLock = useRef(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  function goHero(direction: -1 | 1) {
+    setHeroIndex((index) => {
+      const total = HOME_HERO_VIDEOS.length;
+      return (index + direction + total) % total;
+    });
+  }
 
   function runSearch(value: string) {
     const next = value.trim();
@@ -170,14 +188,62 @@ export default function HomePage() {
   return (
     <main className="home-page">
       <section aria-label="Discover live events" className="home-hero">
-        <MediaPlayer
-          media={{ url: HOME_HERO_VIDEO, media_type: "video" }}
-          alt="A crowd enjoying a live concert beneath bright stage lights"
-          active
-          showProgress={false}
-          frameClassName="home-hero__player"
-          controlsClassName="home-hero-media-controls"
-        />
+        <div className="home-hero__slider">
+          {HOME_HERO_VIDEOS.map((video, index) => (
+            <div
+              key={video.url}
+              className={`home-hero__slide${index === heroIndex ? " is-active" : ""}`}
+              aria-hidden={index !== heroIndex}
+            >
+              <MediaPlayer
+                media={{ url: video.url, media_type: "video" }}
+                alt={video.alt}
+                active={index === heroIndex}
+                showProgress={false}
+                frameClassName="home-hero__player"
+                controlsClassName="home-hero-media-controls"
+              />
+            </div>
+          ))}
+        </div>
+
+        {HOME_HERO_VIDEOS.length > 1 ? (
+          <>
+            <button
+              type="button"
+              className="home-hero__nav home-hero__nav--prev"
+              aria-label="Previous hero video"
+              onClick={() => goHero(-1)}
+            >
+              <svg width="12" height="20" viewBox="0 0 12 20" fill="none" aria-hidden="true">
+                <path
+                  d="M10.25 1.5 2.75 10l7.5 8.5"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="home-hero__nav home-hero__nav--next"
+              aria-label="Next hero video"
+              onClick={() => goHero(1)}
+            >
+              <svg width="12" height="20" viewBox="0 0 12 20" fill="none" aria-hidden="true">
+                <path
+                  d="M1.75 1.5 9.25 10l-7.5 8.5"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </>
+        ) : null}
+
         <div className="home-hero__content">
           <h1 className="home-hero__title font-heading">
             Make every moment special

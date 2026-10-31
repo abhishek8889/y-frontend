@@ -1397,6 +1397,24 @@ input[type="password"]::placeholder {
   background: #000;
 }
 
+.home-hero__slider,
+.home-hero__slide {
+  position: absolute;
+  inset: 0;
+}
+
+.home-hero__slide {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 450ms ease;
+}
+
+.home-hero__slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
 .home-hero__player {
   pointer-events: none;
   position: absolute;
@@ -1404,6 +1422,45 @@ input[type="password"]::placeholder {
   height: 100%;
   width: 100%;
   background: #000;
+}
+
+.home-hero__nav {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  transform: translateY(-50%);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.home-hero__nav:hover {
+  opacity: 0.65;
+}
+
+.home-hero__nav--prev {
+  left: 10px;
+}
+
+.home-hero__nav--next {
+  right: 10px;
+}
+
+@media (min-width: 640px) {
+  .home-hero__nav--prev {
+    left: 18px;
+  }
+
+  .home-hero__nav--next {
+    right: 18px;
+  }
 }
 
 /*
