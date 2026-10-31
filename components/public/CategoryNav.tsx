@@ -22,9 +22,9 @@ export function CategoryNav({
     <section
       id="categories"
       className={`public-categories ${className}`.trim()}
-      aria-label="Event categories"
+      aria-label={title || "Event categories"}
     >
-      <h2 className="public-categories__title">{title}</h2>
+      {title ? <h2 className="public-categories__title">{title}</h2> : null}
       {isLoading ? (
         <p className="public-categories__status">Loading categories…</p>
       ) : categories.length === 0 ? null : (

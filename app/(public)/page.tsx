@@ -189,7 +189,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CategoryNav className="home-categories" />
+      <CategoryNav className="home-categories" title="" />
 
       <section id="events" aria-label="Upcoming events" className="home-events">
         <h2 className="home-events__heading">Explore Events</h2>
