@@ -5,6 +5,8 @@ export type EventCategory = {
   id: number;
   organisation_id: number | null;
   name: string;
+  /** Public URL segment from API, e.g. `live-music`. */
+  slug?: string | null;
 };
 
 export type EventCategoriesResponse = {

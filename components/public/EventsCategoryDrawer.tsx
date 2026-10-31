@@ -56,7 +56,7 @@ export function EventsCategoryDrawer({
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={categoryHref(category.id, category.name)}
+              href={categoryHref(category)}
               className="public-events-drawer__link"
               onClick={onClose}
             >

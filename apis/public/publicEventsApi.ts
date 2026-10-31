@@ -31,6 +31,8 @@ export type PublicEventListParams = {
   organisation_id?: number;
   organisation_unique_id?: string;
   event_category_id?: number;
+  /** Filter by category slug from `public/events/list`. */
+  event_category_slug?: string;
 };
 
 export type PublicEventListResponse = {
@@ -251,8 +253,11 @@ export const publicEventsApi = baseApi.injectEndpoints({
         if (params?.organisation_unique_id) {
           searchParams.set("organisation_unique_id", params.organisation_unique_id);
         }
-        if (params?.event_category_id) {
+        if (params?.event_category_id != null && String(params.event_category_id).trim() !== "") {
           searchParams.set("event_category_id", String(params.event_category_id));
+        }
+        if (params?.event_category_slug?.trim()) {
+          searchParams.set("event_category_slug", params.event_category_slug.trim());
         }
         const query = searchParams.toString();
         return query ? `public/events/list?${query}` : "public/events/list";
@@ -296,6 +301,7 @@ export const publicEventsApi = baseApi.injectEndpoints({
 
 export const {
   useGetPublicEventsQuery,
+  useLazyGetPublicEventsQuery,
   useGetPublicEventDetailsQuery,
   useGetPublicEventTicketsQuery,
   useStartBookingTicketMutation,

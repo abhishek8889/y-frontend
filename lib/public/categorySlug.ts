@@ -1,4 +1,4 @@
-/** Build a URL slug from a category name. */
+/** Build a URL slug from a category name (fallback when API omits `slug`). */
 export function categorySlug(name: string) {
   return name
     .trim()
@@ -8,6 +8,13 @@ export function categorySlug(name: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function categoryHref(id: number, name: string) {
-  return `/category/${encodeURIComponent(categorySlug(name))}?id=${id}`;
+/** Prefer API `slug`; fall back to slugifying `name`. */
+export function resolveCategorySlug(category: { slug?: string | null; name: string }) {
+  const fromApi = category.slug?.trim();
+  return fromApi || categorySlug(category.name);
+}
+
+/** Category page URL — slug only (no id query). */
+export function categoryHref(category: { id?: number; slug?: string | null; name: string }) {
+  return `/category/${encodeURIComponent(resolveCategorySlug(category))}`;
 }

@@ -78,6 +78,7 @@ export const surfacePaths = {
   public: [
     "/",
     "/event",
+    "/category",
     "/payment",
     "/account",
     "/orders",

@@ -1,12 +1,16 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { useGetEventCategoriesQuery } from "@/apis/events/eventsApi";
-import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
+import {
+  useGetPublicEventsQuery,
+  useLazyGetPublicEventsQuery,
+  type PublicEventListItem,
+} from "@/apis/public/publicEventsApi";
 import { EventCard } from "@/components/public/EventCard";
 import { SelectField } from "@/components/ui/SelectField";
-import { categorySlug } from "@/lib/public/categorySlug";
+import { resolveCategorySlug } from "@/lib/public/categorySlug";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 const SORT_OPTIONS = [
@@ -15,37 +19,61 @@ const SORT_OPTIONS = [
   { value: "name", label: "Name" },
 ];
 
-function CategoryPageContent() {
+const PAGE_SIZE = 10;
+
+export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
-  const searchParams = useSearchParams();
-  const slug = decodeURIComponent(params.slug || "");
-  const idParam = searchParams.get("id");
+  const slug = decodeURIComponent(params.slug || "").trim();
   const [sortBy, setSortBy] = useState("featured");
+  const [extraEvents, setExtraEvents] = useState<PublicEventListItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const loadMoreLock = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const { data: categoriesData } = useGetEventCategoriesQuery();
   const categories = categoriesData?.data ?? [];
 
-  const category = useMemo(() => {
-    if (idParam) {
-      const byId = categories.find((item) => String(item.id) === idParam);
-      if (byId) return byId;
-    }
-    return categories.find((item) => categorySlug(item.name) === slug) ?? null;
-  }, [categories, idParam, slug]);
-
-  const categoryId = category?.id;
-  const { data, isLoading, isError } = useGetPublicEventsQuery(
-    {
-      event_category_id: categoryId,
-      per_page: 48,
-    },
-    { skip: !categoryId },
+  const category = useMemo(
+    () => categories.find((item) => resolveCategorySlug(item) === slug) ?? null,
+    [categories, slug],
   );
+
+  const { data, isLoading, isError, isFetching } = useGetPublicEventsQuery(
+    {
+      event_category_slug: slug || undefined,
+      per_page: PAGE_SIZE,
+    },
+    { skip: !slug },
+  );
+
+  const [fetchMore, { isFetching: isFetchingMore }] = useLazyGetPublicEventsQuery();
+
+  // Reset appended pages whenever the category (or first page) changes.
+  useEffect(() => {
+    setExtraEvents([]);
+    loadMoreLock.current = false;
+    const pagination = data?.data?.pagination;
+    setNextCursor(pagination?.next_cursor ?? null);
+    setHasMore(Boolean(pagination?.has_more && pagination?.next_cursor));
+  }, [slug, data]);
 
   const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
 
+  const allEvents = useMemo(() => {
+    const first = data?.data?.items ?? [];
+    const seen = new Set<number>();
+    const merged: PublicEventListItem[] = [];
+    for (const event of [...first, ...extraEvents]) {
+      if (seen.has(event.id)) continue;
+      seen.add(event.id);
+      merged.push(event);
+    }
+    return merged;
+  }, [data?.data?.items, extraEvents]);
+
   const sortedEvents = useMemo(() => {
-    const items = [...(data?.data?.items ?? [])];
+    const items = [...allEvents];
     if (sortBy === "name") {
       return items.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
     }
@@ -57,15 +85,59 @@ function CategoryPageContent() {
       });
     }
     return items;
-  }, [data?.data?.items, sortBy]);
+  }, [allEvents, sortBy]);
+
+  const loadMore = useCallback(async () => {
+    if (!slug || !nextCursor || !hasMore) return;
+    if (isFetchingMore || isFetching || loadMoreLock.current) return;
+
+    loadMoreLock.current = true;
+    try {
+      const result = await fetchMore({
+        event_category_slug: slug,
+        per_page: PAGE_SIZE,
+        cursor: nextCursor,
+      }).unwrap();
+
+      const pageItems = result.data?.items ?? [];
+      const pagination = result.data?.pagination;
+      if (pageItems.length) {
+        setExtraEvents((prev) => [...prev, ...pageItems]);
+      }
+      setNextCursor(pagination?.next_cursor ?? null);
+      setHasMore(Boolean(pagination?.has_more && pagination?.next_cursor));
+    } catch {
+      // Keep current list; user can scroll again to retry.
+    } finally {
+      loadMoreLock.current = false;
+    }
+  }, [slug, nextCursor, hasMore, isFetchingMore, isFetching, fetchMore]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !slug) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { root: null, rootMargin: "240px 0px", threshold: 0 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [slug, loadMore, sortedEvents.length]);
 
   const title = category?.name || slug.replace(/-/g, " ");
+  const showInitialLoading = isLoading && !data;
 
   return (
     <main className="category-page">
       <header className="category-page__toolbar">
         <p aria-live="polite" className="category-page__count">
-          {!categoryId || isLoading
+          {!slug || showInitialLoading
             ? "Loading…"
             : `${sortedEvents.length} Event${sortedEvents.length === 1 ? "" : "s"}`}
         </p>
@@ -85,47 +157,38 @@ function CategoryPageContent() {
         />
       </header>
 
-      {!categoryId && categoriesData ? (
+      {!slug ? (
         <p className="home-events__status" role="alert">
           Category not found.
         </p>
-      ) : isError ? (
+      ) : isError && !data ? (
         <p role="alert" className="home-events__status home-events__status--error">
           Unable to load events. Please try again.
         </p>
-      ) : isLoading || !categoryId ? (
+      ) : showInitialLoading ? (
         <p role="status" className="home-events__status">
           Loading events…
         </p>
       ) : sortedEvents.length === 0 ? (
         <p className="home-events__status">No events in this category yet.</p>
       ) : (
-        <div className="category-page__grid">
-          {sortedEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              isWishlisted={wishlistedIds.has(event.id)}
-              wishlistDisabled={isMutating}
-              onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="category-page__grid">
+            {sortedEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                isWishlisted={wishlistedIds.has(event.id)}
+                wishlistDisabled={isMutating}
+                onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
+              />
+            ))}
+          </div>
+          {hasMore ? (
+            <div ref={sentinelRef} className="category-page__scroll-sentinel" aria-hidden />
+          ) : null}
+        </>
       )}
     </main>
-  );
-}
-
-export default function CategoryPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="category-page">
-          <p className="home-events__status">Loading…</p>
-        </main>
-      }
-    >
-      <CategoryPageContent />
-    </Suspense>
   );
 }

@@ -1681,6 +1681,16 @@ input[type="password"]::placeholder {
   isolation: isolate;
 }
 
+/* Collapse category toolbar border with first card row (one 1px line). */
+.category-page__grid {
+  margin-top: -1px;
+}
+
+.category-page__scroll-sentinel {
+  width: 100%;
+  height: 1px;
+}
+
 .home-events__grid .event-card,
 .category-page__grid .event-card {
   /* Full 1px stroke per card; overlap shared edges so they stay 1px (not 2px). */
@@ -1815,6 +1825,8 @@ input[type="password"]::placeholder {
 }
 
 .category-page__toolbar {
+  position: relative;
+  z-index: 20;
   display: grid;
   box-sizing: border-box;
   grid-template-columns: 1fr;
@@ -1824,6 +1836,8 @@ input[type="password"]::placeholder {
   padding: 20px 16px;
   border-bottom: 1px solid #000;
   text-align: center;
+  /* Keep sort dropdown visible over the event grid */
+  overflow: visible;
 }
 
 .category-page__title {
@@ -1836,6 +1850,8 @@ input[type="password"]::placeholder {
 }
 
 .category-page__sort {
+  position: relative;
+  z-index: 21;
   justify-self: center;
 }
 
@@ -1849,7 +1865,7 @@ input[type="password"]::placeholder {
     text-align: left;
     padding-inline: 40px;
     padding-block: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .category-page__count {

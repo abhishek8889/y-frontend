@@ -32,7 +32,7 @@ export function CategoryNav({
           {categories.map((category) => (
             <li key={category.id}>
               <Link
-                href={categoryHref(category.id, category.name)}
+                href={categoryHref(category)}
                 className="public-categories__chip"
               >
                 {category.name}
