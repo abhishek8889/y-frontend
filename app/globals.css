@@ -1686,7 +1686,8 @@ input[type="password"]::placeholder {
   margin-top: -1px;
 }
 
-.category-page__scroll-sentinel {
+.category-page__scroll-sentinel,
+.home-events__scroll-sentinel {
   width: 100%;
   height: 1px;
 }

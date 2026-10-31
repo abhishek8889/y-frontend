@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useGetPublicEventsQuery } from "@/apis/public/publicEventsApi";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useGetPublicEventsQuery,
+  useLazyGetPublicEventsQuery,
+  type PublicEventListItem,
+} from "@/apis/public/publicEventsApi";
 import { MediaPlayer } from "@/components/common";
 import { CategoryNav } from "@/components/public/CategoryNav";
 import { EventCard } from "@/components/public/EventCard";
@@ -10,6 +14,7 @@ import { PUBLIC_SEARCH_EVENT } from "@/components/public/PublicSiteHeader";
 import { useWishlistIds } from "@/lib/public/useWishlistIds";
 
 const HOME_HERO_VIDEO = "/landing/home-hero-2.mp4";
+const PAGE_SIZE = 10;
 
 function scrollToEvents() {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -22,6 +27,11 @@ export default function HomePage() {
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
   const scrollAfterSearch = useRef(false);
+  const [extraEvents, setExtraEvents] = useState<PublicEventListItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const loadMoreLock = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   function runSearch(value: string) {
     const next = value.trim();
@@ -56,8 +66,18 @@ export default function HomePage() {
 
   const { data, isLoading, isFetching, isError } = useGetPublicEventsQuery({
     search: search || undefined,
-    per_page: 24,
+    per_page: PAGE_SIZE,
   });
+
+  const [fetchMore, { isFetching: isFetchingMore }] = useLazyGetPublicEventsQuery();
+
+  useEffect(() => {
+    setExtraEvents([]);
+    loadMoreLock.current = false;
+    const pagination = data?.data?.pagination;
+    setNextCursor(pagination?.next_cursor ?? null);
+    setHasMore(Boolean(pagination?.has_more && pagination?.next_cursor));
+  }, [search, data]);
 
   useEffect(() => {
     if (!searching) return;
@@ -90,8 +110,62 @@ export default function HomePage() {
 
   const { wishlistedIds, toggleWishlist, isMutating } = useWishlistIds();
 
-  const events = useMemo(() => data?.data?.items ?? [], [data?.data?.items]);
+  const events = useMemo(() => {
+    const first = data?.data?.items ?? [];
+    const seen = new Set<number>();
+    const merged: PublicEventListItem[] = [];
+    for (const event of [...first, ...extraEvents]) {
+      if (seen.has(event.id)) continue;
+      seen.add(event.id);
+      merged.push(event);
+    }
+    return merged;
+  }, [data?.data?.items, extraEvents]);
+
   const [featuredEvent, ...restEvents] = events;
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || !hasMore) return;
+    if (isFetchingMore || isFetching || loadMoreLock.current) return;
+
+    loadMoreLock.current = true;
+    try {
+      const result = await fetchMore({
+        search: search || undefined,
+        per_page: PAGE_SIZE,
+        cursor: nextCursor,
+      }).unwrap();
+
+      const pageItems = result.data?.items ?? [];
+      const pagination = result.data?.pagination;
+      if (pageItems.length) {
+        setExtraEvents((prev) => [...prev, ...pageItems]);
+      }
+      setNextCursor(pagination?.next_cursor ?? null);
+      setHasMore(Boolean(pagination?.has_more && pagination?.next_cursor));
+    } catch {
+      // Keep current list; user can scroll again to retry.
+    } finally {
+      loadMoreLock.current = false;
+    }
+  }, [nextCursor, hasMore, isFetchingMore, isFetching, fetchMore, search]);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { root: null, rootMargin: "240px 0px", threshold: 0 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMore, events.length]);
 
   return (
     <main className="home-page">
@@ -120,11 +194,11 @@ export default function HomePage() {
       <section id="events" aria-label="Upcoming events" className="home-events">
         <h2 className="home-events__heading">Explore Events</h2>
 
-        {isError ? (
+        {isError && !data ? (
           <p role="alert" className="home-events__status home-events__status--error">
             Unable to load events. Please try again.
           </p>
-        ) : isLoading ? (
+        ) : isLoading && !data ? (
           <p role="status" className="home-events__status">
             Loading events…
           </p>
@@ -133,27 +207,32 @@ export default function HomePage() {
             {search ? "No events match your search." : "No published events yet."}
           </p>
         ) : (
-          <div className="home-events__grid">
-            {featuredEvent ? (
-              <EventCard
-                key={featuredEvent.id}
-                event={featuredEvent}
-                featured
-                isWishlisted={wishlistedIds.has(featuredEvent.id)}
-                wishlistDisabled={isMutating}
-                onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
-              />
+          <>
+            <div className="home-events__grid">
+              {featuredEvent ? (
+                <EventCard
+                  key={featuredEvent.id}
+                  event={featuredEvent}
+                  featured
+                  isWishlisted={wishlistedIds.has(featuredEvent.id)}
+                  wishlistDisabled={isMutating}
+                  onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
+                />
+              ) : null}
+              {restEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isWishlisted={wishlistedIds.has(event.id)}
+                  wishlistDisabled={isMutating}
+                  onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
+                />
+              ))}
+            </div>
+            {hasMore ? (
+              <div ref={sentinelRef} className="home-events__scroll-sentinel" aria-hidden />
             ) : null}
-            {restEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                isWishlisted={wishlistedIds.has(event.id)}
-                wishlistDisabled={isMutating}
-                onToggleWishlist={(eventId) => void toggleWishlist(eventId)}
-              />
-            ))}
-          </div>
+          </>
         )}
       </section>
 
