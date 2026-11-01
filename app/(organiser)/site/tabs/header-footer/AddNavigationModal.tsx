@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { OrganiserModal } from "@/components/organiser/OrganiserModal";
 import { InputField } from "@/components/ui/InputField";
 
 type AddNavigationModalProps = {
   open: boolean;
-  defaultPriority: string;
   onClose: () => void;
-  onSave: (item: { name: string; url: string; priority: string }) => void;
+  onSave: (item: { name: string; url: string }) => void;
 };
 
 function isValidNavUrl(value: string) {
@@ -26,27 +25,33 @@ function isValidNavUrl(value: string) {
 
 export default function AddNavigationModal({
   open,
-  defaultPriority,
   onClose,
   onSave,
 }: AddNavigationModalProps) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const [priority, setPriority] = useState(defaultPriority);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setName("");
+    setUrl("");
+    setError("");
+  }, [open]);
 
   function submitItem(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const trimmedName = name.trim();
     const normalizedUrl = url.trim();
+    if (trimmedName.length < 1) {
+      setError("Enter a label name.");
+      return;
+    }
     if (!isValidNavUrl(normalizedUrl)) {
       setError("Enter a path like /about or a full URL starting with http:// or https://.");
       return;
     }
-    if (!Number.isInteger(Number(priority)) || Number(priority) < 1) {
-      setError("Priority must be a whole number greater than zero.");
-      return;
-    }
-    onSave({ name: name.trim(), url: normalizedUrl, priority });
+    onSave({ name: trimmedName, url: normalizedUrl });
   }
 
   return (
@@ -94,22 +99,6 @@ export default function AddNavigationModal({
               setError("");
             }}
             placeholder="/about or https://example.com"
-          />
-
-          <InputField
-            id="navigation-priority"
-            type="number"
-            min="1"
-            step="1"
-            required
-            label="Priority"
-            labelClassName="input-heading"
-            value={priority}
-            onChange={(event) => {
-              setPriority(event.target.value);
-              setError("");
-            }}
-            placeholder="6"
           />
 
           {error ? (

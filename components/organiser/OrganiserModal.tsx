@@ -2,6 +2,8 @@
 
 import { useEffect, type ReactNode } from "react";
 
+export type OrganiserModalSize = "default" | "lg" | "xl";
+
 type OrganiserModalProps = {
   open: boolean;
   children: ReactNode;
@@ -10,13 +12,30 @@ type OrganiserModalProps = {
   /** Show top-right close control. */
   showClose?: boolean;
   onClose?: () => void;
-  /** Extra classes on the white panel. */
+  /**
+   * Optional width preset. Only applies a modifier class when not `default`,
+   * so other modals keep the base `max-width: 500px`.
+   */
+  size?: OrganiserModalSize;
+  /**
+   * Extra classes on the white panel only (e.g. `sites-dns-modal-panel`).
+   * Use this for per-modal styles so shared modal chrome stays untouched.
+   */
   panelClassName?: string;
+  /** Extra classes on the overlay root. */
+  className?: string;
+};
+
+const SIZE_CLASS: Record<OrganiserModalSize, string> = {
+  default: "",
+  lg: "organiser-modal__panel--lg",
+  xl: "organiser-modal__panel--xl",
 };
 
 /**
  * Shared organiser dashboard modal chrome: dimmed overlay + white panel.
  * Pass modal body as children (title, copy, CTA, etc.).
+ * Size / panelClassName are opt-in — they never change other modals' defaults.
  */
 export function OrganiserModal({
   open,
@@ -24,7 +43,9 @@ export function OrganiserModal({
   titleId,
   showClose = false,
   onClose,
+  size = "default",
   panelClassName = "",
+  className = "",
 }: OrganiserModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -47,7 +68,7 @@ export function OrganiserModal({
 
   return (
     <div
-      className="organiser-modal"
+      className={["organiser-modal", className].filter(Boolean).join(" ")}
       role="presentation"
       onClick={(event) => {
         if (onClose && event.target === event.currentTarget) onClose();
@@ -57,7 +78,13 @@ export function OrganiserModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={["organiser-modal__panel", panelClassName].filter(Boolean).join(" ")}
+        className={[
+          "organiser-modal__panel",
+          SIZE_CLASS[size],
+          panelClassName,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         {showClose && onClose ? (
           <button

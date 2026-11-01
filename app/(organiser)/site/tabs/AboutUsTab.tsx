@@ -2,17 +2,60 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { InputField } from "@/components/ui/InputField";
+import RichTextEditor from "./RichTextEditor";
 
-type AboutImage = {
+type AboutBanner = {
   name: string;
   url: string;
+  file: File;
 };
 
-function useAboutImagePreview(image: AboutImage | null) {
+type AboutDraft = {
+  title: string;
+  descriptionHtml: string;
+  banner: AboutBanner | null;
+};
+
+const IMAGE_EXTENSIONS = ["jpeg", "jpg", "png", "webp", "gif", "jfif", "avif", "heic", "heif"] as const;
+const IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/pjpeg",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+]);
+const BANNER_ACCEPT = [
+  ...IMAGE_EXTENSIONS.map((ext) => `.${ext}`),
+  ...IMAGE_MIME_TYPES,
+].join(",");
+const MAX_BANNER_BYTES = 10 * 1024 * 1024;
+
+function fileExtension(file: File) {
+  const match = /\.([^.]+)$/.exec(file.name.trim());
+  return match?.[1]?.toLowerCase() ?? "";
+}
+
+function isAllowedBanner(file: File) {
+  const ext = fileExtension(file);
+  return (
+    (IMAGE_EXTENSIONS as readonly string[]).includes(ext) ||
+    IMAGE_MIME_TYPES.has(file.type.toLowerCase())
+  );
+}
+
+function stripHtml(html: string) {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function useBannerPreview(banner: AboutBanner | null) {
   useEffect(() => {
-    if (!image) return;
-    return () => URL.revokeObjectURL(image.url);
-  }, [image]);
+    if (!banner) return;
+    return () => URL.revokeObjectURL(banner.url);
+  }, [banner]);
 }
 
 function ImagePlaceholder() {
@@ -27,130 +70,221 @@ function ImagePlaceholder() {
 
 export default function AboutUsTab() {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState<AboutImage | null>(null);
-  const [saved, setSaved] = useState({ title: "", description: "" });
-  const [imageError, setImageError] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [banner, setBanner] = useState<AboutBanner | null>(null);
+  const [saved, setSaved] = useState<AboutDraft>({
+    title: "",
+    descriptionHtml: "",
+    banner: null,
+  });
+  const [bannerError, setBannerError] = useState("");
+  const [formError, setFormError] = useState("");
   const [notice, setNotice] = useState("");
 
-  useAboutImagePreview(image);
+  useBannerPreview(banner);
 
-  function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+  function revokeBanner(asset: AboutBanner | null) {
+    if (asset?.url) URL.revokeObjectURL(asset.url);
+  }
+
+  async function uploadBanner(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
-    const validFormat = ["image/jpeg", "image/png"].includes(file.type) || /\.(jpe?g|png)$/i.test(file.name);
-    if (!validFormat) {
-      setImageError("Upload a JPG or PNG image.");
+    if (!isAllowedBanner(file)) {
+      setBannerError(
+        "Allowed banner images: JPEG, JPG, PNG, WEBP, GIF, JFIF, AVIF, HEIC, HEIF.",
+      );
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError("Image must be 5 MB or smaller.");
+    if (file.size > MAX_BANNER_BYTES) {
+      setBannerError("Banner image must be 10 MB or smaller.");
       return;
     }
 
     const url = URL.createObjectURL(file);
-    const preview = new Image();
-    preview.onload = () => {
-      setImage({ name: file.name, url });
-      setImageError("");
-      setNotice("");
-    };
-    preview.onerror = () => {
+    const decoded = await new Promise<boolean>((resolve) => {
+      const element = new Image();
+      element.onload = () => resolve(true);
+      element.onerror = () => resolve(false);
+      element.src = url;
+    });
+
+    if (!decoded && !/\.(heic|heif)$/i.test(file.name) && !/image\/hei/i.test(file.type)) {
       URL.revokeObjectURL(url);
-      setImageError("This image could not be read. Choose a valid JPG or PNG.");
-    };
-    preview.src = url;
+      setBannerError("This banner image could not be read.");
+      return;
+    }
+
+    setBanner((current) => {
+      revokeBanner(current);
+      return { name: file.name, url, file };
+    });
+    setBannerError("");
+    setFormError("");
+    setNotice("");
+  }
+
+  function removeBanner() {
+    setBanner((current) => {
+      revokeBanner(current);
+      return null;
+    });
+    setBannerError("");
+    setNotice("");
   }
 
   function saveAbout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaved({ title: title.trim(), description: description.trim() });
-    setTitle(title.trim());
-    setDescription(description.trim());
+
+    const nextTitle = title.trim();
+    if (!nextTitle) {
+      setFormError("Enter an About title.");
+      return;
+    }
+    if (!banner) {
+      setBannerError("Upload a banner image.");
+      return;
+    }
+    if (!stripHtml(descriptionHtml)) {
+      setFormError("Enter an About description.");
+      return;
+    }
+
+    setSaved({
+      title: nextTitle,
+      descriptionHtml,
+      banner,
+    });
+    setTitle(nextTitle);
+    setFormError("");
+    setBannerError("");
     setNotice("About page saved.");
   }
 
   function cancelChanges() {
+    setBanner((current) => {
+      if (!saved.banner) {
+        if (current) revokeBanner(current);
+        return null;
+      }
+      if (current?.file === saved.banner.file) return current;
+      if (current) revokeBanner(current);
+      return {
+        name: saved.banner.name,
+        file: saved.banner.file,
+        url: URL.createObjectURL(saved.banner.file),
+      };
+    });
     setTitle(saved.title);
-    setDescription(saved.description);
-    setImage(null);
-    setImageError("");
+    setDescriptionHtml(saved.descriptionHtml);
+    setBannerError("");
+    setFormError("");
     setNotice("");
   }
 
   return (
-    <form onSubmit={saveAbout} className="site-tab">
-      <div className="site-about-grid">
-        <div className="site-about-fields">
-          <InputField
-            id="about-title"
-            label="Title"
-            labelClassName="input-heading"
-            required
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setNotice("");
-            }}
-            placeholder="Enter headline"
-          />
-          <InputField
-            as="textarea"
-            label="Description"
-            labelClassName="input-heading"
-            id="about-description"
-            required
-            rows={6}
-            value={description}
-            onChange={(event) => {
-              setDescription(event.target.value);
-              setNotice("");
-            }}
-            placeholder="Supporting text..."
-          />
-        </div>
+    <form onSubmit={saveAbout} className="site-tab site-about-tab">
+      <header className="site-about-header">
+        <h3 className="site-tab-title">About Us</h3>
+        <p className="site-tab-subtitle">
+          Set the page title, banner, and rich-text description.
+        </p>
+      </header>
 
-        <div>
-          <label htmlFor="about-image" className="site-upload-box site-upload-box-sm">
-            {image ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.url}
-                  alt="About page preview"
-                  className="site-upload-thumb site-upload-thumb-lg"
-                />
-                <span className="site-upload-filename">{image.name}</span>
-                <span className="site-upload-replace">Click to replace image</span>
-              </>
-            ) : (
-              <>
-                <ImagePlaceholder />
-                <span className="site-upload-title">Add Image</span>
-                <span className="site-upload-hint form-upload-hint">
-                  Upload a nice image that represent your brand. JPG or
-                  <br className="hidden sm:block" />
-                  PNG, under 5MB.
-                </span>
-              </>
-            )}
-            <input
-              id="about-image"
-              type="file"
-              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-              className="sr-only"
-              onChange={uploadImage}
-            />
-          </label>
-          {imageError ? (
+      <div className="site-about-stack">
+        <InputField
+          id="about-title"
+          label="Title *"
+          labelClassName="input-heading"
+          required
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setFormError("");
+            setNotice("");
+          }}
+          placeholder="Enter headline"
+        />
+
+        <div className="site-about-banner">
+          <div className="site-about-banner-heading">
+            <label htmlFor="about-banner" className="input-heading">
+              Banner *
+            </label>
+            <p className="site-about-banner-hint">
+              JPEG, JPG, PNG, WEBP, GIF, JFIF, AVIF, HEIC, HEIF · up to 10MB · 1440 × 720 preferred
+            </p>
+          </div>
+
+          {banner ? (
+            <div className="site-about-banner-preview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={banner.url} alt={banner.name || "About banner preview"} />
+              <div className="site-about-banner-actions">
+                <p className="site-about-banner-filename">{banner.name}</p>
+                <div className="site-about-banner-buttons">
+                  <label htmlFor="about-banner" className="site-about-banner-replace">
+                    Replace
+                    <input
+                      id="about-banner"
+                      type="file"
+                      accept={BANNER_ACCEPT}
+                      className="sr-only"
+                      onChange={uploadBanner}
+                    />
+                  </label>
+                  <button type="button" className="site-about-banner-remove" onClick={removeBanner}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <label htmlFor="about-banner" className="site-upload-box site-about-banner-empty">
+              <ImagePlaceholder />
+              <span className="site-upload-title">Add banner image</span>
+              <span className="site-upload-hint form-upload-hint">
+                Upload a wide banner that represents your club.
+              </span>
+              <input
+                id="about-banner"
+                type="file"
+                accept={BANNER_ACCEPT}
+                className="sr-only"
+                onChange={uploadBanner}
+              />
+            </label>
+          )}
+
+          {bannerError ? (
             <p role="alert" className="site-error">
-              {imageError}
+              {bannerError}
             </p>
           ) : null}
         </div>
+
+        <RichTextEditor
+          id="about-description"
+          label="Description *"
+          labelClassName="input-heading"
+          valueHtml={descriptionHtml}
+          placeholder="Write your About Us story…"
+          onChangeHtml={(html) => {
+            setDescriptionHtml(html);
+            setFormError("");
+            setNotice("");
+          }}
+          minHeightClassName="min-h-[220px]"
+        />
       </div>
+
+      {formError ? (
+        <p role="alert" className="site-error">
+          {formError}
+        </p>
+      ) : null}
 
       <div className="site-form-actions">
         {notice ? (

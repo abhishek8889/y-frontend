@@ -108,8 +108,8 @@ export function ActionMenu<T>({
   }, []);
 
   useLayoutEffect(() => {
-    if (!open) {
-      setPosition(null);
+    if (!open || !mounted) {
+      if (!open) setPosition(null);
       return;
     }
 
@@ -137,7 +137,7 @@ export function ActionMenu<T>({
       window.removeEventListener("scroll", handleReposition, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, align, visibleActions.length]);
+  }, [open, mounted, align, visibleActions.length]);
 
   useEffect(() => {
     if (!open) return;

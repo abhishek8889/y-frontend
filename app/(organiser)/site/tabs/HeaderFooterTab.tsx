@@ -1,81 +1,74 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { useUploadMediaMutation } from "@/apis/media/mediaApi";
+import {
+  isApiSiteId,
+  useUpdateOrganisationSiteMutation,
+} from "@/apis/organisation/siteApi";
 import { InputField } from "@/components/ui/InputField";
-import { SelectField } from "@/components/ui/SelectField";
+import {
+  defaultFooterConfig,
+  defaultHeaderConfig,
+  footerToPayload,
+  headerToPayload,
+} from "../siteMappers";
+import type {
+  SiteFooterConfig,
+  SiteFooterLink,
+  SiteHeaderConfig,
+  SiteMediaAsset,
+  SiteNavItem,
+  SiteRecord,
+  SiteSocialLink,
+} from "../siteTypes";
 import AddNavigationModal from "./header-footer/AddNavigationModal";
 
-type NavigationItem = {
-  id: string;
-  name: string;
-  url: string;
-  priority: string;
-  included: boolean;
-};
-
-type FooterLink = {
-  id: string;
-  label: string;
-  included: boolean;
-};
-
-type LogoAsset = {
-  name: string;
-  url: string;
-};
+type NavigationItem = SiteNavItem;
+type FooterLink = SiteFooterLink;
+type LogoAsset = SiteMediaAsset;
 
 type HeaderFooterSettings = {
   searchEnabled: boolean;
   accountEnabled: boolean;
-  headerButtonEnabled: boolean;
-  headerButtonName: string;
   headerLogo: LogoAsset | null;
   footerLogo: LogoAsset | null;
   navigation: NavigationItem[];
   exploreTitle: string;
   exploreLinks: FooterLink[];
   socialTitle: string;
-  socialLinks: { id: string; label: string; value: string }[];
+  socialLinks: SiteSocialLink[];
   contactTitle: string;
-  phoneCountry: string;
   phoneNumber: string;
   email: string;
   address: string;
 };
 
-const initialSettings: HeaderFooterSettings = {
-  searchEnabled: true,
-  accountEnabled: true,
-  headerButtonEnabled: true,
-  headerButtonName: "",
-  headerLogo: null,
-  footerLogo: null,
-  navigation: [
-    { id: "home", name: "Home", url: "/", priority: "1", included: true },
-    { id: "about", name: "About", url: "/about", priority: "2", included: true },
-    { id: "events", name: "Events", url: "/events", priority: "3", included: true },
-    { id: "news", name: "News", url: "/news", priority: "4", included: true },
-  ],
-  exploreTitle: "",
-  exploreLinks: [
-    { id: "about", label: "About", included: true },
-    { id: "events", label: "Events", included: true },
-    { id: "news", label: "News", included: true },
-    { id: "tickets", label: "My Tickets", included: true },
-  ],
-  socialTitle: "",
-  socialLinks: [
-    { id: "facebook", label: "Facebook", value: "" },
-    { id: "instagram", label: "Instagram", value: "" },
-    { id: "tiktok", label: "TikTok", value: "" },
-    { id: "youtube", label: "YouTube", value: "" },
-  ],
-  contactTitle: "",
-  phoneCountry: "+1",
-  phoneNumber: "",
-  email: "",
-  address: "",
-};
+function settingsFromSite(site: SiteRecord | null | undefined): HeaderFooterSettings {
+  const header = site?.header ?? defaultHeaderConfig();
+  const footer = site?.footer ?? defaultFooterConfig();
+  return {
+    searchEnabled: header.search_enabled,
+    accountEnabled: header.account_enabled,
+    headerLogo: header.logo ? { ...header.logo } : null,
+    footerLogo: footer.logo ? { ...footer.logo } : null,
+    navigation: header.navigation.map((item) => ({ ...item })),
+    exploreTitle: footer.explore_title,
+    exploreLinks: footer.explore_links.map((item) => ({ ...item })),
+    socialTitle: footer.social_title,
+    socialLinks: footer.social_links.map((item) => ({ ...item })),
+    contactTitle: footer.contact_title,
+    phoneNumber: footer.phone,
+    email: footer.email,
+    address: footer.address,
+  };
+}
 
 function cloneSettings(settings: HeaderFooterSettings): HeaderFooterSettings {
   return {
@@ -88,11 +81,33 @@ function cloneSettings(settings: HeaderFooterSettings): HeaderFooterSettings {
   };
 }
 
-function useLogoPreview(asset: LogoAsset | null) {
-  useEffect(() => {
-    if (!asset) return;
-    return () => URL.revokeObjectURL(asset.url);
-  }, [asset]);
+function toHeaderConfig(settings: HeaderFooterSettings): SiteHeaderConfig {
+  return {
+    logo: settings.headerLogo,
+    navigation: settings.navigation.map((item) => ({
+      ...item,
+      name: item.name.trim(),
+    })),
+    search_enabled: settings.searchEnabled,
+    account_enabled: settings.accountEnabled,
+  };
+}
+
+function toFooterConfig(settings: HeaderFooterSettings): SiteFooterConfig {
+  return {
+    logo: settings.footerLogo,
+    explore_title: settings.exploreTitle.trim(),
+    explore_links: settings.exploreLinks.map((item) => ({ ...item })),
+    social_title: settings.socialTitle.trim(),
+    social_links: settings.socialLinks.map((item) => ({
+      ...item,
+      value: item.value.trim(),
+    })),
+    contact_title: settings.contactTitle.trim(),
+    phone: settings.phoneNumber.trim(),
+    email: settings.email.trim(),
+    address: settings.address.trim(),
+  };
 }
 
 function ImagePlaceholder() {
@@ -120,19 +135,19 @@ function LogoDropZone({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="site-hf-logo-upload">
+      <label htmlFor={id} className="form-upload-box site-hf-logo-upload">
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={value.url} alt={`${label} preview`} className="site-hf-logo-preview" />
         ) : (
           <ImagePlaceholder />
         )}
-        <span className="site-hf-logo-title">
-          {value ? value.name : "Upload website logo"}
-        </span>
-        <span className="site-hf-logo-hint form-upload-hint">
+        <p className="input-heading mb-0 text-center">
+          {value ? value.name : `Upload ${label.toLowerCase()}`}
+        </p>
+        <p className="form-upload-hint">
           {value ? "Click to replace image" : "PNG or SVG · max 2MB"}
-        </span>
+        </p>
         <input
           id={id}
           type="file"
@@ -150,29 +165,6 @@ function LogoDropZone({
         </p>
       ) : null}
     </div>
-  );
-}
-
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-label={label}
-      aria-checked={checked}
-      onClick={onChange}
-      className={`site-switch${checked ? " site-switch-on" : ""}`}
-    >
-      <span aria-hidden="true" className="site-switch-knob" />
-    </button>
   );
 }
 
@@ -227,19 +219,39 @@ function FooterCard({ title, children }: { title: string; children: ReactNode })
   );
 }
 
-export default function HeaderFooterTab() {
+export default function HeaderFooterTab({
+  site,
+  section = "all",
+}: {
+  site: SiteRecord;
+  section?: "header" | "footer" | "all";
+}) {
+  const showHeader = section === "header" || section === "all";
+  const showFooter = section === "footer" || section === "all";
+
   const [settings, setSettings] = useState<HeaderFooterSettings>(() =>
-    cloneSettings(initialSettings),
+    cloneSettings(settingsFromSite(site)),
   );
   const [savedSettings, setSavedSettings] = useState<HeaderFooterSettings>(() =>
-    cloneSettings(initialSettings),
+    cloneSettings(settingsFromSite(site)),
   );
   const [notice, setNotice] = useState("");
   const [logoErrors, setLogoErrors] = useState({ header: "", footer: "" });
+  const [uploadingLogo, setUploadingLogo] = useState<"header" | "footer" | null>(null);
   const [isNavigationModalOpen, setIsNavigationModalOpen] = useState(false);
+  const [draggingNavId, setDraggingNavId] = useState<string | null>(null);
+  const [dragOverNavId, setDragOverNavId] = useState<string | null>(null);
 
-  useLogoPreview(settings.headerLogo);
-  useLogoPreview(settings.footerLogo);
+  const [uploadMedia] = useUploadMediaMutation();
+  const [updateSite, { isLoading: isSaving }] = useUpdateOrganisationSiteMutation();
+
+  useEffect(() => {
+    const next = cloneSettings(settingsFromSite(site));
+    setSettings(next);
+    setSavedSettings(cloneSettings(next));
+    setLogoErrors({ header: "", footer: "" });
+    setNotice("");
+  }, [site.id, site.header, site.footer]);
 
   function updateSetting<K extends keyof HeaderFooterSettings>(
     key: K,
@@ -249,7 +261,7 @@ export default function HeaderFooterTab() {
     setNotice("");
   }
 
-  function handleLogoUpload(slot: "header" | "footer", file: File | undefined) {
+  async function handleLogoUpload(slot: "header" | "footer", file: File | undefined) {
     const errorKey = slot === "header" ? "header" : "footer";
     const settingKey = slot === "header" ? "headerLogo" : "footerLogo";
 
@@ -273,14 +285,33 @@ export default function HeaderFooterTab() {
       return;
     }
 
-    const url = URL.createObjectURL(file);
-    updateSetting(settingKey, { name: file.name, url });
+    setUploadingLogo(slot);
     setLogoErrors((current) => ({ ...current, [errorKey]: "" }));
+    setNotice("");
+
+    try {
+      const result = await uploadMedia({
+        file,
+        context: slot === "header" ? "site-header-logo" : "site-footer-logo",
+      }).unwrap();
+      updateSetting(settingKey, {
+        path: result.data.path,
+        url: result.data.url,
+        name: result.data.original_name || file.name,
+      });
+    } catch {
+      setLogoErrors((current) => ({
+        ...current,
+        [errorKey]: "Upload failed. Try again.",
+      }));
+    } finally {
+      setUploadingLogo(null);
+    }
   }
 
   function updateNavigation(
     id: string,
-    field: "name" | "priority" | "included",
+    field: "name" | "included",
     value: string | boolean,
   ) {
     setSettings((current) => ({
@@ -289,6 +320,24 @@ export default function HeaderFooterTab() {
         item.id === id ? { ...item, [field]: value } : item,
       ),
     }));
+    setNotice("");
+  }
+
+  function withSyncedPriorities(items: NavigationItem[]): NavigationItem[] {
+    return items.map((item, index) => ({ ...item, priority: String(index + 1) }));
+  }
+
+  function reorderNavigation(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setSettings((current) => {
+      const fromIndex = current.navigation.findIndex((item) => item.id === fromId);
+      const toIndex = current.navigation.findIndex((item) => item.id === toId);
+      if (fromIndex < 0 || toIndex < 0) return current;
+      const next = [...current.navigation];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return { ...current, navigation: withSyncedPriorities(next) };
+    });
     setNotice("");
   }
 
@@ -312,22 +361,54 @@ export default function HeaderFooterTab() {
     setNotice("");
   }
 
-  function addNavigationItem(item: Omit<NavigationItem, "id" | "included">) {
+  function addNavigationItem(item: { name: string; url: string }) {
     setSettings((current) => ({
       ...current,
-      navigation: [...current.navigation, { ...item, id: crypto.randomUUID(), included: true }],
+      navigation: withSyncedPriorities([
+        ...current.navigation,
+        {
+          id: crypto.randomUUID(),
+          name: item.name,
+          url: item.url,
+          priority: String(current.navigation.length + 1),
+          included: true,
+        },
+      ]),
     }));
     setIsNavigationModalOpen(false);
     setNotice("");
   }
 
-  function saveSettings(event: FormEvent<HTMLFormElement>) {
+  async function saveSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isApiSiteId(site.id)) {
+      setNotice("Save branding after the site is created.");
+      return;
+    }
+
     const next = cloneSettings(settings);
     next.navigation = next.navigation.map((item) => ({ ...item, name: item.name.trim() }));
     setSettings(next);
-    setSavedSettings(cloneSettings(next));
-    setNotice("Header and footer settings saved.");
+
+    const body =
+      section === "footer"
+        ? { footer: footerToPayload(toFooterConfig(next)) }
+        : section === "header"
+          ? { header: headerToPayload(toHeaderConfig(next)) }
+          : {
+              header: headerToPayload(toHeaderConfig(next)),
+              footer: footerToPayload(toFooterConfig(next)),
+            };
+
+    try {
+      await updateSite({ siteId: site.id, body }).unwrap();
+      setSavedSettings(cloneSettings(next));
+      if (section === "header") setNotice("Header settings saved.");
+      else if (section === "footer") setNotice("Footer settings saved.");
+      else setNotice("Header and footer settings saved.");
+    } catch {
+      // Toast handled by mutation.
+    }
   }
 
   function cancelChanges() {
@@ -337,244 +418,353 @@ export default function HeaderFooterTab() {
   }
 
   return (
-    <div className="site-tab">
-      <form onSubmit={saveSettings} aria-label="Header and footer settings">
-        <section className="site-hf-section">
-          <SectionHeading
-            title="Header Configuration"
-            description="Set up your website header, navigation and actions."
-          />
-
-          <div className="site-hf-block-lg">
-            <h4 className="site-hf-subheading">Website logo</h4>
-            <LogoDropZone
-              id="header-logo-upload"
-              label="Header logo"
-              value={settings.headerLogo}
-              error={logoErrors.header}
-              onUpload={(file) => handleLogoUpload("header", file)}
-            />
-          </div>
-
-          <div className="site-hf-block">
-            <h4 className="site-hf-subheading">Header actions</h4>
-            <div className="site-hf-toggle-list">
-              <div className="site-hf-toggle-row">
-                <span className="site-hf-toggle-label">Show search option</span>
-                <Toggle
-                  label="Show search option"
-                  checked={settings.searchEnabled}
-                  onChange={() => updateSetting("searchEnabled", !settings.searchEnabled)}
-                />
-              </div>
-              <div className="site-hf-toggle-row">
-                <span className="site-hf-toggle-label">Show Login account</span>
-                <Toggle
-                  label="Show login account"
-                  checked={settings.accountEnabled}
-                  onChange={() => updateSetting("accountEnabled", !settings.accountEnabled)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="site-hf-block">
-            <h4 className="site-hf-subheading">Header button</h4>
-            <label htmlFor="header-button-name" className="input-heading">
-              Contact Us
-            </label>
-            <div className="site-hf-button-row">
-              <CheckControl
-                label="Show header contact button"
-                checked={settings.headerButtonEnabled}
-                onChange={() =>
-                  updateSetting("headerButtonEnabled", !settings.headerButtonEnabled)
-                }
+    <div className={section === "all" ? "site-tab" : "site-hf-embedded"}>
+      <form
+        onSubmit={(event) => {
+          void saveSettings(event);
+        }}
+        aria-label={
+          section === "header"
+            ? "Header settings"
+            : section === "footer"
+              ? "Footer settings"
+              : "Header and footer settings"
+        }
+      >
+        {showHeader ? (
+          <section className="site-hf-section">
+            {section === "all" ? (
+              <SectionHeading
+                title="Header Configuration"
+                description="Set up your website header, navigation and actions."
               />
-              <InputField
-                id="header-button-name"
-                labelClassName="input-heading"
-                value={settings.headerButtonName}
-                onChange={(event) => updateSetting("headerButtonName", event.target.value)}
-                placeholder="Change link name to"
-              />
-            </div>
-          </div>
+            ) : null}
 
-          <div className="site-hf-block">
-            <div className="site-hf-nav-header">
-              <h4 className="site-hf-subheading">Main navigation</h4>
-              <button
-                type="button"
-                onClick={() => setIsNavigationModalOpen(true)}
-                className="page-primary-button-action"
-              >
-                <span aria-hidden="true">+</span>
-                Add navigation item
-              </button>
-            </div>
-
-            <div className="site-hf-nav-list">
-              {settings.navigation.map((item) => (
-                <div key={item.id} className="site-hf-nav-row">
-                  <label className="site-hf-nav-name">{item.name || "Navigation item"}</label>
-                  <span className="site-hf-nav-check">
-                    <CheckControl
-                      label={`Include ${item.name || "navigation item"}`}
-                      checked={item.included}
-                      onChange={() => updateNavigation(item.id, "included", !item.included)}
-                    />
-                  </span>
-                  <InputField
-                    aria-label={`${item.name || "Navigation item"} priority`}
-                    type="number"
-                    min="1"
-                    labelClassName="input-heading"
-                    value={item.priority}
-                    onChange={(event) => updateNavigation(item.id, "priority", event.target.value)}
-                    placeholder="Priority"
-                  />
-                  <InputField
-                    aria-label={`${item.name || "Navigation item"} link name`}
-                    labelClassName="input-heading"
-                    value={item.name}
-                    onChange={(event) => updateNavigation(item.id, "name", event.target.value)}
-                    placeholder="Change link name to"
-                  />
+            <div className="site-hf-block site-hf-block--first">
+              <h4 className="input-heading">Header preview</h4>
+              <div className="site-hf-navbar" aria-label="Header navigation preview">
+                <div className="site-hf-navbar-left">
+                  {settings.navigation
+                    .filter((item) => item.included)
+                    .map((item) => (
+                      <span key={item.id} className="site-hf-navbar-link">
+                        {item.name || "Link"}
+                      </span>
+                    ))}
+                  {settings.navigation.every((item) => !item.included) ? (
+                    <span className="site-hf-navbar-empty">No links included yet</span>
+                  ) : null}
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="site-hf-footer">
-          <SectionHeading
-            title="Footer Configuration"
-            description="Set up your website footer with links, contact information and social media."
-          />
-
-          <div className="site-hf-block">
-            <h4 className="site-hf-subheading site-hf-subheading-sm">Website logo</h4>
-            <LogoDropZone
-              id="footer-logo-upload"
-              label="Footer logo"
-              value={settings.footerLogo}
-              error={logoErrors.footer}
-              onUpload={(file) => handleLogoUpload("footer", file)}
-            />
-          </div>
-
-          <div className="site-hf-cards">
-            <FooterCard title="Explore">
-              <InputField
-                aria-label="Explore footer title"
-                labelClassName="input-heading"
-                value={settings.exploreTitle}
-                onChange={(event) => updateSetting("exploreTitle", event.target.value)}
-                placeholder="Change title name to"
-              />
-              <h5 className="site-hf-card-links-title">Links</h5>
-              <div className="site-hf-card-links">
-                {settings.exploreLinks.map((link) => (
-                  <label key={link.id} className="site-hf-link-row">
-                    <span aria-hidden="true" className="site-hf-drag">
-                      ⠿
+                <div className="site-hf-navbar-brand">
+                  {settings.headerLogo?.url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={settings.headerLogo.url}
+                      alt=""
+                      className="site-hf-navbar-logo"
+                    />
+                  ) : (
+                    <span className="site-hf-navbar-brand-fallback">
+                      {settings.headerLogo?.name || "Your logo"}
                     </span>
-                    <CheckControl
-                      label={`Show ${link.label} footer link`}
-                      checked={link.included}
-                      onChange={() => updateFooterLink(link.id, !link.included)}
-                    />
-                    {link.label}
-                  </label>
-                ))}
+                  )}
+                </div>
+                <div className="site-hf-navbar-right">
+                  <span className="site-hf-navbar-link">Login</span>
+                </div>
               </div>
-            </FooterCard>
+              <p className="form-helper-text site-hf-preview-hint">
+                Preview only — edit logo and links below to update what appears in the bar.
+              </p>
+            </div>
 
-            <FooterCard title="Social handles">
-              <InputField
-                aria-label="Social handles footer title"
-                labelClassName="input-heading"
-                value={settings.socialTitle}
-                onChange={(event) => updateSetting("socialTitle", event.target.value)}
-                placeholder="Change title name to"
-              />
-              <h5 className="site-hf-card-links-title">Links</h5>
-              <div className="site-hf-social-fields">
-                {settings.socialLinks.map((link) => (
-                  <InputField
-                    key={link.id}
-                    id={`social-${link.id}`}
-                    type="url"
-                    label={`${link.label}`}
-                    labelClassName="input-heading"
-                    value={link.value}
-                    onChange={(event) => updateSocialLink(link.id, event.target.value)}
-                    placeholder={`${link.id}.com/yourhandle`}
-                  />
-                ))}
+            <div className="site-hf-block">
+              <div className="site-hf-preview-logo-col">
+                <h4 className="input-heading">Header logo</h4>
+                <LogoDropZone
+                  id="header-logo-upload"
+                  label="Header logo"
+                  value={settings.headerLogo}
+                  error={logoErrors.header}
+                  onUpload={(file) => {
+                    void handleLogoUpload("header", file);
+                  }}
+                />
               </div>
-            </FooterCard>
+            </div>
 
-            <FooterCard title="Contact">
-              <InputField
-                aria-label="Contact footer title"
-                labelClassName="input-heading"
-                value={settings.contactTitle}
-                onChange={(event) => updateSetting("contactTitle", event.target.value)}
-                placeholder="Change title name to"
-              />
-              <div className="site-hf-social-fields">
-                <div className="site-hf-phone-field">
-                  <label htmlFor="footer-phone" className="input-heading">
-                    Phone Number
-                  </label>
-                  <div className="site-hf-phone-row">
-                    <SelectField
-                      id="footer-phone-country"
-                      aria-label="Phone country code"
-                      labelClassName="input-heading"
-                      value={settings.phoneCountry}
-                      onChange={(event) => updateSetting("phoneCountry", event.target.value)}
-                      options={[
-                        { value: "+1", label: "🇺🇸 +1" },
-                        { value: "+44", label: "🇬🇧 +44" },
-                        { value: "+91", label: "🇮🇳 +91" },
-                      ]}
-                    />
+            <div className="site-hf-block">
+              <div className="site-hf-nav-header">
+                <h4 className="input-heading mb-0">Main navigation</h4>
+                <button
+                  type="button"
+                  onClick={() => setIsNavigationModalOpen(true)}
+                  className="page-primary-button-action"
+                >
+                  <span aria-hidden="true">+</span>
+                  Add navigation item
+                </button>
+              </div>
+
+              <div className="site-hf-nav-list" role="list">
+                {settings.navigation.map((item) => (
+                  <div
+                    key={item.id}
+                    role="listitem"
+                    onDragOver={(event: DragEvent<HTMLDivElement>) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      if (dragOverNavId !== item.id) setDragOverNavId(item.id);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverNavId === item.id) setDragOverNavId(null);
+                    }}
+                    onDrop={(event: DragEvent<HTMLDivElement>) => {
+                      event.preventDefault();
+                      const fromId = event.dataTransfer.getData("text/plain") || draggingNavId;
+                      if (fromId) reorderNavigation(fromId, item.id);
+                      setDraggingNavId(null);
+                      setDragOverNavId(null);
+                    }}
+                    className={[
+                      "site-hf-nav-row",
+                      draggingNavId === item.id ? "is-dragging" : "",
+                      dragOverNavId === item.id ? "is-drag-over" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <button
+                      type="button"
+                      className="site-hf-drag"
+                      title="Drag to reorder"
+                      aria-label={`Drag to reorder ${item.name || "navigation item"}`}
+                      draggable
+                      onDragStart={(event: DragEvent<HTMLButtonElement>) => {
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", item.id);
+                        setDraggingNavId(item.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingNavId(null);
+                        setDragOverNavId(null);
+                      }}
+                    >
+                      ⠿
+                    </button>
+                    <span className="site-hf-nav-check">
+                      <CheckControl
+                        label={`Include ${item.name || "navigation item"}`}
+                        checked={item.included}
+                        onChange={() => updateNavigation(item.id, "included", !item.included)}
+                      />
+                    </span>
                     <InputField
-                      id="footer-phone"
-                      type="tel"
+                      aria-label={`${item.name || "Navigation item"} link name`}
                       labelClassName="input-heading"
-                      value={settings.phoneNumber}
-                      onChange={(event) => updateSetting("phoneNumber", event.target.value)}
-                      placeholder="(000) 000-0000"
+                      value={item.name}
+                      onChange={(event) => updateNavigation(item.id, "name", event.target.value)}
+                      placeholder="Link name"
                     />
                   </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {showFooter ? (
+          <section className={section === "all" ? "site-hf-footer" : "site-hf-section"}>
+            {section === "all" ? (
+              <SectionHeading
+                title="Footer Configuration"
+                description="Set up your website footer with links, contact information and social media."
+              />
+            ) : null}
+
+            <div className="site-hf-block site-hf-block--first">
+              <h4 className="input-heading">Footer preview</h4>
+              <div className="site-hf-footer-preview" aria-label="Footer preview">
+                <div className="site-hf-footer-preview-grid">
+                  <div className="site-hf-footer-preview-col site-hf-footer-preview-brand">
+                    {settings.footerLogo?.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={settings.footerLogo.url}
+                        alt=""
+                        className="site-hf-footer-preview-logo"
+                      />
+                    ) : (
+                      <span className="site-hf-footer-preview-logo-fallback">
+                        {settings.footerLogo?.name || "Your logo"}
+                      </span>
+                    )}
+                    <ul className="site-hf-footer-preview-list">
+                      {settings.exploreLinks
+                        .filter((link) => link.included)
+                        .map((link) => (
+                          <li key={link.id}>{link.label}</li>
+                        ))}
+                      {settings.exploreLinks.every((link) => !link.included) ? (
+                        <li className="site-hf-footer-preview-empty">No links included</li>
+                      ) : null}
+                    </ul>
+                  </div>
+
+                  <div className="site-hf-footer-preview-col">
+                    <p className="site-hf-footer-preview-heading">
+                      {settings.socialTitle.trim() || "Social media"}
+                    </p>
+                    <ul className="site-hf-footer-preview-list">
+                      {settings.socialLinks
+                        .filter((link) => link.value.trim())
+                        .map((link) => (
+                          <li key={link.id}>{link.label}</li>
+                        ))}
+                      {settings.socialLinks.every((link) => !link.value.trim())
+                        ? settings.socialLinks.map((link) => (
+                            <li key={link.id} className="site-hf-footer-preview-muted">
+                              {link.label}
+                            </li>
+                          ))
+                        : null}
+                    </ul>
+                  </div>
+
+                  <div className="site-hf-footer-preview-col">
+                    <p className="site-hf-footer-preview-heading">
+                      {settings.contactTitle.trim() || "Contact us"}
+                    </p>
+                    <ul className="site-hf-footer-preview-list site-hf-footer-preview-contact">
+                      <li>
+                        <span className="site-hf-footer-preview-icon" aria-hidden="true">
+                          ☎
+                        </span>
+                        {settings.phoneNumber.trim() || "Add phone number"}
+                      </li>
+                      <li>
+                        <span className="site-hf-footer-preview-icon" aria-hidden="true">
+                          ✉
+                        </span>
+                        {settings.email.trim() || "Add email"}
+                      </li>
+                      <li>
+                        <span className="site-hf-footer-preview-icon" aria-hidden="true">
+                          ⌖
+                        </span>
+                        {settings.address.trim() || "Add address"}
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <InputField
-                  id="footer-email"
-                  label="Email"
-                  labelClassName="input-heading"
-                  type="email"
-                  value={settings.email}
-                  onChange={(event) => updateSetting("email", event.target.value)}
-                  placeholder="user@gmail.com"
-                />
-                <InputField
-                  as="textarea"
-                  id="footer-address"
-                  rows={3}
-                  label="Address"
-                  labelClassName="input-heading"
-                  value={settings.address}
-                  onChange={(event) => updateSetting("address", event.target.value)}
-                  placeholder="Enter address details"
+                <div className="site-hf-footer-preview-bottom">
+                  <p>© {new Date().getFullYear()} All Rights Reserved | powered by yourlist</p>
+                  <p className="site-hf-footer-preview-terms">Terms of Use</p>
+                </div>
+              </div>
+              <p className="form-helper-text site-hf-preview-hint">
+                Preview only — edit the sections below to update what appears here.
+              </p>
+            </div>
+
+            <div className="site-hf-block site-hf-footer-editor">
+              <div className="site-hf-footer-editor-logo">
+                <h4 className="input-heading">Footer logo</h4>
+                <LogoDropZone
+                  id="footer-logo-upload"
+                  label="Footer logo"
+                  value={settings.footerLogo}
+                  error={logoErrors.footer}
+                  onUpload={(file) => {
+                    void handleLogoUpload("footer", file);
+                  }}
                 />
               </div>
-            </FooterCard>
-          </div>
-        </section>
+
+              <div className="site-hf-cards">
+                <FooterCard title="Footer links">
+                  <div className="site-hf-card-links">
+                    {settings.exploreLinks.map((link) => (
+                      <label key={link.id} className="site-hf-link-row">
+                        <CheckControl
+                          label={`Show ${link.label} footer link`}
+                          checked={link.included}
+                          onChange={() => updateFooterLink(link.id, !link.included)}
+                        />
+                        <span>{link.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FooterCard>
+
+                <FooterCard title="Social handles">
+                  <InputField
+                    aria-label="Social handles footer title"
+                    labelClassName="input-heading"
+                    value={settings.socialTitle}
+                    onChange={(event) => updateSetting("socialTitle", event.target.value)}
+                    placeholder="Social media"
+                  />
+                  <div className="site-hf-social-fields">
+                    {settings.socialLinks.map((link) => (
+                      <InputField
+                        key={link.id}
+                        id={`social-${link.id}`}
+                        type="url"
+                        label={link.label}
+                        labelClassName="input-heading"
+                        value={link.value}
+                        onChange={(event) => updateSocialLink(link.id, event.target.value)}
+                        placeholder={`${link.id}.com/yourhandle`}
+                      />
+                    ))}
+                  </div>
+                </FooterCard>
+
+                <FooterCard title="Contact">
+                  <InputField
+                    aria-label="Contact footer title"
+                    labelClassName="input-heading"
+                    value={settings.contactTitle}
+                    onChange={(event) => updateSetting("contactTitle", event.target.value)}
+                    placeholder="Contact us"
+                  />
+                  <div className="site-hf-social-fields site-hf-contact-fields">
+                    <InputField
+                      id="footer-phone"
+                      label="Phone number"
+                      labelClassName="input-heading"
+                      type="text"
+                      inputMode="tel"
+                      value={settings.phoneNumber}
+                      onChange={(event) => updateSetting("phoneNumber", event.target.value)}
+                      placeholder="e.g. +44 1234 567890"
+                    />
+                    <InputField
+                      id="footer-email"
+                      label="Email"
+                      labelClassName="input-heading"
+                      type="email"
+                      value={settings.email}
+                      onChange={(event) => updateSetting("email", event.target.value)}
+                      placeholder="user@gmail.com"
+                    />
+                    <InputField
+                      as="textarea"
+                      id="footer-address"
+                      rows={3}
+                      label="Address"
+                      labelClassName="input-heading"
+                      value={settings.address}
+                      onChange={(event) => updateSetting("address", event.target.value)}
+                      placeholder="Enter address details"
+                    />
+                  </div>
+                </FooterCard>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <div className="site-form-actions">
           {notice ? (
@@ -585,12 +775,17 @@ export default function HeaderFooterTab() {
           <button
             type="button"
             onClick={cancelChanges}
+            disabled={isSaving || Boolean(uploadingLogo)}
             className="form-footer-btn form-footer-btn-secondary"
           >
             Cancel
           </button>
-          <button type="submit" className="form-footer-btn form-footer-btn-primary">
-            Save
+          <button
+            type="submit"
+            disabled={isSaving || Boolean(uploadingLogo)}
+            className="form-footer-btn form-footer-btn-primary"
+          >
+            {isSaving ? "Saving…" : "Save"}
           </button>
         </div>
       </form>
@@ -598,7 +793,6 @@ export default function HeaderFooterTab() {
       {isNavigationModalOpen ? (
         <AddNavigationModal
           open
-          defaultPriority={String(settings.navigation.length + 1)}
           onClose={() => setIsNavigationModalOpen(false)}
           onSave={addNavigationItem}
         />

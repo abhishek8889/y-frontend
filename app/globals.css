@@ -2323,6 +2323,15 @@ textarea {
   box-shadow: 0 20px 50px rgba(55, 69, 87, 0.12);
 }
 
+/* Opt-in sizes — only applied when OrganiserModal `size` is set */
+.organiser-modal__panel--lg {
+  max-width: 820px;
+}
+
+.organiser-modal__panel--xl {
+  max-width: 1100px;
+}
+
 .organiser-modal__close {
   position: absolute;
   top: 16px;

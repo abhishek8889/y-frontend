@@ -1,47 +1,61 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { InputField } from "@/components/ui/InputField";
+import { useUploadMediaMutation } from "@/apis/media/mediaApi";
+import {
+  isApiSiteId,
+  useUpdateOrganisationSiteAssetsMutation,
+} from "@/apis/organisation/siteApi";
+import { Button } from "@/components/ui/Button";
+import type { SiteMediaAsset, SiteRecord } from "../siteTypes";
 
-type UploadedAsset = {
-  name: string;
-  url: string;
-};
-
-function useAssetPreview(asset: UploadedAsset | null) {
-  useEffect(() => {
-    if (!asset) return;
-    return () => URL.revokeObjectURL(asset.url);
-  }, [asset]);
-}
+type AssetKind = "logo" | "favicon";
 
 function AssetPlaceholder() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="site-upload-preview-icon">
-      <rect x="3" y="3" width="42" height="42" rx="4" fill="currentColor" />
-      <path d="m9 34 9-10 6 6 5-5 10 9H9Z" fill="white" />
-      <circle cx="17" cy="16" r="3" fill="white" />
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="site-asset-upload-icon">
+      <path
+        d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5M8 10l4-4 4 4M12 6.5V16"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-export default function MainAssetsTab() {
-  const [microSiteName, setMicroSiteName] = useState("");
-  const [savedMicroSiteName, setSavedMicroSiteName] = useState("");
-  const [logo, setLogo] = useState<UploadedAsset | null>(null);
-  const [favicon, setFavicon] = useState<UploadedAsset | null>(null);
+export default function MainAssetsTab({ site }: { site: SiteRecord }) {
+  const [logo, setLogo] = useState<SiteMediaAsset | null>(site.logo);
+  const [favicon, setFavicon] = useState<SiteMediaAsset | null>(site.favicon);
+  const [savedLogo, setSavedLogo] = useState<SiteMediaAsset | null>(site.logo);
+  const [savedFavicon, setSavedFavicon] = useState<SiteMediaAsset | null>(site.favicon);
+  const [uploading, setUploading] = useState<AssetKind | null>(null);
   const [errors, setErrors] = useState({ logo: "", favicon: "" });
   const [notice, setNotice] = useState("");
 
-  useAssetPreview(logo);
-  useAssetPreview(favicon);
+  const [uploadMedia] = useUploadMediaMutation();
+  const [updateAssets, { isLoading: isSaving }] = useUpdateOrganisationSiteAssetsMutation();
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>, type: "logo" | "favicon") {
+  useEffect(() => {
+    setLogo(site.logo);
+    setFavicon(site.favicon);
+    setSavedLogo(site.logo);
+    setSavedFavicon(site.favicon);
+    setErrors({ logo: "", favicon: "" });
+    setNotice("");
+  }, [site.id, site.logo, site.favicon]);
+
+  async function handleUpload(event: ChangeEvent<HTMLInputElement>, type: AssetKind) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    const setError = (message: string) => setErrors((current) => ({ ...current, [type]: message }));
-    const validFormat = ["image/png", "image/svg+xml"].includes(file.type) || /\.(png|svg)$/i.test(file.name);
+
+    const setError = (message: string) =>
+      setErrors((current) => ({ ...current, [type]: message }));
+
+    const validFormat =
+      ["image/png", "image/svg+xml"].includes(file.type) || /\.(png|svg)$/i.test(file.name);
     if (!validFormat) {
       setError("Upload a PNG or SVG file.");
       return;
@@ -51,107 +65,146 @@ export default function MainAssetsTab() {
       return;
     }
 
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      if (image.naturalWidth < 200 || image.naturalHeight < 200) {
-        URL.revokeObjectURL(url);
-        setError("Image must be at least 200 × 200 pixels.");
-        return;
-      }
-      const asset = { name: file.name, url };
+    setUploading(type);
+    setError("");
+    setNotice("");
+
+    try {
+      const result = await uploadMedia({
+        file,
+        context: type === "logo" ? "site-logo" : "site-favicon",
+      }).unwrap();
+
+      const asset: SiteMediaAsset = {
+        path: result.data.path,
+        url: result.data.url,
+        name: result.data.original_name || file.name,
+      };
+
       if (type === "logo") setLogo(asset);
       else setFavicon(asset);
-      setError("");
-      setNotice("");
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      setError("This image could not be read. Choose a valid PNG or SVG.");
-    };
-    image.src = url;
+    } catch {
+      setError("Upload failed. Try again.");
+    } finally {
+      setUploading(null);
+    }
   }
 
-  function saveAssets(event: FormEvent<HTMLFormElement>) {
+  async function saveAssets(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSavedMicroSiteName(microSiteName.trim());
-    setMicroSiteName(microSiteName.trim());
-    setNotice("Branding assets saved.");
+    if (!isApiSiteId(site.id)) {
+      setNotice("Save branding after the site is created.");
+      return;
+    }
+    if (!logo?.path || !favicon?.path) {
+      setNotice("Upload both a logo and favicon before saving.");
+      return;
+    }
+
+    try {
+      await updateAssets({
+        siteId: site.id,
+        body: {
+          logo: logo.path,
+          favicon: favicon.path,
+        },
+      }).unwrap();
+      setSavedLogo(logo);
+      setSavedFavicon(favicon);
+      setNotice("Logo and favicon saved.");
+    } catch {
+      // Toast handled by mutation.
+    }
   }
 
   function cancelChanges() {
-    setMicroSiteName(savedMicroSiteName);
-    setLogo(null);
-    setFavicon(null);
+    setLogo(savedLogo);
+    setFavicon(savedFavicon);
     setErrors({ logo: "", favicon: "" });
     setNotice("");
   }
 
-  return (
-    <form onSubmit={saveAssets} className="site-tab">
-      <InputField
-        id="microsite-name"
-        required
-        label="Microsite name"
-        labelClassName="input-heading"
-        value={microSiteName}
-        onChange={(event) => {
-          setMicroSiteName(event.target.value);
-          setNotice("");
-        }}
-        placeholder="e.g. United Sports Elite"
-      />
+  const assets = [
+    {
+      id: "logo" as const,
+      label: "Official logo",
+      value: logo,
+      emptyTitle: "Click to upload logo",
+      uploadingTitle: "Uploading logo…",
+    },
+    {
+      id: "favicon" as const,
+      label: "Favicon",
+      value: favicon,
+      emptyTitle: "Click to upload favicon",
+      uploadingTitle: "Uploading favicon…",
+    },
+  ];
 
+  return (
+    <form onSubmit={(event) => void saveAssets(event)} className="site-tab">
       <div className="site-form-grid-2 site-assets-grid">
-        {([
-          { id: "logo", label: "Official logo", value: logo, hint: "Click to upload logo" },
-          { id: "favicon", label: "Favicon", value: favicon, hint: "Click to upload favicon" },
-        ] as const).map((asset) => (
-          <div key={asset.id}>
-            <label className="input-heading" htmlFor={`site-${asset.id}-upload`}>
-              {asset.label}
-            </label>
-            <label htmlFor={`site-${asset.id}-upload`} className="site-upload-inline">
-              <span className="site-upload-preview">
-                {asset.value ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={asset.value.url} alt={`${asset.label} preview`} />
+        {assets.map((asset) => {
+          const isUploading = uploading === asset.id;
+          return (
+            <div key={asset.id}>
+              <label className="input-heading" htmlFor={`site-${asset.id}-upload`}>
+                {asset.label}
+              </label>
+              <label
+                htmlFor={`site-${asset.id}-upload`}
+                className={[
+                  "form-upload-box site-asset-upload",
+                  isUploading ? "site-asset-upload--busy" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {asset.value?.url ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={asset.value.url}
+                      alt={`${asset.label} preview`}
+                      className="site-asset-upload-preview"
+                    />
+                    <p className="input-heading mb-0 text-center">
+                      {asset.value.name || "Replace image"}
+                    </p>
+                    <p className="form-upload-hint">Click to replace · PNG or SVG · max 2MB</p>
+                  </>
                 ) : (
-                  <AssetPlaceholder />
+                  <>
+                    <AssetPlaceholder />
+                    <p className="input-heading mb-0 text-center">
+                      {isUploading ? asset.uploadingTitle : asset.emptyTitle}
+                    </p>
+                    <p className="form-upload-hint">
+                      PNG or SVG · max 2MB
+                      <br />
+                      (Min 200×200px)
+                    </p>
+                  </>
                 )}
-              </span>
-              <span className="site-upload-meta">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="site-upload-meta-icon">
-                  <path
-                    d="M12 16V3m0 0L7 8m5-5 5 5M4 15v5h16v-5"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span className="site-upload-meta-title">{asset.value?.name ?? asset.hint}</span>
-                <span className="site-upload-meta-hint">
-                  PNG or SVG · max 2MB
-                  <br />
-                  (Min 200x200px)
-                </span>
-              </span>
-              <input
-                id={`site-${asset.id}-upload`}
-                type="file"
-                accept=".png,.svg,image/png,image/svg+xml"
-                className="sr-only"
-                onChange={(event) => handleUpload(event, asset.id)}
-              />
-            </label>
-            {errors[asset.id] ? (
-              <p role="alert" className="site-error">
-                {errors[asset.id]}
-              </p>
-            ) : null}
-          </div>
-        ))}
+                <input
+                  id={`site-${asset.id}-upload`}
+                  type="file"
+                  accept=".png,.svg,image/png,image/svg+xml"
+                  className="sr-only"
+                  disabled={Boolean(uploading) || isSaving}
+                  onChange={(event) => {
+                    void handleUpload(event, asset.id);
+                  }}
+                />
+              </label>
+              {errors[asset.id] ? (
+                <p role="alert" className="site-error">
+                  {errors[asset.id]}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
 
       <div className="site-form-actions">
@@ -160,12 +213,21 @@ export default function MainAssetsTab() {
             {notice}
           </p>
         ) : null}
-        <button type="button" onClick={cancelChanges} className="form-footer-btn form-footer-btn-secondary">
+        <Button
+          type="button"
+          onClick={cancelChanges}
+          disabled={isSaving || Boolean(uploading)}
+          className="form-footer-btn form-footer-btn-secondary"
+        >
           Cancel
-        </button>
-        <button type="submit" className="form-footer-btn form-footer-btn-primary">
-          Save
-        </button>
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSaving || Boolean(uploading)}
+          className="form-footer-btn form-footer-btn-primary"
+        >
+          {isSaving ? "Saving…" : "Save"}
+        </Button>
       </div>
     </form>
   );
