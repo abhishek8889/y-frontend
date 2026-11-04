@@ -10,6 +10,11 @@ type DashboardShellProps = {
   rightRail?: ReactNode;
   /** Show the Figma search strip above page content. Currently disabled. */
   showSearch?: boolean;
+  /**
+   * Fill the viewport height (needed for split panes like Events).
+   * Set false for tall pages that should grow and use the main page scroll.
+   */
+  fillHeight?: boolean;
 };
 
 /**
@@ -21,6 +26,7 @@ export function DashboardShell({
   sidebar,
   children,
   rightRail,
+  fillHeight = true,
   // showSearch = true,
 }: DashboardShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -71,8 +77,20 @@ export function DashboardShell({
             */}
 
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#fafbfc]">
-              <div className="flex min-h-full lg:h-full">
-                <div className="min-h-0 min-w-0 flex-1 lg:h-full">{children}</div>
+              <div
+                className={
+                  fillHeight ? "flex min-h-full lg:h-full" : "flex min-h-full"
+                }
+              >
+                <div
+                  className={
+                    fillHeight
+                      ? "min-h-0 min-w-0 flex-1 lg:h-full"
+                      : "min-w-0 flex-1"
+                  }
+                >
+                  {children}
+                </div>
                 {rightRail ? (
                   <div className="hidden w-[260px] shrink-0 overflow-y-auto border-l border-black bg-white lg:block">
                     {rightRail}

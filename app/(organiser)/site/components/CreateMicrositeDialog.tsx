@@ -4,18 +4,35 @@ import { useEffect, useState, type FormEvent } from "react";
 import { OrganiserModal } from "@/components/organiser/OrganiserModal";
 import { Button } from "@/components/ui/Button";
 import { InputField } from "@/components/ui/InputField";
-import type { SiteKind } from "../siteTypes";
 
-const DOMAIN_PATTERN =
-  /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
+/** Matches backend StoreSiteRequest hostname regex. */
+const HOSTNAME_PATTERN =
+  /^(?=.{1,255}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
 
-function normalizeDomain(value: string) {
-  return value.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+function normalizeHostname(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, "")
+    .replace(/[/?#].*$/, "")
+    .replace(/\/+$/, "");
+}
+
+function validateHostname(value: string): string | null {
+  if (!value) {
+    return "Enter a domain name, e.g. club.example.com.";
+  }
+  if (/^https?:\/\//i.test(value.trim()) || /[/?#]/.test(value.trim())) {
+    return "Use a domain name only (e.g. club.example.com), not a full URL.";
+  }
+  if (!HOSTNAME_PATTERN.test(value)) {
+    return "Enter a valid domain name, e.g. club.example.com.";
+  }
+  return null;
 }
 
 type CreateMicrositeDialogProps = {
   open: boolean;
-  kind: SiteKind;
   onClose: () => void;
   onCreate: (name: string, domain: string) => void | Promise<void>;
   creating?: boolean;
@@ -23,7 +40,6 @@ type CreateMicrositeDialogProps = {
 
 export function CreateMicrositeDialog({
   open,
-  kind,
   onClose,
   onCreate,
   creating = false,
@@ -31,7 +47,6 @@ export function CreateMicrositeDialog({
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
   const [error, setError] = useState("");
-  const isMain = kind === "main";
 
   useEffect(() => {
     if (!open) return;
@@ -45,19 +60,26 @@ export function CreateMicrositeDialog({
     if (creating) return;
 
     const trimmedName = name.trim();
-    const trimmedDomain = normalizeDomain(domain);
+    const trimmedDomain = normalizeHostname(domain);
 
-    if (trimmedName.length < 2) {
-      setError(
-        isMain
-          ? "Enter a clubsite name with at least 2 characters."
-          : "Enter a microsite name with at least 2 characters.",
-      );
+    if (!trimmedName) {
+      setError("Enter a microsite name.");
       return;
     }
 
-    if (!trimmedDomain || !DOMAIN_PATTERN.test(trimmedDomain)) {
-      setError("Enter a valid domain name, such as www.yourclub.com.");
+    if (trimmedName.length > 255) {
+      setError("Microsite name must be 255 characters or fewer.");
+      return;
+    }
+
+    if (trimmedName.length < 2) {
+      setError("Enter a microsite name with at least 2 characters.");
+      return;
+    }
+
+    const domainError = validateHostname(trimmedDomain);
+    if (domainError) {
+      setError(domainError);
       return;
     }
 
@@ -75,16 +97,12 @@ export function CreateMicrositeDialog({
       <div className="site-create-modal">
         <header className="site-create-modal-header">
           <div>
-            <p className="site-create-modal-eyebrow">
-              {isMain ? "Clubsite" : "White label microsite"}
-            </p>
+            <p className="site-create-modal-eyebrow">Microsite</p>
             <h2 id="create-microsite-title" className="site-create-modal-title">
-              {isMain ? "Setup your clubsite" : "Add white label site"}
+              Create microsite
             </h2>
             <p className="site-create-modal-subtitle">
-              {isMain
-                ? "Name your clubsite and domain. You can configure branding and content next."
-                : "Name your microsite and domain — then branding, hero, and pages."}
+              Name your microsite and domain. You can configure branding and content next.
             </p>
           </div>
         </header>
@@ -92,7 +110,7 @@ export function CreateMicrositeDialog({
         <form onSubmit={submit} className="site-create-modal-body">
           <InputField
             id="microsite-name"
-            label={isMain ? "Clubsite name *" : "Microsite name *"}
+            label="Microsite name *"
             labelClassName="input-heading"
             required
             value={name}
@@ -100,7 +118,7 @@ export function CreateMicrositeDialog({
               setName(event.target.value);
               setError("");
             }}
-            placeholder="e.g. Hednesford Town"
+            placeholder="e.g. Calm International"
             disabled={creating}
           />
 
@@ -114,7 +132,7 @@ export function CreateMicrositeDialog({
               setDomain(event.target.value);
               setError("");
             }}
-            placeholder="e.g. www.yourclub.com"
+            placeholder="e.g. club.example.com"
             disabled={creating}
           />
 
@@ -138,11 +156,7 @@ export function CreateMicrositeDialog({
               disabled={creating}
               className="form-footer-btn form-footer-btn-primary"
             >
-              {creating
-                ? "Creating…"
-                : isMain
-                  ? "Create clubsite"
-                  : "Create white label"}
+              {creating ? "Creating…" : "Create microsite"}
             </Button>
           </div>
         </form>

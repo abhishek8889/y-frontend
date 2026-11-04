@@ -1,4 +1,4 @@
-import { mapSiteFooter, mapSiteHeader } from "./siteMappers";
+import { mapNavigation, mapSiteFooter, mapSiteHeader } from "./siteMappers";
 import type { SiteRecord, SitesStore } from "./siteTypes";
 
 const SITE_STORAGE_KEY = "yourlist_organiser_sites_v2";
@@ -13,12 +13,7 @@ function emptyStore(): SitesStore {
 function normalizeSiteRecord(value: unknown): SiteRecord | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Partial<SiteRecord>;
-  if (
-    typeof record.id !== "string" ||
-    typeof record.name !== "string" ||
-    !record.name.trim() ||
-    (record.kind !== "main" && record.kind !== "whitelabel")
-  ) {
+  if (typeof record.id !== "string" || typeof record.name !== "string" || !record.name.trim()) {
     return null;
   }
 
@@ -30,7 +25,7 @@ function normalizeSiteRecord(value: unknown): SiteRecord | null {
   return {
     id: record.id,
     name: record.name.trim(),
-    kind: record.kind,
+    kind: "microsite",
     createdAt,
     updatedAt: typeof record.updatedAt === "string" && record.updatedAt ? record.updatedAt : createdAt,
     status: typeof record.status === "string" && record.status ? record.status : "draft",
@@ -48,6 +43,7 @@ function normalizeSiteRecord(value: unknown): SiteRecord | null {
             name: typeof record.logo.name === "string" ? record.logo.name : undefined,
           }
         : null,
+    navigation: mapNavigation(record.navigation),
     favicon:
       record.favicon &&
       typeof record.favicon === "object" &&
@@ -123,16 +119,12 @@ export function getActiveSite(store: SitesStore): SiteRecord | null {
   return store.sites[0] ?? null;
 }
 
-export function getMainSite(store: SitesStore): SiteRecord | null {
-  return store.sites.find((site) => site.kind === "main") ?? null;
-}
-
-function blankSiteFields(name: string, kind: SiteRecord["kind"]): SiteRecord {
+function blankSiteFields(name: string): SiteRecord {
   const createdAt = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     name: name.trim(),
-    kind,
+    kind: "microsite",
     createdAt,
     updatedAt: createdAt,
     status: "draft",
@@ -140,6 +132,7 @@ function blankSiteFields(name: string, kind: SiteRecord["kind"]): SiteRecord {
     domainStatus: null,
     dnsRecords: [],
     logo: null,
+    navigation: [],
     favicon: null,
     header: null,
     footer: null,
@@ -147,10 +140,7 @@ function blankSiteFields(name: string, kind: SiteRecord["kind"]): SiteRecord {
   };
 }
 
-export function createMainSite(name: string): SiteRecord {
-  return blankSiteFields(name, "main");
-}
-
-export function createWhitelabelSite(name: string): SiteRecord {
-  return blankSiteFields(name, "whitelabel");
+/** Local-only draft when create API is unavailable. */
+export function createLocalMicrosite(name: string): SiteRecord {
+  return blankSiteFields(name);
 }

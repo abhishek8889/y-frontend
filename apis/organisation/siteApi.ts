@@ -32,6 +32,12 @@ export type OrganisationSiteMedia =
     }
   | null;
 
+/** Fixed navigation item shape stored on `sites.navigation`. */
+export type SiteNavigationItem = {
+  name: string;
+  redirect_link: string;
+};
+
 /** Site row from `organisation/site/list` — fields may grow; map defensively. */
 export type OrganisationSite = {
   id: number | string;
@@ -44,8 +50,15 @@ export type OrganisationSite = {
   kind?: string | null;
   type?: string | null;
   site_type?: string | null;
+  /** Top-level hostname from list resource (mirrors domain.hostname). */
+  hostname?: string | null;
   domain?: string | OrganisationSiteDomain | null;
   logo?: OrganisationSiteMedia;
+  navigation?: SiteNavigationItem[] | null;
+  feature_object?: {
+    event_category?: string;
+    news_category?: string;
+  } | null;
   favicon?: OrganisationSiteMedia;
   header?: Record<string, unknown> | null;
   footer?: Record<string, unknown> | null;
@@ -58,14 +71,11 @@ export type OrganisationSite = {
   updatedAt?: string | null;
 };
 
+/** Patch body for `organisation/site/update/{id}` — only include keys to change. */
 export type UpdateOrganisationSitePayload = {
   name?: string;
-  domain?: string | null;
-  site_template_id?: number | string | null;
   logo?: string | null;
-  favicon?: string | null;
-  header?: Record<string, unknown> | null;
-  footer?: Record<string, unknown> | null;
+  navigation?: SiteNavigationItem[] | null;
   status?: "draft" | "active" | "disabled";
 };
 
@@ -82,15 +92,30 @@ export type UpdateOrganisationSiteResponse = {
 export type OrganisationSiteListResponse = {
   success: boolean;
   message: string;
-  data: OrganisationSite[];
+  data: {
+    sites: OrganisationSite[];
+  };
 };
+
+/** Normalize list payload — API returns `{ sites: [...] }`. */
+export function extractOrganisationSites(
+  response: OrganisationSiteListResponse | undefined,
+): OrganisationSite[] {
+  const payload = response?.data as
+    | OrganisationSite[]
+    | { sites?: OrganisationSite[] }
+    | undefined;
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.sites)) return payload.sites;
+  return [];
+}
 
 export type CreateOrganisationSitePayload = {
   name: string;
-  /** Omit or null on first create — domain is connected later (publish / Domain step). */
-  domain?: string | null;
-  site_type: "club" | string;
-  site_template_id: string | null;
+  /** Domain hostname only (e.g. club.example.com) — no scheme or path. */
+  hostname: string;
+  template_id?: number | null;
 };
 
 export type CreateOrganisationSiteResponse = {
@@ -242,20 +267,6 @@ export const siteApi = baseApi.injectEndpoints({
         await withQueryToast(queryFulfilled, { success: true, error: true });
       },
     }),
-    updateOrganisationSiteAssets: build.mutation<
-      UpdateOrganisationSiteResponse,
-      { siteId: string; body: Pick<UpdateOrganisationSitePayload, "logo" | "favicon"> }
-    >({
-      query: ({ siteId, body }) => ({
-        url: `organisation/site/update/${siteId}`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["OrganisationSites"],
-      async onQueryStarted(_, { queryFulfilled }) {
-        await withQueryToast(queryFulfilled, { success: true, error: true });
-      },
-    }),
   }),
 });
 
@@ -266,5 +277,4 @@ export const {
   useUpdateOrganisationSiteDomainMutation,
   usePublishOrganisationSiteMutation,
   useUpdateOrganisationSiteMutation,
-  useUpdateOrganisationSiteAssetsMutation,
 } = siteApi;

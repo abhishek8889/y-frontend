@@ -5,6 +5,7 @@ import {
   extractCreatedSiteId,
   extractDnsRecords,
   extractHostname,
+  extractOrganisationSites,
   useCreateOrganisationSiteMutation,
   useGetOrganisationSiteListQuery,
   type SiteDnsRecord,
@@ -19,12 +20,10 @@ import { SiteWorkspace } from "./components/SiteWorkspace";
 import { mapOrganisationSite } from "./siteMappers";
 import {
   clearSitesStore,
-  createWhitelabelSite,
   getActiveSite,
-  getMainSite,
   writeSitesStore,
 } from "./siteStorage";
-import type { SiteKind, SiteRecord, SiteSection, SitesStore } from "./siteTypes";
+import type { SiteRecord, SitesStore } from "./siteTypes";
 
 function emptyStore(): SitesStore {
   return { version: 1, sites: [], activeSiteId: null };
@@ -35,23 +34,17 @@ export default function SitePage() {
   const [createSite, { isLoading: isCreating }] = useCreateOrganisationSiteMutation();
   const [store, setStore] = useState<SitesStore>(emptyStore);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createKind, setCreateKind] = useState<SiteKind>("main");
   const [view, setView] = useState<"list" | "manage">("list");
-  const [activeSection, setActiveSection] = useState<SiteSection>("Domain");
-  const [connectedDomain, setConnectedDomain] = useState("");
-  const [dnsRecords, setDnsRecords] = useState<SiteDnsRecord[]>([]);
   const [dnsRecordsBySiteId, setDnsRecordsBySiteId] = useState<
     Record<string, SiteDnsRecord[]>
   >({});
-  const [domainNotice, setDomainNotice] = useState("");
-  const [pageNotice, setPageNotice] = useState("");
 
-  const apiSites = data?.data;
+  const apiSites = extractOrganisationSites(data);
 
   useEffect(() => {
     if (isLoading) return;
 
-    const list = Array.isArray(apiSites) ? apiSites : [];
+    const list = apiSites;
 
     if (list.length > 0) {
       const sites = list.map(mapOrganisationSite);
@@ -87,25 +80,15 @@ export default function SitePage() {
     });
   }, [apiSites, isLoading]);
 
-  const list = Array.isArray(apiSites) ? apiSites : [];
-  const mappedList = list.map(mapOrganisationSite);
+  const mappedList = apiSites.map(mapOrganisationSite);
   const activeSite = getActiveSite(store);
-  const mainSite = getMainSite(store);
-  const hasApiSites = list.length > 0;
 
   function persist(next: SitesStore) {
     writeSitesStore(next);
     setStore(next);
   }
 
-  function selectSection(section: SiteSection) {
-    setActiveSection(section);
-    setDomainNotice("");
-    setPageNotice("");
-  }
-
   function openCreate() {
-    setCreateKind(mainSite || hasApiSites ? "whitelabel" : "main");
     setCreateOpen(true);
   }
 
@@ -113,76 +96,55 @@ export default function SitePage() {
     const records = dnsRecordsBySiteId[siteId]?.length
       ? dnsRecordsBySiteId[siteId]
       : site?.dnsRecords ?? [];
-    setConnectedDomain(site?.domainHostname ?? "");
-    setDnsRecords(records);
-    setDomainNotice(
-      records.length ? "Add these DNS records at your domain provider." : "",
-    );
-    setPageNotice("");
-    setActiveSection("Domain");
+    if (records.length && siteId) {
+      setDnsRecordsBySiteId((prev) =>
+        prev[siteId]?.length ? prev : { ...prev, [siteId]: records },
+      );
+    }
     setView("manage");
   }
 
   async function createMicrosite(name: string, domain: string) {
-    if (createKind === "main") {
-      if (mainSite || hasApiSites) return;
-      try {
-        const result = await createSite({
-          name,
-          domain,
-          site_type: "club",
-          site_template_id: null,
-        }).unwrap();
-        const createdId = extractCreatedSiteId(result);
-        const createdSite = result.data?.site
-          ? mapOrganisationSite(result.data.site, 0)
-          : null;
-        const records = extractDnsRecords(result);
-        const hostname = extractHostname(result, domain);
-        setCreateOpen(false);
-        if (createdId && createdSite) {
-          const siteWithDomain: SiteRecord = {
-            ...createdSite,
-            domainHostname: createdSite.domainHostname || hostname,
-            dnsRecords: createdSite.dnsRecords.length ? createdSite.dnsRecords : records,
-          };
-          persist({
-            version: 1,
-            sites: [siteWithDomain],
-            activeSiteId: createdId,
-          });
-          if (records.length) {
-            setDnsRecordsBySiteId((prev) => ({ ...prev, [createdId]: records }));
-          }
-          openWorkspace(createdId, siteWithDomain);
-          setConnectedDomain(hostname);
-          if (records.length) {
-            setDnsRecords(records);
-            setDomainNotice("Add these DNS records at your domain provider.");
-          }
-        } else if (createdId) {
-          persist({ ...store, activeSiteId: createdId });
-          setView("list");
-        } else {
-          setView("list");
-        }
-      } catch {
-        // Toast handled by mutation middleware.
-      }
-      return;
-    }
+    try {
+      const result = await createSite({
+        name,
+        hostname: domain,
+        template_id: null,
+      }).unwrap();
+      const createdId = extractCreatedSiteId(result);
+      const createdSite = result.data?.site
+        ? mapOrganisationSite(result.data.site)
+        : null;
+      const records = extractDnsRecords(result);
+      const hostname = extractHostname(result, domain);
+      setCreateOpen(false);
 
-    // White label create UI — local draft until WL create API exists.
-    const site = createWhitelabelSite(name);
-    const next: SitesStore = {
-      version: 1,
-      sites: [...store.sites, site],
-      activeSiteId: site.id,
-    };
-    persist(next);
-    setCreateOpen(false);
-    openWorkspace(site.id, { ...site, domainHostname: domain });
-    setConnectedDomain(domain);
+      if (createdId && createdSite) {
+        const siteWithDomain: SiteRecord = {
+          ...createdSite,
+          domainHostname: createdSite.domainHostname || hostname,
+          dnsRecords: createdSite.dnsRecords.length ? createdSite.dnsRecords : records,
+        };
+        const withoutDup = store.sites.filter((item) => item.id !== createdId);
+        persist({
+          version: 1,
+          sites: [...withoutDup, siteWithDomain],
+          activeSiteId: createdId,
+        });
+        if (records.length) {
+          setDnsRecordsBySiteId((prev) => ({ ...prev, [createdId]: records }));
+        }
+        openWorkspace(createdId, siteWithDomain);
+        return;
+      }
+
+      if (createdId) {
+        persist({ ...store, activeSiteId: createdId });
+      }
+      setView("list");
+    } catch {
+      // Toast handled by mutation — keep dialog open so the user can fix validation errors.
+    }
   }
 
   function manageSite(site: SiteRecord) {
@@ -205,48 +167,16 @@ export default function SitePage() {
     });
   }
 
-  function backToList() {
-    setView("list");
-    setPageNotice("");
-    setDomainNotice("");
+  function handleSiteUpdated(site: SiteRecord) {
+    persist({
+      ...store,
+      sites: store.sites.map((item) => (item.id === site.id ? site : item)),
+      activeSiteId: site.id,
+    });
   }
 
-  function handleConnectedDomain(
-    domain: string,
-    records: SiteDnsRecord[],
-    siteId?: string | null,
-    domainStatus?: string | null,
-  ) {
-    setConnectedDomain(domain);
-    if (records.length) {
-      setDnsRecords(records);
-      setDomainNotice("Add these DNS records at your domain provider.");
-      if (siteId) {
-        setDnsRecordsBySiteId((prev) => ({ ...prev, [siteId]: records }));
-      }
-    }
-    if (siteId) {
-      setStore((prev) => {
-        const next = {
-          ...prev,
-          activeSiteId: siteId,
-          sites: prev.sites.map((item) =>
-            item.id === siteId
-              ? {
-                  ...item,
-                  domainHostname: domain,
-                  domainStatus: domainStatus ?? item.domainStatus,
-                  dnsRecords: records.length ? records : item.dnsRecords,
-                  updatedAt: new Date().toISOString(),
-                }
-              : item,
-          ),
-        };
-        writeSitesStore(next);
-        return next;
-      });
-    }
-    setView("manage");
+  function backToList() {
+    setView("list");
   }
 
   if (isLoading) {
@@ -272,20 +202,16 @@ export default function SitePage() {
 
   if (view === "manage" && activeSite) {
     return (
-      <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
+      <DashboardShell
+        header={<DashboardHeader />}
+        sidebar={<DashboardSidebar />}
+        fillHeight={false}
+      >
         <SiteWorkspace
           site={activeSite}
-          activeSection={activeSection}
-          connectedDomain={connectedDomain || activeSite.domainHostname || ""}
-          dnsRecords={dnsRecords.length ? dnsRecords : activeSite.dnsRecords}
-          domainNotice={domainNotice}
-          pageNotice={pageNotice}
-          onBackToList={hasApiSites ? backToList : undefined}
-          onSelectSection={selectSection}
-          onConnectedDomain={handleConnectedDomain}
-          onPageNotice={setPageNotice}
-          onDomainNotice={setDomainNotice}
-          onPublished={publishSiteLocal}
+          onBackToList={backToList}
+          onPublishedLocal={publishSiteLocal}
+          onSiteUpdated={handleSiteUpdated}
         />
       </DashboardShell>
     );
@@ -295,13 +221,9 @@ export default function SitePage() {
     return (
       <DashboardShell header={<DashboardHeader />} sidebar={<DashboardSidebar />}>
         <div className="page-content site-page-empty">
-          <SiteEmptyState onSetup={() => {
-            setCreateKind("main");
-            setCreateOpen(true);
-          }} />
+          <SiteEmptyState onSetup={openCreate} />
           <CreateMicrositeDialog
             open={createOpen}
-            kind={createKind}
             creating={isCreating}
             onClose={() => {
               if (!isCreating) setCreateOpen(false);
@@ -324,7 +246,6 @@ export default function SitePage() {
       />
       <CreateMicrositeDialog
         open={createOpen}
-        kind={createKind}
         creating={isCreating}
         onClose={() => {
           if (!isCreating) setCreateOpen(false);

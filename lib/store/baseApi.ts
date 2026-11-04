@@ -104,6 +104,8 @@ export const baseApi = createApi({
     "RolePermissions",
     "StaffMembers",
     "OrganisationSites",
+    "OrganisationSiteNews",
+    "OrganisationSiteSupportContacts",
     "PlatformOrganisations",
     "PublicEvents",
     "Wishlist",

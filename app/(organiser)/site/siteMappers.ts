@@ -15,10 +15,9 @@ import type {
 } from "./siteTypes";
 
 const DEFAULT_NAV: SiteNavItem[] = [
-  { id: "home", name: "Home", url: "/", priority: "1", included: true },
-  { id: "about", name: "About", url: "/about", priority: "2", included: true },
-  { id: "events", name: "Events", url: "/events", priority: "3", included: true },
-  { id: "news", name: "News", url: "/news", priority: "4", included: true },
+  { name: "Events", redirect_link: "/events" },
+  { name: "News", redirect_link: "/news" },
+  { name: "About us", redirect_link: "/about" },
 ];
 
 const DEFAULT_EXPLORE: SiteFooterLink[] = [
@@ -55,21 +54,34 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-function mapNavigation(raw: unknown): SiteNavItem[] {
-  if (!Array.isArray(raw) || !raw.length) return DEFAULT_NAV.map((item) => ({ ...item }));
-  return raw.map((item, index) => {
-    const row = asRecord(item) ?? {};
-    return {
-      id: typeof row.id === "string" && row.id ? row.id : `nav-${index}`,
-      name: typeof row.name === "string" ? row.name : "",
-      url: typeof row.url === "string" ? row.url : "/",
-      priority:
-        typeof row.priority === "string" || typeof row.priority === "number"
-          ? String(row.priority)
-          : String(index + 1),
-      included: row.included !== false,
-    };
-  });
+/** Map API navigation into the fixed { name, redirect_link } shape. */
+export function mapNavigation(raw: unknown): SiteNavItem[] {
+  if (!Array.isArray(raw) || !raw.length) return [];
+  return raw
+    .map((item) => {
+      const row = asRecord(item) ?? {};
+      const name = typeof row.name === "string" ? row.name.trim() : "";
+      const redirect =
+        (typeof row.redirect_link === "string" && row.redirect_link.trim()) ||
+        (typeof row.url === "string" && row.url.trim()) ||
+        "/";
+      return {
+        name,
+        redirect_link: redirect,
+      };
+    })
+    .filter((item) => item.name.length > 0);
+}
+
+export function navigationToPayload(
+  items: Array<{ name: string; redirect_link: string }>,
+): SiteNavItem[] {
+  return items
+    .map((item) => ({
+      name: item.name.trim(),
+      redirect_link: item.redirect_link.trim() || "/",
+    }))
+    .filter((item) => item.name.length > 0);
 }
 
 function mapExploreLinks(raw: unknown): SiteFooterLink[] {
@@ -99,9 +111,12 @@ function mapSocialLinks(raw: unknown): SiteSocialLink[] {
 export function mapSiteHeader(raw: unknown): SiteHeaderConfig | null {
   const data = asRecord(raw);
   if (!data) return null;
+  const navigation = mapNavigation(data.navigation);
   return {
     logo: mediaFromField((data.logo as OrganisationSiteMedia) ?? null),
-    navigation: mapNavigation(data.navigation),
+    navigation: navigation.length
+      ? navigation
+      : DEFAULT_NAV.map((item) => ({ ...item })),
     search_enabled: data.search_enabled !== false,
     account_enabled: data.account_enabled !== false,
   };
@@ -149,13 +164,7 @@ export function defaultFooterConfig(): SiteFooterConfig {
 export function headerToPayload(header: SiteHeaderConfig): Record<string, unknown> {
   return {
     logo: header.logo?.path ?? null,
-    navigation: header.navigation.map((item) => ({
-      id: item.id,
-      name: item.name,
-      url: item.url,
-      priority: item.priority,
-      included: item.included,
-    })),
+    navigation: navigationToPayload(header.navigation),
     search_enabled: header.search_enabled,
     account_enabled: header.account_enabled,
   };
@@ -177,16 +186,11 @@ export function footerToPayload(footer: SiteFooterConfig): Record<string, unknow
 
 export function isSiteBrandingComplete(site: SiteRecord): boolean {
   if (site.brandingComplete) return true;
-  return Boolean(site.logo?.path && site.favicon?.path && site.header && site.footer);
+  return Boolean(site.logo?.path && site.navigation.length > 0);
 }
 
-export function resolveSiteKind(site: OrganisationSite, index: number): SiteKind {
-  const raw = (site.kind ?? site.type ?? site.site_type ?? "").toString().toLowerCase();
-  if (raw === "whitelabel" || raw === "white_label" || raw === "wl" || raw === "brand") {
-    return "whitelabel";
-  }
-  if (raw === "main" || raw === "club") return "main";
-  return index === 0 ? "main" : "whitelabel";
+export function resolveSiteKind(_site?: OrganisationSite, _index?: number): SiteKind {
+  return "microsite";
 }
 
 function domainFromSite(site: OrganisationSite): {
@@ -194,19 +198,32 @@ function domainFromSite(site: OrganisationSite): {
   status: string | null;
   dnsRecords: SiteDnsRecord[];
 } {
+  const topHostname =
+    typeof site.hostname === "string" && site.hostname.trim()
+      ? site.hostname.trim()
+      : null;
   const domain = site.domain;
-  if (!domain) return { hostname: null, status: null, dnsRecords: [] };
+  if (!domain) {
+    return { hostname: topHostname, status: null, dnsRecords: [] };
+  }
   if (typeof domain === "string") {
-    return { hostname: domain.trim() || null, status: null, dnsRecords: [] };
+    return {
+      hostname: domain.trim() || topHostname,
+      status: null,
+      dnsRecords: [],
+    };
   }
   return {
-    hostname: typeof domain.hostname === "string" && domain.hostname.trim() ? domain.hostname.trim() : null,
+    hostname:
+      (typeof domain.hostname === "string" && domain.hostname.trim()
+        ? domain.hostname.trim()
+        : null) || topHostname,
     status: typeof domain.status === "string" ? domain.status : null,
     dnsRecords: Array.isArray(domain.dns_instructions) ? domain.dns_instructions : [],
   };
 }
 
-export function mapOrganisationSite(site: OrganisationSite, index: number): SiteRecord {
+export function mapOrganisationSite(site: OrganisationSite, _index = 0): SiteRecord {
   const name =
     (typeof site.name === "string" && site.name.trim()) ||
     (typeof site.title === "string" && site.title.trim()) ||
@@ -221,18 +238,19 @@ export function mapOrganisationSite(site: OrganisationSite, index: number): Site
     createdAt;
   const domain = domainFromSite(site);
   const logo = mediaFromField(site.logo);
+  const navigation = mapNavigation(site.navigation);
   const favicon = mediaFromField(site.favicon);
   const header = mapSiteHeader(site.header);
   const footer = mapSiteFooter(site.footer);
   const brandingComplete =
     typeof site.branding_complete === "boolean"
       ? site.branding_complete
-      : Boolean(logo?.path && favicon?.path && header && footer);
+      : Boolean(logo?.path && navigation.length > 0);
 
   return {
     id: String(site.id),
     name,
-    kind: resolveSiteKind(site, index),
+    kind: resolveSiteKind(),
     createdAt,
     updatedAt,
     status: typeof site.status === "string" && site.status ? site.status : "draft",
@@ -240,6 +258,7 @@ export function mapOrganisationSite(site: OrganisationSite, index: number): Site
     domainStatus: domain.status,
     dnsRecords: domain.dnsRecords,
     logo,
+    navigation,
     favicon,
     header,
     footer,

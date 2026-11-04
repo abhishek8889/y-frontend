@@ -160,9 +160,7 @@ function SiteCard({
           {GlobeIcon}
         </div>
         <div className="sites-card-identity">
-          <p className="sites-card-kind">
-            {site.kind === "main" ? "Club site" : "White label"}
-          </p>
+          <p className="sites-card-kind">Microsite</p>
           <h3 className="sites-card-title">{site.name}</h3>
         </div>
       </div>
@@ -208,7 +206,7 @@ function SiteCard({
             title={
               canPublish
                 ? "Publish site"
-                : "Complete branding (logo & favicon, header, footer) before publishing"
+                : "Complete branding (logo and navigation) before publishing"
             }
             onClick={() => onPublish(site)}
           >
@@ -244,18 +242,9 @@ export function SitesList({
   const [refreshDomain] = useRefreshOrganisationSiteDomainMutation();
   const [publishSite] = usePublishOrganisationSiteMutation();
 
-  const clubSites = useMemo(
-    () => sites.filter((site) => site.kind === "main"),
-    [sites],
-  );
-  const whiteLabelSites = useMemo(
-    () => sites.filter((site) => site.kind === "whitelabel"),
-    [sites],
-  );
-
-  const filteredClub = useMemo(() => {
+  const filteredSites = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return clubSites.filter((site) => {
+    return sites.filter((site) => {
       const status = siteDisplayStatus(site);
       if (statusFilter !== "all" && status !== statusFilter) return false;
       if (!q) return true;
@@ -264,20 +253,7 @@ export function SitesList({
         (site.domainHostname ?? "").toLowerCase().includes(q)
       );
     });
-  }, [clubSites, search, statusFilter]);
-
-  const filteredWhiteLabel = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return whiteLabelSites.filter((site) => {
-      const status = siteDisplayStatus(site);
-      if (statusFilter !== "all" && status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        site.name.toLowerCase().includes(q) ||
-        (site.domainHostname ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [whiteLabelSites, search, statusFilter]);
+  }, [sites, search, statusFilter]);
 
   const liveCount = sites.filter((site) => siteDisplayStatus(site) === "live").length;
   const draftCount = sites.filter((site) => siteDisplayStatus(site) === "draft").length;
@@ -400,15 +376,13 @@ export function SitesList({
       <div className="page-header">
         <div className="page-header-text">
           <h1 className="page-title">Sites</h1>
-          <p className="page-subtitle">
-            Manage your clubsite and white label brand microsites.
-          </p>
+          <p className="page-subtitle">Manage your microsites.</p>
         </div>
         <Button type="button" className="page-primary-button-action" onClick={onCreateSite}>
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" width="12" height="12">
             <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
-          Create new site
+          Create microsite
         </Button>
       </div>
 
@@ -423,7 +397,7 @@ export function SitesList({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search sites, domains or brands..."
+            placeholder="Search sites or domains..."
             labelClassName="input-heading"
           />
         </div>
@@ -442,41 +416,14 @@ export function SitesList({
         />
       </div>
 
-      <section className="sites-list-section" aria-label="Club site">
+      <section className="sites-list-section" aria-label="Microsites">
         <div className="sites-list-section-header">
-          <h2 className="section-title">Club site</h2>
-          <span className="sites-list-section-note">Global</span>
+          <h2 className="section-title">Microsites</h2>
+          <span className="sites-list-section-note">{filteredSites.length}</span>
         </div>
-        {filteredClub.length ? (
-          <div className="sites-list-club">
-            {filteredClub.map((site) => (
-              <SiteCard
-                key={site.id}
-                site={site}
-                featured
-                menuOpen={openMenuId === site.id}
-                actions={menuActionsFor(site)}
-                publishing={publishingSiteId === site.id}
-                onMenuOpenChange={(open) => setOpenMenuId(open ? site.id : null)}
-                onPublish={(row) => {
-                  void handlePublishSite(row);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="page-subtitle sites-list-empty">No clubsite matches your filters.</p>
-        )}
-      </section>
-
-      <section className="sites-list-section" aria-label="White label sites">
-        <div className="sites-list-section-header">
-          <h2 className="section-title">White label sites</h2>
-          <span className="sites-list-section-note">Brands</span>
-        </div>
-        {filteredWhiteLabel.length ? (
+        {filteredSites.length ? (
           <div className="sites-list-grid">
-            {filteredWhiteLabel.map((site) => (
+            {filteredSites.map((site) => (
               <SiteCard
                 key={site.id}
                 site={site}
@@ -492,9 +439,9 @@ export function SitesList({
           </div>
         ) : (
           <p className="page-subtitle sites-list-empty">
-            {whiteLabelSites.length
-              ? "No white label sites match your filters."
-              : "No white label sites yet. Create one to brand a partner microsite."}
+            {sites.length
+              ? "No microsites match your filters."
+              : "No microsites yet. Create one to get started."}
           </p>
         )}
       </section>

@@ -12,8 +12,8 @@ export const SITE_SECTIONS = [
 
 export type SiteSection = (typeof SITE_SECTIONS)[number];
 
-/** Clubsite maps from API `site_type: "club"`; later sites are `whitelabel`. */
-export type SiteKind = "main" | "whitelabel";
+/** All organiser sites are the same microsite product. */
+export type SiteKind = "microsite";
 
 export type SiteMediaAsset = {
   path: string;
@@ -21,12 +21,10 @@ export type SiteMediaAsset = {
   name?: string;
 };
 
+/** Fixed navigation shape stored on `sites.navigation` (matches API). */
 export type SiteNavItem = {
-  id: string;
   name: string;
-  url: string;
-  priority: string;
-  included: boolean;
+  redirect_link: string;
 };
 
 export type SiteFooterLink = {
@@ -71,6 +69,7 @@ export type SiteRecord = {
   domainStatus: string | null;
   dnsRecords: SiteDnsRecord[];
   logo: SiteMediaAsset | null;
+  navigation: SiteNavItem[];
   favicon: SiteMediaAsset | null;
   header: SiteHeaderConfig | null;
   footer: SiteFooterConfig | null;

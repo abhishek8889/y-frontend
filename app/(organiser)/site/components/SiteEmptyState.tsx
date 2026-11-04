@@ -17,10 +17,9 @@ export function SiteEmptyState({ onSetup }: SiteEmptyStateProps) {
         </svg>
       </div>
 
-      <h1 className="page-title site-create-empty-title">No clubsite yet</h1>
+      <h1 className="page-title site-create-empty-title">No microsite yet</h1>
       <p className="page-subtitle site-create-empty-copy">
-        Set up your clubsite first — domain, branding, hero, and content.
-        You can add white label sites later with the same process.
+        Set up your first microsite — domain, branding, hero, and content.
       </p>
 
       <ol className="site-create-empty-steps" aria-label="Setup journey">
@@ -36,7 +35,7 @@ export function SiteEmptyState({ onSetup }: SiteEmptyStateProps) {
 
       <div className="site-create-empty-action">
         <Button type="button" onClick={onSetup} className="page-primary-button-action">
-          Setup your site.
+          Create microsite
         </Button>
       </div>
     </section>
