@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
-  formatDomainStatusLabel,
+  extractDnsRecords,
   isApiSiteId,
   usePublishOrganisationSiteMutation,
   useRefreshOrganisationSiteDomainMutation,
@@ -10,40 +10,26 @@ import {
 } from "@/apis/organisation/siteApi";
 import {
   ActionMenu,
+  DataTable,
   GridCard,
   StatusBadge,
   type ActionMenuItem,
+  type DataTableColumn,
   type GridCardItem,
 } from "@/components/common";
-import { OrganiserModal } from "@/components/organiser/OrganiserModal";
 import { Button } from "@/components/ui/Button";
-import { InputField } from "@/components/ui/InputField";
-import { SelectField } from "@/components/ui/SelectField";
 import {
   formatDnsStatusLabel,
   formatSiteStatusLabel,
   formatSiteUpdatedAt,
   isSiteBrandingComplete,
+  mapOrganisationSite,
   siteDisplayStatus,
   siteDnsStatus,
   siteLifecycleStatus,
 } from "../siteMappers";
 import type { SiteRecord } from "../siteTypes";
-import { SiteDnsRecordsTable } from "./SiteDnsRecordsTable";
-
-function domainStatusBadgeProps(status: string | null | undefined) {
-  const raw = String(status ?? "").trim().toLowerCase();
-  if (raw === "pending_dns" || raw === "pending") {
-    return { status: "pending", label: formatDomainStatusLabel(status) };
-  }
-  if (raw === "failed" || raw === "error") {
-    return { status: "failed", label: formatDomainStatusLabel(status) };
-  }
-  if (raw === "verified" || raw === "active" || raw === "live") {
-    return { status: "active", label: formatDomainStatusLabel(status) };
-  }
-  return { status: status || "draft", label: formatDomainStatusLabel(status) };
-}
+import { SiteDnsInstructionsModal } from "./SiteDnsInstructionsModal";
 
 function dnsBadgeProps(site: SiteRecord) {
   const dns = siteDnsStatus(site);
@@ -130,102 +116,6 @@ function domainLabel(site: SiteRecord) {
   return site.domainHostname?.trim() || "Domain not connected";
 }
 
-type SiteCardProps = {
-  site: SiteRecord;
-  featured?: boolean;
-  menuOpen: boolean;
-  actions: ActionMenuItem<SiteRecord>[];
-  publishing?: boolean;
-  onMenuOpenChange: (open: boolean) => void;
-  onPublish?: (site: SiteRecord) => void;
-};
-
-function SiteCard({
-  site,
-  featured = false,
-  menuOpen,
-  actions,
-  publishing = false,
-  onMenuOpenChange,
-  onPublish,
-}: SiteCardProps) {
-  const domain = domainLabel(site);
-  const isDraft = siteLifecycleStatus(site) === "draft";
-  const canPublish = isDraft && isSiteBrandingComplete(site);
-
-  return (
-    <article className={featured ? "sites-card sites-card--featured" : "sites-card"}>
-      <div className="sites-card-main">
-        <div className="sites-card-icon" aria-hidden="true">
-          {GlobeIcon}
-        </div>
-        <div className="sites-card-identity">
-          <p className="sites-card-kind">Microsite</p>
-          <h3 className="sites-card-title">{site.name}</h3>
-        </div>
-      </div>
-
-      <div className="sites-card-meta">
-        <div className="sites-card-meta-item">
-          <span className="sites-card-meta-label">Domain</span>
-          <span className="sites-card-meta-value">
-            {domain}
-            {site.domainHostname && siteLifecycleStatus(site) === "live" ? (
-              <a
-                href={`https://${site.domainHostname}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="sites-card-external"
-                aria-label={`Open ${site.domainHostname}`}
-              >
-                {ExternalIcon}
-              </a>
-            ) : null}
-          </span>
-        </div>
-        <div className="sites-card-meta-item">
-          <span className="sites-card-meta-label">DNS status</span>
-          <StatusBadge {...dnsBadgeProps(site)} className="sites-card-status" />
-        </div>
-        <div className="sites-card-meta-item">
-          <span className="sites-card-meta-label">Site status</span>
-          <StatusBadge {...siteBadgeProps(site)} className="sites-card-status" />
-        </div>
-        <div className="sites-card-meta-item">
-          <span className="sites-card-meta-label">Last updated</span>
-          <span className="sites-card-meta-value">{formatSiteUpdatedAt(site.updatedAt)}</span>
-        </div>
-      </div>
-
-      <div className="sites-card-actions">
-        {isDraft && onPublish ? (
-          <Button
-            type="button"
-            className="sites-card-publish-btn"
-            disabled={publishing || !canPublish}
-            title={
-              canPublish
-                ? "Publish site"
-                : "Complete branding (logo and navigation) before publishing"
-            }
-            onClick={() => onPublish(site)}
-          >
-            {publishing ? "Publishing…" : "Publish"}
-          </Button>
-        ) : null}
-        <ActionMenu
-          row={site}
-          actions={actions}
-          open={menuOpen}
-          onOpenChange={onMenuOpenChange}
-          align="right"
-          ariaLabel={`Actions for ${site.name}`}
-        />
-      </div>
-    </article>
-  );
-}
-
 export function SitesList({
   sites,
   dnsRecordsBySiteId = {},
@@ -236,7 +126,11 @@ export function SitesList({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [dnsSite, setDnsSite] = useState<SiteRecord | null>(null);
+  const [dnsModal, setDnsModal] = useState<{
+    site: SiteRecord;
+    records: SiteDnsRecord[];
+    fromPublish: boolean;
+  } | null>(null);
   const [refreshingSiteId, setRefreshingSiteId] = useState<string | null>(null);
   const [publishingSiteId, setPublishingSiteId] = useState<string | null>(null);
   const [refreshDomain] = useRefreshOrganisationSiteDomainMutation();
@@ -269,6 +163,8 @@ export function SitesList({
     { id: "issues", label: "Domain issues", value: String(domainIssues) },
   ];
 
+  const hasListFilters = Boolean(search.trim()) || statusFilter !== "all";
+
   function dnsFor(site: SiteRecord) {
     const cached = dnsRecordsBySiteId[site.id];
     if (cached?.length) return cached;
@@ -298,12 +194,36 @@ export function SitesList({
 
     setPublishingSiteId(site.id);
     try {
-      await publishSite(site.id).unwrap();
+      const result = await publishSite(site.id).unwrap();
+      const records = extractDnsRecords(result);
+      const mapped = result.data?.site
+        ? mapOrganisationSite(result.data.site)
+        : site;
+      const nextSite: SiteRecord = {
+        ...mapped,
+        status: mapped.status || "active",
+        dnsRecords: records.length ? records : mapped.dnsRecords,
+        vercelAdded: records.length ? true : mapped.vercelAdded,
+      };
+      onPublishSite?.(nextSite);
+      setDnsModal({
+        site: nextSite,
+        records: nextSite.dnsRecords,
+        fromPublish: true,
+      });
     } catch {
       // Toast handled by mutation
     } finally {
       setPublishingSiteId(null);
     }
+  }
+
+  function openDnsModal(site: SiteRecord, fromPublish = false) {
+    setDnsModal({
+      site,
+      records: dnsFor(site),
+      fromPublish,
+    });
   }
 
   function menuActionsFor(site: SiteRecord): ActionMenuItem<SiteRecord>[] {
@@ -342,7 +262,7 @@ export function SitesList({
         label: "View DNS",
         icon: GlobeIcon,
         disabled: !canViewDns,
-        onClick: (row) => setDnsSite(row),
+        onClick: (row) => openDnsModal(row),
       },
       {
         key: "refresh",
@@ -367,9 +287,88 @@ export function SitesList({
     ];
   }
 
-  const dnsModalRecords = dnsSite ? dnsFor(dnsSite) : [];
-  const dnsModalHostname = dnsSite?.domainHostname || "";
-  const dnsModalStatus = dnsSite?.domainStatus || null;
+  const columns = useMemo<DataTableColumn<SiteRecord>[]>(
+    () => [
+      {
+        id: "name",
+        header: "MICROSITE",
+        accessorKey: "name",
+        cell: ({ row }) => (
+          <div className="datatable-venue-cell">
+            <div className="datatable-venue-thumb sites-list-thumb" aria-hidden="true">
+              {GlobeIcon}
+            </div>
+            <span className="datatable-venue-name">{row.name}</span>
+          </div>
+        ),
+      },
+      {
+        id: "domain",
+        header: "DOMAIN",
+        cell: ({ row }) => {
+          const domain = domainLabel(row);
+          const isLive = siteLifecycleStatus(row) === "live" && Boolean(row.domainHostname);
+
+          return (
+            <span className="sites-list-domain-cell">
+              <span className="text-[12px] font-normal leading-5 text-black">{domain}</span>
+              {isLive ? (
+                <a
+                  href={`https://${row.domainHostname}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sites-list-domain-link"
+                  aria-label={`Open ${row.domainHostname}`}
+                >
+                  {ExternalIcon}
+                </a>
+              ) : null}
+            </span>
+          );
+        },
+      },
+      {
+        id: "dnsStatus",
+        header: "DNS STATUS",
+        cell: ({ row }) => (
+          <StatusBadge {...dnsBadgeProps(row)} className="datatable-status" />
+        ),
+      },
+      {
+        id: "siteStatus",
+        header: "SITE STATUS",
+        cell: ({ row }) => (
+          <StatusBadge {...siteBadgeProps(row)} className="datatable-status" />
+        ),
+      },
+      {
+        id: "updatedAt",
+        header: "LAST UPDATED",
+        cell: ({ row }) => (
+          <span className="text-[12px] font-normal leading-5 text-black">
+            {formatSiteUpdatedAt(row.updatedAt)}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "ACTION",
+        align: "center",
+        cell: ({ row }) => (
+          <ActionMenu
+            row={row}
+            actions={menuActionsFor(row)}
+            open={openMenuId === row.id}
+            onOpenChange={(open) => setOpenMenuId(open ? row.id : null)}
+            ariaLabel={`Actions for ${row.name}`}
+          />
+        ),
+      },
+    ],
+    // menuActionsFor closes over publish/refresh/dns state — refresh columns when those change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [openMenuId, publishingSiteId, refreshingSiteId, dnsRecordsBySiteId],
+  );
 
   return (
     <div className="page-content sites-list-page">
@@ -390,117 +389,72 @@ export function SitesList({
         <GridCard items={overviewItems} columns={4} />
       </div>
 
-      <div className="sites-list-toolbar">
-        <div className="sites-list-search">
-          <InputField
-            id="sites-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search sites or domains..."
-            labelClassName="input-heading"
-          />
-        </div>
-        <SelectField
-          id="sites-status-filter"
-          aria-label="Filter by status"
-          labelClassName="input-heading"
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          options={[
-            { value: "all", label: "All statuses" },
-            { value: "live", label: "Live" },
-            { value: "draft", label: "Draft" },
-            { value: "pending", label: "Pending DNS" },
-          ]}
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredSites}
+        getRowId={(row) => row.id}
+        features={{
+          search: true,
+          filters: true,
+          pagination: false,
+          pageSize: false,
+        }}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: "Search sites or domains...",
+        }}
+        filters={[
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            value: statusFilter,
+            options: [
+              { value: "all", label: "All statuses" },
+              { value: "live", label: "Live" },
+              { value: "draft", label: "Draft" },
+              { value: "pending", label: "Pending DNS" },
+            ],
+          },
+        ]}
+        onFilterChange={(key, value) => {
+          if (key === "status") setStatusFilter(value);
+        }}
+        emptyState={{
+          title: hasListFilters ? "NO MICROSITES FOUND" : "NO MICROSITES YET",
+          subtitle: hasListFilters
+            ? "Try adjusting your search or filters."
+            : "Create one to get started.",
+          showButton: !hasListFilters,
+          buttonLabel: "+ CREATE MICROSITE",
+          onButtonClick: onCreateSite,
+        }}
+        bodyHeightClassName={false}
+      />
 
-      <section className="sites-list-section" aria-label="Microsites">
-        <div className="sites-list-section-header">
-          <h2 className="section-title">Microsites</h2>
-          <span className="sites-list-section-note">{filteredSites.length}</span>
-        </div>
-        {filteredSites.length ? (
-          <div className="sites-list-grid">
-            {filteredSites.map((site) => (
-              <SiteCard
-                key={site.id}
-                site={site}
-                menuOpen={openMenuId === site.id}
-                actions={menuActionsFor(site)}
-                publishing={publishingSiteId === site.id}
-                onMenuOpenChange={(open) => setOpenMenuId(open ? site.id : null)}
-                onPublish={(row) => {
-                  void handlePublishSite(row);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="page-subtitle sites-list-empty">
-            {sites.length
-              ? "No microsites match your filters."
-              : "No microsites yet. Create one to get started."}
-          </p>
-        )}
-      </section>
-
-      <OrganiserModal
-        open={Boolean(dnsSite)}
-        onClose={() => setDnsSite(null)}
-        showClose
-        titleId="sites-dns-title"
-        size="lg"
-        panelClassName="sites-dns-modal-panel"
-      >
-        <div className="sites-dns-modal">
-          <header className="sites-dns-modal-header">
-            <p className="sites-dns-modal-eyebrow">DNS setup</p>
-            <h2 id="sites-dns-title" className="page-title">
-              DNS records
-            </h2>
-            <p className="page-subtitle">
-              {dnsModalHostname
-                ? `Add these records at your provider for ${dnsModalHostname}.`
-                : "DNS records for this site."}
-            </p>
-            {dnsModalStatus ? (
-              <div className="sites-dns-modal-status">
-                <StatusBadge
-                  {...domainStatusBadgeProps(dnsModalStatus)}
-                  className="sites-card-status"
-                />
-              </div>
-            ) : null}
-          </header>
-          <div className="sites-dns-modal-body">
-            <SiteDnsRecordsTable records={dnsModalRecords} />
-          </div>
-          <div className="sites-dns-modal-footer">
-            <Button
-              type="button"
-              className="form-footer-btn form-footer-btn-secondary"
-              onClick={() => setDnsSite(null)}
-            >
-              Close
-            </Button>
-            {dnsSite ? (
-              <Button
-                type="button"
-                className="form-footer-btn form-footer-btn-primary"
-                onClick={() => {
-                  const site = dnsSite;
-                  setDnsSite(null);
-                  onManageSite(site);
-                }}
-              >
-                Manage site
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </OrganiserModal>
+      <SiteDnsInstructionsModal
+        open={Boolean(dnsModal)}
+        hostname={dnsModal?.site.domainHostname}
+        status={dnsModal?.site.domainStatus}
+        records={dnsModal?.records ?? []}
+        notice={
+          dnsModal?.fromPublish
+            ? "After closing this popup, you can see your DNS records in Domain & Identity on the site detail page."
+            : null
+        }
+        primaryLabel={dnsModal ? "Manage site" : undefined}
+        onPrimary={
+          dnsModal
+            ? () => {
+                const site = dnsModal.site;
+                setDnsModal(null);
+                onManageSite(site);
+              }
+            : undefined
+        }
+        onClose={() => setDnsModal(null)}
+      />
     </div>
   );
 }

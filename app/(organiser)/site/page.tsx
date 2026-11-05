@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   extractCreatedSiteId,
   extractDnsRecords,
@@ -16,11 +17,9 @@ import { DashboardSidebar } from "@/components/organiser/DashboardSidebar";
 import { CreateMicrositeDialog } from "./components/CreateMicrositeDialog";
 import { SiteEmptyState } from "./components/SiteEmptyState";
 import { SitesList } from "./components/SitesList";
-import { SiteWorkspace } from "./components/SiteWorkspace";
-import { mapOrganisationSite } from "./siteMappers";
+import { mapOrganisationSite, siteManageHref } from "./siteMappers";
 import {
   clearSitesStore,
-  getActiveSite,
   writeSitesStore,
 } from "./siteStorage";
 import type { SiteRecord, SitesStore } from "./siteTypes";
@@ -30,11 +29,11 @@ function emptyStore(): SitesStore {
 }
 
 export default function SitePage() {
+  const router = useRouter();
   const { data, isLoading, isError } = useGetOrganisationSiteListQuery();
   const [createSite, { isLoading: isCreating }] = useCreateOrganisationSiteMutation();
   const [store, setStore] = useState<SitesStore>(emptyStore);
   const [createOpen, setCreateOpen] = useState(false);
-  const [view, setView] = useState<"list" | "manage">("list");
   const [dnsRecordsBySiteId, setDnsRecordsBySiteId] = useState<
     Record<string, SiteDnsRecord[]>
   >({});
@@ -81,7 +80,6 @@ export default function SitePage() {
   }, [apiSites, isLoading]);
 
   const mappedList = apiSites.map(mapOrganisationSite);
-  const activeSite = getActiveSite(store);
 
   function persist(next: SitesStore) {
     writeSitesStore(next);
@@ -92,16 +90,16 @@ export default function SitePage() {
     setCreateOpen(true);
   }
 
-  function openWorkspace(siteId: string, site?: SiteRecord) {
-    const records = dnsRecordsBySiteId[siteId]?.length
-      ? dnsRecordsBySiteId[siteId]
-      : site?.dnsRecords ?? [];
-    if (records.length && siteId) {
+  function openWorkspace(site: SiteRecord) {
+    const records = dnsRecordsBySiteId[site.id]?.length
+      ? dnsRecordsBySiteId[site.id]
+      : site.dnsRecords ?? [];
+    if (records.length) {
       setDnsRecordsBySiteId((prev) =>
-        prev[siteId]?.length ? prev : { ...prev, [siteId]: records },
+        prev[site.id]?.length ? prev : { ...prev, [site.id]: records },
       );
     }
-    setView("manage");
+    router.push(siteManageHref(site));
   }
 
   async function createMicrosite(name: string, domain: string) {
@@ -134,14 +132,13 @@ export default function SitePage() {
         if (records.length) {
           setDnsRecordsBySiteId((prev) => ({ ...prev, [createdId]: records }));
         }
-        openWorkspace(createdId, siteWithDomain);
+        openWorkspace(siteWithDomain);
         return;
       }
 
       if (createdId) {
         persist({ ...store, activeSiteId: createdId });
       }
-      setView("list");
     } catch {
       // Toast handled by mutation — keep dialog open so the user can fix validation errors.
     }
@@ -152,31 +149,29 @@ export default function SitePage() {
       ...store,
       activeSiteId: site.id,
     });
-    openWorkspace(site.id, site);
+    openWorkspace(site);
   }
 
   function publishSiteLocal(site: SiteRecord) {
     const updatedAt = new Date().toISOString();
+    const nextSite: SiteRecord = {
+      ...site,
+      status: site.status === "draft" ? "active" : site.status,
+      updatedAt,
+      brandingComplete: true,
+      vercelAdded: site.vercelAdded || site.dnsRecords.length > 0,
+    };
     persist({
       ...store,
-      sites: store.sites.map((item) =>
-        item.id === site.id
-          ? { ...item, status: "active", updatedAt, brandingComplete: true }
-          : item,
-      ),
-    });
-  }
-
-  function handleSiteUpdated(site: SiteRecord) {
-    persist({
-      ...store,
-      sites: store.sites.map((item) => (item.id === site.id ? site : item)),
+      sites: store.sites.map((item) => (item.id === site.id ? nextSite : item)),
       activeSiteId: site.id,
     });
-  }
-
-  function backToList() {
-    setView("list");
+    if (nextSite.dnsRecords.length) {
+      setDnsRecordsBySiteId((prev) => ({
+        ...prev,
+        [site.id]: nextSite.dnsRecords,
+      }));
+    }
   }
 
   if (isLoading) {
@@ -199,23 +194,6 @@ export default function SitePage() {
 
   const visibleSites = mappedList.length ? mappedList : store.sites;
   const hasSites = visibleSites.length > 0;
-
-  if (view === "manage" && activeSite) {
-    return (
-      <DashboardShell
-        header={<DashboardHeader />}
-        sidebar={<DashboardSidebar />}
-        fillHeight={false}
-      >
-        <SiteWorkspace
-          site={activeSite}
-          onBackToList={backToList}
-          onPublishedLocal={publishSiteLocal}
-          onSiteUpdated={handleSiteUpdated}
-        />
-      </DashboardShell>
-    );
-  }
 
   if (!hasSites) {
     return (

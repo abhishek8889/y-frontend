@@ -7257,43 +7257,39 @@
   margin-top: 4px;
 }
 
-.organiser-dashboard .sites-list-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+.organiser-dashboard .sites-list-thumb {
+  display: inline-flex;
+  height: 40px;
+  width: 40px;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  border-radius: 0;
+  background: var(--black);
+  color: var(--white);
 }
 
-.organiser-dashboard .sites-list-search {
+@media (max-width: 639px) {
+  .organiser-dashboard .sites-list-thumb {
+    height: 36px;
+    width: 36px;
+  }
+}
+
+.organiser-dashboard .sites-list-domain-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  flex: 1;
-  max-width: 420px;
 }
 
-.organiser-dashboard .sites-list-section {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.organiser-dashboard .sites-list-section-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.organiser-dashboard .sites-list-section-note {
-  font-family: var(--font-univers), sans-serif;
-  font-size: var(--od-table-header-size);
-  font-weight: 400;
-  letter-spacing: var(--od-btn-tracking);
-  text-transform: uppercase;
+.organiser-dashboard .sites-list-domain-link {
+  display: inline-flex;
   color: var(--od-muted);
+  transition: color 0.15s ease;
 }
 
-.organiser-dashboard .sites-list-empty {
-  margin: 0;
+.organiser-dashboard .sites-list-domain-link:hover {
+  color: var(--black);
 }
 
 .organiser-dashboard .sites-list-club {
@@ -7523,6 +7519,18 @@
 
 .organiser-dashboard .sites-dns-modal-header .page-subtitle {
   margin-top: 8px;
+}
+
+.organiser-dashboard .sites-dns-modal-notice {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: #f5f5f5;
+  font-family: var(--font-univers), sans-serif;
+  font-size: var(--od-page-subtitle-size, 14px);
+  line-height: 1.45;
+  color: #000;
 }
 
 .organiser-dashboard .sites-dns-modal-body {

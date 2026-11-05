@@ -9,6 +9,7 @@ type ReviewPanelProps = Pick<
   | "checklist"
   | "setReviewOpen"
   | "publishWebsite"
+  | "isPublishing"
 >;
 
 export function ReviewPanel({
@@ -17,6 +18,7 @@ export function ReviewPanel({
   checklist,
   setReviewOpen,
   publishWebsite,
+  isPublishing,
 }: ReviewPanelProps) {
   return (
     <section className="csp-review" aria-label="Review before publish">
@@ -25,13 +27,20 @@ export function ReviewPanel({
         <li>
           Identity:{" "}
           {checklist.identityDone
-            ? `${preview.brandName} · ${draft.publicContactEmail}`
-            : "Add public name and contact email"}
+            ? preview.brandName
+            : "Add a public name under Header & footer"}
         </li>
         <li>
-          Header: {draft.navItems.length} nav items
-          {draft.logoDataUrl ? " · logo set" : " · default mark"}
-          {" · Login"}
+          Branding:{" "}
+          {checklist.brandingDone
+            ? `${draft.navItems.length} nav items · logo set`
+            : "Save logo and navigation under Header & footer"}
+        </li>
+        <li>
+          Domain:{" "}
+          {checklist.domainDone
+            ? draft.domainInput
+            : "Add a domain under Domain & Identity"}
         </li>
         <li>
           Homepage: {preview.heroTitle} · CTA “{preview.heroCta}” → {preview.heroCtaLink}
@@ -45,6 +54,7 @@ export function ReviewPanel({
         <button
           type="button"
           className="page-secondary-button"
+          disabled={isPublishing}
           onClick={() => setReviewOpen(false)}
         >
           Keep editing
@@ -52,10 +62,12 @@ export function ReviewPanel({
         <button
           type="button"
           className="page-primary-button-action"
-          disabled={!checklist.readyToPublish}
-          onClick={publishWebsite}
+          disabled={!checklist.readyToPublish || isPublishing}
+          onClick={() => {
+            void publishWebsite();
+          }}
         >
-          Publish website
+          {isPublishing ? "Publishing…" : "Publish website"}
         </button>
       </div>
     </section>

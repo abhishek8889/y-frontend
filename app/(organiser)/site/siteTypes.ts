@@ -59,7 +59,10 @@ export type SiteFooterConfig = {
 };
 
 export type SiteRecord = {
+  /** Numeric site id — used for API calls (`site_id`), not in the manage URL. */
   id: string;
+  /** Public unique id — used in `/site/[uniqueId]` manage route. */
+  uniqueId: string | null;
   name: string;
   kind: SiteKind;
   createdAt: string;
@@ -67,6 +70,8 @@ export type SiteRecord = {
   status: string;
   domainHostname: string | null;
   domainStatus: string | null;
+  /** True when domain is connected on Vercel (publish / update-domain). */
+  vercelAdded: boolean;
   dnsRecords: SiteDnsRecord[];
   logo: SiteMediaAsset | null;
   navigation: SiteNavItem[];

@@ -139,12 +139,17 @@ export type UpdateOrganisationSiteDomainResponse = {
 };
 
 export function extractDnsRecords(
-  response: CreateOrganisationSiteResponse | undefined,
+  response:
+    | CreateOrganisationSiteResponse
+    | UpdateOrganisationSiteResponse
+    | UpdateOrganisationSiteDomainResponse
+    | undefined,
 ): SiteDnsRecord[] {
   if (!response?.data) return [];
   const top = response.data.dns_records;
   if (Array.isArray(top) && top.length) return top;
-  const domain = response.data.site?.domain;
+  const site = "site" in response.data ? response.data.site : undefined;
+  const domain = site?.domain;
   if (domain && typeof domain === "object" && Array.isArray(domain.dns_instructions)) {
     return domain.dns_instructions;
   }

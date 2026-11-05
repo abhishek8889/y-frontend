@@ -1,28 +1,25 @@
 "use client";
 
+import { SiteDnsRecordsTable } from "../../components/SiteDnsRecordsTable";
 import type { SiteManageController } from "../useSiteManageDraft";
 
 type SettingsAreaProps = Pick<
   SiteManageController,
-  "draft" | "update" | "toast"
+  "site" | "draft" | "update" | "saveDomain" | "isSavingDomain"
 >;
 
-export function SettingsArea({ draft, update, toast }: SettingsAreaProps) {
-  function saveDomain() {
-    const domain = draft.domainInput
-      .trim()
-      .replace(/^https?:\/\//i, "")
-      .replace(/\/+$/, "");
-    if (!domain) {
-      toast("Enter a domain first.");
-      return;
-    }
-    update({
-      domainInput: domain,
-      domainConnected: true,
-      toast: `${domain} saved for this preview.`,
-    });
-  }
+export function SettingsArea({
+  site,
+  draft,
+  update,
+  saveDomain,
+  isSavingDomain,
+}: SettingsAreaProps) {
+  const isPublished = draft.siteStatus !== "draft" || siteLifecycleIsLive(site.status);
+  const showDns =
+    (site.vercelAdded || site.dnsRecords.length > 0) &&
+    (isPublished || site.dnsRecords.length > 0);
+  const dnsRecords = site.dnsRecords;
 
   return (
     <>
@@ -43,6 +40,7 @@ export function SettingsArea({ draft, update, toast }: SettingsAreaProps) {
               className="csp-input"
               placeholder="e.g. club.example.com"
               value={draft.domainInput}
+              disabled={isSavingDomain}
               onChange={(event) => update({ domainInput: event.target.value })}
             />
           </label>
@@ -58,13 +56,32 @@ export function SettingsArea({ draft, update, toast }: SettingsAreaProps) {
             </ol>
           </div>
 
+          {showDns ? (
+            <div className="csp-domain-dns">
+              <h3 className="csp-domain-procedure-title">DNS instructions</h3>
+              <p className="csp-panel-lead">
+                {site.domainHostname
+                  ? `Add these records at your provider for ${site.domainHostname}.`
+                  : "Add these records at your DNS provider."}{" "}
+                Copy the name and value for each row.
+              </p>
+              <SiteDnsRecordsTable records={dnsRecords} />
+            </div>
+          ) : null}
+
           <div className="csp-domain-state">
             <strong>
-              {draft.domainConnected ? "Connected in preview" : "Not connected"}
+              {draft.domainConnected
+                ? site.vercelAdded || showDns
+                  ? "Connected"
+                  : "Domain saved"
+                : "Not connected"}
             </strong>
             <span>
               {draft.domainConnected
-                ? "Domain saved for this preview. Finish DNS at your provider, then allow up to 48 hours."
+                ? showDns
+                  ? "Finish DNS at your provider, then allow up to 48 hours for verification."
+                  : "Domain saved. Publish the site to connect it on Vercel and get DNS records."
                 : "Add your domain above, then complete DNS at your provider."}
             </span>
           </div>
@@ -72,12 +89,20 @@ export function SettingsArea({ draft, update, toast }: SettingsAreaProps) {
           <button
             type="button"
             className="page-primary-button-action"
-            onClick={saveDomain}
+            disabled={isSavingDomain}
+            onClick={() => {
+              void saveDomain();
+            }}
           >
-            Save domain
+            {isSavingDomain ? "Saving…" : "Save domain"}
           </button>
         </div>
       </section>
     </>
   );
+}
+
+function siteLifecycleIsLive(status: string | null | undefined): boolean {
+  const raw = String(status ?? "").trim().toLowerCase();
+  return raw === "active" || raw === "live" || raw === "published";
 }

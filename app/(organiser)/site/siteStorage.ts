@@ -24,6 +24,10 @@ function normalizeSiteRecord(value: unknown): SiteRecord | null {
 
   return {
     id: record.id,
+    uniqueId:
+      typeof record.uniqueId === "string" && record.uniqueId.trim()
+        ? record.uniqueId.trim()
+        : null,
     name: record.name.trim(),
     kind: "microsite",
     createdAt,
@@ -31,6 +35,7 @@ function normalizeSiteRecord(value: unknown): SiteRecord | null {
     status: typeof record.status === "string" && record.status ? record.status : "draft",
     domainHostname: typeof record.domainHostname === "string" ? record.domainHostname : null,
     domainStatus: typeof record.domainStatus === "string" ? record.domainStatus : null,
+    vercelAdded: Boolean(record.vercelAdded),
     dnsRecords: Array.isArray(record.dnsRecords) ? record.dnsRecords : [],
     logo:
       record.logo &&
@@ -123,6 +128,7 @@ function blankSiteFields(name: string): SiteRecord {
   const createdAt = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
+    uniqueId: null,
     name: name.trim(),
     kind: "microsite",
     createdAt,
@@ -130,6 +136,7 @@ function blankSiteFields(name: string): SiteRecord {
     status: "draft",
     domainHostname: null,
     domainStatus: null,
+    vercelAdded: false,
     dnsRecords: [],
     logo: null,
     navigation: [],

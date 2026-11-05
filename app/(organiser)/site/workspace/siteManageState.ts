@@ -12,6 +12,8 @@ export type SampleEvent = {
   venue: string;
   cta: string;
   path: string;
+  /** Banner/feature image URL from organisation events API. */
+  imageUrl?: string;
 };
 
 /** Built-in pages — redirect links are fixed to the product routes. */
@@ -209,6 +211,9 @@ export type SiteManageDraft = {
   selectedArticleId: string;
   customHeadline: string;
   bannerSource: BannerSource;
+  /** Media path from media/upload — sent to organisation/site/banner/save. */
+  bannerImagePath: string;
+  /** Preview URL (CDN or local data URL). */
   bannerImageDataUrl: string;
   ctaLabel: string;
   ctaRedirectLink: string;
@@ -318,6 +323,7 @@ export function defaultManageDraft(siteName: string): SiteManageDraft {
     selectedArticleId: articles[0].id,
     customHeadline: `Welcome to ${siteName}`,
     bannerSource: "feature",
+    bannerImagePath: "",
     bannerImageDataUrl: "",
     ctaLabel: "",
     ctaRedirectLink: "",
@@ -436,7 +442,9 @@ export function validateImageFile(file: File): string | null {
 }
 
 export function getSetupChecklist(draft: SiteManageDraft) {
-  const identityDone = Boolean(draft.publicName.trim() && draft.publicContactEmail.trim());
+  const identityDone = Boolean(draft.publicName.trim());
+  const brandingDone = Boolean(draft.logoPath.trim() && draft.navItems.length > 0);
+  const domainDone = Boolean(draft.domainInput.trim());
   const homepageDone = Boolean(
     draft.featureKind === "custom"
       ? draft.customHeadline.trim() && (draft.ctaLabel.trim() || draft.customHeadline.trim())
@@ -451,9 +459,12 @@ export function getSetupChecklist(draft: SiteManageDraft) {
 
   return {
     identityDone,
+    brandingDone,
+    domainDone,
     homepageDone,
     contentStarted,
     enquiryDone,
-    readyToPublish: identityDone && homepageDone,
+    /** Matches backend publish rules: name + logo + navigation + domain. */
+    readyToPublish: identityDone && brandingDone && domainDone,
   };
 }

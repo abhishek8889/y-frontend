@@ -42,14 +42,16 @@ export function buildClubsitePreviewModel(
 
   const heroTitle =
     draft.featureKind === "event"
-      ? selectedEvent.title
+      ? selectedEvent?.title || "Choose an event"
       : draft.featureKind === "news"
         ? selectedArticle?.headline || "Choose a story"
         : draft.customHeadline || "Add a campaign headline";
 
   const heroMeta =
     draft.featureKind === "event"
-      ? eventMeta(selectedEvent)
+      ? selectedEvent
+        ? eventMeta(selectedEvent)
+        : "No events yet"
       : draft.featureKind === "news"
         ? selectedArticle?.status === "published"
           ? "From your news"
@@ -59,7 +61,7 @@ export function buildClubsitePreviewModel(
   const heroCta =
     draft.ctaLabel.trim() ||
     (draft.featureKind === "event"
-      ? selectedEvent.cta
+      ? selectedEvent?.cta || "Get tickets"
       : draft.featureKind === "news"
         ? "Read article"
         : "Learn more");
@@ -67,7 +69,7 @@ export function buildClubsitePreviewModel(
   const heroCtaLink =
     draft.ctaRedirectLink.trim() ||
     (draft.featureKind === "event"
-      ? selectedEvent.path
+      ? selectedEvent?.path || "/events"
       : draft.featureKind === "news"
         ? `/news/${selectedArticle?.id ?? ""}`
         : "/");
@@ -77,7 +79,9 @@ export function buildClubsitePreviewModel(
       ? draft.bannerImageDataUrl
       : draft.featureKind === "news"
         ? selectedArticle?.imageDataUrl || ""
-        : "";
+        : draft.featureKind === "event"
+          ? selectedEvent?.imageUrl || ""
+          : "";
 
   const previewUrl =
     draft.domainConnected && draft.domainInput

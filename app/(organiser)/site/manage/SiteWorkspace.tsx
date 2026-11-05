@@ -1,5 +1,11 @@
 "use client";
 
+import { StatusBadge } from "@/components/common";
+import { SiteDnsInstructionsModal } from "../components/SiteDnsInstructionsModal";
+import {
+  formatDnsStatusLabel,
+  siteDnsStatus,
+} from "../siteMappers";
 import type { SiteRecord } from "../siteTypes";
 import "../workspace/site-manage.css";
 import { ContentArea } from "./content/ContentArea";
@@ -16,6 +22,23 @@ type SiteWorkspaceProps = {
   onSiteUpdated?: (site: SiteRecord) => void;
 };
 
+function domainStatusBadgeProps(site: SiteRecord) {
+  const dns = siteDnsStatus(site);
+  if (dns === "pending" || dns === "pending_verification") {
+    return { status: "pending", label: formatDnsStatusLabel(dns) };
+  }
+  if (dns === "failed") {
+    return { status: "failed", label: formatDnsStatusLabel(dns) };
+  }
+  if (dns === "active" || dns === "verified") {
+    return { status: "active", label: formatDnsStatusLabel(dns) };
+  }
+  if (dns === "not_connected") {
+    return { status: "draft", label: formatDnsStatusLabel(dns) };
+  }
+  return { status: "draft", label: formatDnsStatusLabel(dns) };
+}
+
 export function SiteWorkspace({
   site,
   onBackToList,
@@ -24,7 +47,6 @@ export function SiteWorkspace({
 }: SiteWorkspaceProps) {
   const manage = useSiteManageDraft(site, onPublishedLocal, onSiteUpdated);
   const {
-    draft,
     preview,
     checklist,
     mainTab,
@@ -32,51 +54,46 @@ export function SiteWorkspace({
     reviewOpen,
     setReviewOpen,
     publishWebsite,
+    isPublishing,
+    dnsModal,
+    closeDnsModal,
   } = manage;
+
+  const domainBadge = domainStatusBadgeProps(manage.site);
 
   return (
     <div className="csp csp-surface">
       <header className="site-toolbar csp-toolbar">
         <div className="site-toolbar-identity page-header-text">
-          <div className="site-toolbar-heading-row">
-            {onBackToList ? (
-              <button
-                type="button"
-                className="page-secondary-button"
-                onClick={onBackToList}
-              >
-                ← Sites
-              </button>
-            ) : null}
-            <h1 className="page-title">Microsite</h1>
-            <span
-              className={`csp-badge${draft.siteStatus === "draft" ? " csp-badge--draft" : ""}`}
+          {onBackToList ? (
+            <button
+              type="button"
+              className="csp-toolbar-back"
+              onClick={onBackToList}
             >
-              {draft.siteStatus === "draft" ? "Draft" : "Published"}
-            </span>
+              ← Sites
+            </button>
+          ) : null}
+          <div className="site-toolbar-heading-row">
+            <h1 className="page-title">Microsite</h1>
+            <StatusBadge
+              status={domainBadge.status}
+              label={domainBadge.label}
+              className="csp-toolbar-domain-status"
+            />
           </div>
-          <p className="page-subtitle">{preview.brandName}</p>
+          <p className="page-subtitle csp-toolbar-brand">{preview.brandName}</p>
         </div>
         <div className="site-toolbar-actions">
           <button
             type="button"
-            className="page-secondary-button"
-            onClick={() => setReviewOpen(true)}
-          >
-            Review
-          </button>
-          <button
-            type="button"
             className="page-primary-button-action"
+            disabled={isPublishing}
             onClick={() => {
-              if (!checklist.readyToPublish) {
-                setReviewOpen(true);
-                return;
-              }
-              publishWebsite();
+              void publishWebsite();
             }}
           >
-            Publish
+            {isPublishing ? "Publishing…" : "Publish"}
           </button>
         </div>
       </header>
@@ -105,24 +122,35 @@ export function SiteWorkspace({
       <div className="csp-body site-panel">
         {mainTab === "Website" ? (
           <WebsiteArea
+            site={manage.site}
             draft={manage.draft}
             events={manage.events}
+            eventsLoading={manage.eventsLoading}
+            eventsError={manage.eventsError}
+            eventsFetchingMore={manage.eventsFetchingMore}
+            eventsHasMore={manage.eventsHasMore}
+            loadMoreEvents={manage.loadMoreEvents}
             preview={manage.preview}
             selectedEvent={manage.selectedEvent}
             websitePanel={manage.websitePanel}
             setWebsitePanel={manage.setWebsitePanel}
             update={manage.update}
-            uploadImage={manage.uploadImage}
             uploadLogo={manage.uploadLogo}
             clearLogo={manage.clearLogo}
             uploadingLogo={manage.uploadingLogo}
+            uploadBanner={manage.uploadBanner}
+            clearBannerImage={manage.clearBannerImage}
+            uploadingBanner={manage.uploadingBanner}
+            saveBannerCta={manage.saveBannerCta}
+            isSavingBanner={manage.isSavingBanner}
+            saveCategories={manage.saveCategories}
+            isSavingCategories={manage.isSavingCategories}
             saveHeaderFooter={manage.saveHeaderFooter}
             isSavingHeader={manage.isSavingHeader}
             addNavItem={manage.addNavItem}
             updateNavItem={manage.updateNavItem}
             removeNavItem={manage.removeNavItem}
             toggleIncluded={manage.toggleIncluded}
-            createArticle={manage.createArticle}
           />
         ) : null}
 
@@ -139,9 +167,11 @@ export function SiteWorkspace({
 
         {mainTab === "Domain & Identity" ? (
           <SettingsArea
+            site={manage.site}
             draft={manage.draft}
             update={manage.update}
-            toast={manage.toast}
+            saveDomain={manage.saveDomain}
+            isSavingDomain={manage.isSavingDomain}
           />
         ) : null}
 
@@ -152,9 +182,25 @@ export function SiteWorkspace({
             checklist={manage.checklist}
             setReviewOpen={manage.setReviewOpen}
             publishWebsite={manage.publishWebsite}
+            isPublishing={manage.isPublishing}
           />
         ) : null}
       </div>
+
+      <SiteDnsInstructionsModal
+        open={Boolean(dnsModal)}
+        hostname={dnsModal?.hostname}
+        status={dnsModal?.status}
+        records={dnsModal?.records ?? []}
+        notice="After closing this popup, you can see your DNS records in Domain & Identity on this site."
+        primaryLabel="Open Domain & Identity"
+        onPrimary={() => {
+          closeDnsModal();
+          setMainTab("Domain & Identity");
+          setReviewOpen(false);
+        }}
+        onClose={closeDnsModal}
+      />
     </div>
   );
 }

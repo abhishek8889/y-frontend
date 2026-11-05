@@ -196,6 +196,7 @@ export function resolveSiteKind(_site?: OrganisationSite, _index?: number): Site
 function domainFromSite(site: OrganisationSite): {
   hostname: string | null;
   status: string | null;
+  vercelAdded: boolean;
   dnsRecords: SiteDnsRecord[];
 } {
   const topHostname =
@@ -204,12 +205,18 @@ function domainFromSite(site: OrganisationSite): {
       : null;
   const domain = site.domain;
   if (!domain) {
-    return { hostname: topHostname, status: null, dnsRecords: [] };
+    return {
+      hostname: topHostname,
+      status: null,
+      vercelAdded: false,
+      dnsRecords: [],
+    };
   }
   if (typeof domain === "string") {
     return {
       hostname: domain.trim() || topHostname,
       status: null,
+      vercelAdded: false,
       dnsRecords: [],
     };
   }
@@ -219,6 +226,7 @@ function domainFromSite(site: OrganisationSite): {
         ? domain.hostname.trim()
         : null) || topHostname,
     status: typeof domain.status === "string" ? domain.status : null,
+    vercelAdded: Boolean(domain.vercel_added),
     dnsRecords: Array.isArray(domain.dns_instructions) ? domain.dns_instructions : [],
   };
 }
@@ -247,8 +255,14 @@ export function mapOrganisationSite(site: OrganisationSite, _index = 0): SiteRec
       ? site.branding_complete
       : Boolean(logo?.path && navigation.length > 0);
 
+  const uniqueId =
+    typeof site.unique_id === "string" && site.unique_id.trim()
+      ? site.unique_id.trim()
+      : null;
+
   return {
     id: String(site.id),
+    uniqueId,
     name,
     kind: resolveSiteKind(),
     createdAt,
@@ -256,6 +270,7 @@ export function mapOrganisationSite(site: OrganisationSite, _index = 0): SiteRec
     status: typeof site.status === "string" && site.status ? site.status : "draft",
     domainHostname: domain.hostname,
     domainStatus: domain.status,
+    vercelAdded: domain.vercelAdded,
     dnsRecords: domain.dnsRecords,
     logo,
     navigation,
@@ -264,6 +279,12 @@ export function mapOrganisationSite(site: OrganisationSite, _index = 0): SiteRec
     footer,
     brandingComplete,
   };
+}
+
+/** Manage URL uses unique_id; numeric id stays internal for APIs. */
+export function siteManageHref(site: Pick<SiteRecord, "id" | "uniqueId">): string {
+  const key = site.uniqueId?.trim() || site.id;
+  return `/site/${encodeURIComponent(key)}`;
 }
 
 /** Combined display helper (filters / overview). DNS pending overrides site lifecycle. */

@@ -9,24 +9,35 @@ import { HeaderFooterPanel } from "./HeaderFooterPanel";
 
 type WebsiteAreaProps = Pick<
   SiteManageController,
+  | "site"
   | "draft"
   | "events"
+  | "eventsLoading"
+  | "eventsError"
+  | "eventsFetchingMore"
+  | "eventsHasMore"
+  | "loadMoreEvents"
   | "preview"
   | "selectedEvent"
   | "websitePanel"
   | "setWebsitePanel"
   | "update"
-  | "uploadImage"
   | "uploadLogo"
   | "clearLogo"
   | "uploadingLogo"
+  | "uploadBanner"
+  | "clearBannerImage"
+  | "uploadingBanner"
+  | "saveBannerCta"
+  | "isSavingBanner"
+  | "saveCategories"
+  | "isSavingCategories"
   | "saveHeaderFooter"
   | "isSavingHeader"
   | "addNavItem"
   | "updateNavItem"
   | "removeNavItem"
   | "toggleIncluded"
-  | "createArticle"
 >;
 
 export function WebsiteArea(props: WebsiteAreaProps) {
@@ -90,22 +101,39 @@ export function WebsiteArea(props: WebsiteAreaProps) {
 
           {websitePanel === "feature" ? (
             <BannerCtaPanel
+              site={props.site}
               draft={props.draft}
               events={props.events}
+              eventsLoading={props.eventsLoading}
+              eventsError={props.eventsError}
+              eventsFetchingMore={props.eventsFetchingMore}
+              eventsHasMore={props.eventsHasMore}
+              loadMoreEvents={props.loadMoreEvents}
               selectedEvent={props.selectedEvent}
               preview={props.preview}
               update={props.update}
-              uploadImage={props.uploadImage}
-              createArticle={props.createArticle}
+              uploadBanner={props.uploadBanner}
+              clearBannerImage={props.clearBannerImage}
+              uploadingBanner={props.uploadingBanner}
+              saveBannerCta={props.saveBannerCta}
+              isSavingBanner={props.isSavingBanner}
             />
           ) : null}
 
           {websitePanel === "content-select" ? (
             <EventsNewsPanel
+              site={props.site}
               draft={props.draft}
               events={props.events}
+              eventsLoading={props.eventsLoading}
+              eventsError={props.eventsError}
+              eventsFetchingMore={props.eventsFetchingMore}
+              eventsHasMore={props.eventsHasMore}
+              loadMoreEvents={props.loadMoreEvents}
               update={props.update}
               toggleIncluded={props.toggleIncluded}
+              saveCategories={props.saveCategories}
+              isSavingCategories={props.isSavingCategories}
             />
           ) : null}
         </div>

@@ -477,6 +477,7 @@ export const eventsApi = baseApi.injectEndpoints({
 
 export const {
   useGetOrganisationEventsQuery,
+  useLazyGetOrganisationEventsQuery,
   useGetEventCategoriesQuery,
   useCreateCustomEventCategoryMutation,
   useGetEventDetailsQuery,
