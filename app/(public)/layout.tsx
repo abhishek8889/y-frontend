@@ -4,10 +4,8 @@ import {
   normalizeHostnameParam,
 } from "@/apis/public/resolveHostnameApi";
 import { CustomerSiteShell } from "@/components/public/CustomerSiteShell";
-import {
-  HostResolutionProvider,
-  publicFallbackResolution,
-} from "@/lib/public/hostResolution";
+import { HostResolutionProvider } from "@/lib/public/hostResolution";
+import { publicFallbackResolution } from "@/lib/public/hostResolutionUtils";
 import {
   isLikelyMarketplaceHostname,
   resolveRequestHostname,
